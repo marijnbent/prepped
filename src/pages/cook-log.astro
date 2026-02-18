@@ -1,0 +1,128 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { db } from "../lib/db";
+import { cookLogs, recipes, users } from "../lib/schema";
+import { desc, eq } from "drizzle-orm";
+import { t, formatDate } from "../lib/i18n";
+
+const logs = db
+  .select({
+    id: cookLogs.id,
+    photoUrl: cookLogs.photoUrl,
+    notes: cookLogs.notes,
+    rating: cookLogs.rating,
+    cookedAt: cookLogs.cookedAt,
+    recipeTitle: recipes.title,
+    recipeSlug: recipes.slug,
+    recipeImageUrl: recipes.imageUrl,
+    authorName: users.name,
+  })
+  .from(cookLogs)
+  .innerJoin(recipes, eq(cookLogs.recipeId, recipes.id))
+  .leftJoin(users, eq(cookLogs.createdBy, users.id))
+  .orderBy(desc(cookLogs.cookedAt))
+  .all();
+---
+
+<Layout title={t("cookLog.title")}>
+  <div class="max-w-5xl mx-auto">
+    {/* Page header */}
+    <div class="mb-12">
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("cookLog.title")}</h1>
+      <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
+        {logs.length} {logs.length === 1 ? "entry" : "entries"}
+      </p>
+    </div>
+
+    {logs.length === 0 ? (
+      <div class="text-center py-28">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 border border-border/30 mb-6">
+          <svg class="w-9 h-9 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+          </svg>
+        </div>
+        <p class="text-muted-foreground text-lg font-serif">{t("cookLog.noLogs")}</p>
+        <p class="text-muted-foreground/40 text-sm mt-2">Cook a recipe and log your experience</p>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+        {logs.map((log, i) => (
+          <a
+            href={`/recipes/${log.recipeSlug}`}
+            class="group block animate-fade-up"
+            style={`animation-delay: ${i * 50}ms;`}
+          >
+            <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
+              {/* Photo area */}
+              {log.photoUrl ? (
+                <div class="aspect-[16/9] overflow-hidden relative">
+                  <img
+                    src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
+                    alt="Cook log photo"
+                    class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
+                    loading="lazy"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-60 pointer-events-none" />
+                </div>
+              ) : log.recipeImageUrl ? (
+                <div class="aspect-[16/9] overflow-hidden relative">
+                  <img
+                    src={log.recipeImageUrl.startsWith("/") ? `/api/uploads${log.recipeImageUrl}` : log.recipeImageUrl}
+                    alt=""
+                    class="w-full h-full object-cover opacity-25 blur-[1px]"
+                    loading="lazy"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-br from-secondary/60 to-accent/20 pointer-events-none" />
+                </div>
+              ) : null}
+
+              {/* Content */}
+              <div class="p-5 pb-5">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <h3 class="font-serif text-lg leading-snug group-hover:text-primary transition-colors duration-300 line-clamp-1">
+                    {log.recipeTitle}
+                  </h3>
+                  {/* Dot rating */}
+                  {log.rating && (
+                    <div class="shrink-0 flex items-center gap-1 mt-1.5">
+                      {Array.from({ length: 5 }).map((_, starIndex) => (
+                        <span
+                          class:list={[
+                            "inline-block w-2 h-2 rounded-full transition-colors",
+                            starIndex < log.rating!
+                              ? "bg-primary"
+                              : "bg-border/40",
+                          ]}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {log.notes && (
+                  <p class="text-sm text-muted-foreground/70 line-clamp-2 leading-relaxed">{log.notes}</p>
+                )}
+
+                <div class="flex items-center gap-2 mt-4 pt-3 border-t border-border/30 text-xs text-muted-foreground/50">
+                  {log.authorName && (
+                    <span class="inline-flex items-center gap-1.5 font-medium text-muted-foreground/70">
+                      <svg class="w-3 h-3 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 0 0-16 0" />
+                      </svg>
+                      {log.authorName}
+                    </span>
+                  )}
+                  {log.authorName && <span class="text-border/30">&middot;</span>}
+                  <time class="tabular-nums">{formatDate(log.cookedAt)}</time>
+                </div>
+              </div>
+
+              {/* Hover glow */}
+              <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

@@ -1,0 +1,41 @@
+---
+import RecipeCard from "./RecipeCard.astro";
+import { t } from "../lib/i18n";
+
+interface Props {
+  recipes: {
+    id: number;
+    title: string;
+    slug: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    prepTime?: number | null;
+    cookTime?: number | null;
+    difficulty?: string | null;
+  }[];
+}
+
+const { recipes } = Astro.props;
+---
+
+{
+  recipes.length === 0 ? (
+    <div class="text-center py-28">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 mb-6 border border-border/30">
+        <svg class="w-9 h-9 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+        </svg>
+      </div>
+      <p class="text-muted-foreground text-lg font-serif">{t("recipe.noRecipes")}</p>
+      <p class="text-muted-foreground/40 text-sm mt-2">Your kitchen awaits its first recipe</p>
+    </div>
+  ) : (
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+      {recipes.map((recipe, i) => (
+        <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
+          <RecipeCard recipe={recipe} />
+        </div>
+      ))}
+    </div>
+  )
+}

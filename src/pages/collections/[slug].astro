@@ -1,0 +1,77 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecipeGrid from "../../components/RecipeGrid.astro";
+import { db } from "../../lib/db";
+import { collections, recipeCollections, recipes } from "../../lib/schema";
+import { eq } from "drizzle-orm";
+import { t } from "../../lib/i18n";
+
+const { slug } = Astro.params;
+const collection = db.select().from(collections).where(eq(collections.slug, slug!)).get();
+if (!collection) {
+  return Astro.redirect("/collections");
+}
+
+const collectionRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    description: recipes.description,
+    imageUrl: recipes.imageUrl,
+    prepTime: recipes.prepTime,
+    cookTime: recipes.cookTime,
+    difficulty: recipes.difficulty,
+  })
+  .from(recipeCollections)
+  .innerJoin(recipes, eq(recipeCollections.recipeId, recipes.id))
+  .where(eq(recipeCollections.collectionId, collection.id))
+  .all();
+
+const isOwner = Astro.locals.user?.id === collection.createdBy;
+---
+
+<Layout title={collection.name}>
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-start justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-bold">{collection.name}</h1>
+        {collection.description && (
+          <p class="text-muted-foreground mt-2">{collection.description}</p>
+        )}
+      </div>
+      {isOwner && (
+        <div class="flex gap-2 shrink-0">
+          <a
+            href={`/collections/${collection.slug}/edit`}
+            class="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
+          >
+            {t("common.edit")}
+          </a>
+          <button
+            id="delete-collection"
+            data-id={collection.id}
+            class="inline-flex items-center justify-center rounded-md border border-destructive text-destructive px-4 py-2 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground transition-colors"
+          >
+            {t("common.delete")}
+          </button>
+        </div>
+      )}
+    </div>
+    <RecipeGrid recipes={collectionRecipes} />
+  </div>
+
+  <script>
+    const btn = document.getElementById("delete-collection");
+    if (btn) {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this collection? Recipes won't be deleted.")) return;
+        const id = btn.getAttribute("data-id");
+        const res = await fetch(`/api/collections/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          window.location.href = "/collections";
+        }
+      });
+    }
+  </script>
+</Layout>

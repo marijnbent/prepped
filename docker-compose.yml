@@ -1,0 +1,16 @@
+services:
+  prepped:
+    build: .
+    ports:
+      - "4321:4321"
+    volumes:
+      - prepped-data:/app/data
+    env_file:
+      - .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
+    restart: unless-stopped
+
+volumes:
+  prepped-data:

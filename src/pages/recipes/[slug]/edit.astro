@@ -1,0 +1,72 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import RecipeForm from "../../../islands/RecipeForm";
+import { db } from "../../../lib/db";
+import {
+  recipes,
+  tags,
+  collections,
+  recipeTags,
+  recipeCollections,
+} from "../../../lib/schema";
+import { eq } from "drizzle-orm";
+import { t } from "../../../lib/i18n";
+
+const { slug } = Astro.params;
+
+if (!Astro.locals.user) {
+  return Astro.redirect(`/login?redirect=/recipes/${slug}/edit`);
+}
+
+const recipe = db.select().from(recipes).where(eq(recipes.slug, slug!)).get();
+if (!recipe) {
+  return Astro.redirect("/recipes");
+}
+
+const allTags = db.select().from(tags).all();
+const allCollections = db.select().from(collections).all();
+
+const recipeTagIds = db
+  .select({ tagId: recipeTags.tagId })
+  .from(recipeTags)
+  .where(eq(recipeTags.recipeId, recipe.id))
+  .all()
+  .map((rt) => rt.tagId);
+
+const recipeCollectionIds = db
+  .select({ collectionId: recipeCollections.collectionId })
+  .from(recipeCollections)
+  .where(eq(recipeCollections.recipeId, recipe.id))
+  .all()
+  .map((rc) => rc.collectionId);
+
+const initial = {
+  id: recipe.id,
+  title: recipe.title,
+  description: recipe.description || "",
+  ingredients: recipe.ingredients as any[],
+  steps: recipe.steps as any[],
+  servings: recipe.servings || undefined,
+  prepTime: recipe.prepTime || undefined,
+  cookTime: recipe.cookTime || undefined,
+  difficulty: recipe.difficulty as "easy" | "medium" | "hard" | undefined,
+  imageUrl: recipe.imageUrl || "",
+  sourceUrl: recipe.sourceUrl || "",
+  videoUrl: recipe.videoUrl || "",
+  notes: recipe.notes || "",
+  tagIds: recipeTagIds,
+  collectionIds: recipeCollectionIds,
+};
+---
+
+<Layout title={`${t("recipe.edit")} - ${recipe.title}`}>
+  <div class="max-w-3xl mx-auto">
+    <div class="mb-10 animate-fade-up">
+      <p class="text-[11px] uppercase tracking-[0.12em] text-primary font-medium mb-2">{t("recipe.edit")}</p>
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight">{recipe.title}</h1>
+    </div>
+    <div class="animate-fade-up" style="animation-delay: 100ms;">
+      <RecipeForm initial={initial} tags={allTags} collections={allCollections} client:load />
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,38 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecipeGrid from "../../components/RecipeGrid.astro";
+import { db } from "../../lib/db";
+import { tags, recipeTags, recipes } from "../../lib/schema";
+import { eq } from "drizzle-orm";
+
+const { tag: tagSlug } = Astro.params;
+const tag = db.select().from(tags).where(eq(tags.slug, tagSlug!)).get();
+if (!tag) {
+  return Astro.redirect("/recipes");
+}
+
+const tagRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    description: recipes.description,
+    imageUrl: recipes.imageUrl,
+    prepTime: recipes.prepTime,
+    cookTime: recipes.cookTime,
+    difficulty: recipes.difficulty,
+  })
+  .from(recipeTags)
+  .innerJoin(recipes, eq(recipeTags.recipeId, recipes.id))
+  .where(eq(recipeTags.tagId, tag.id))
+  .all();
+---
+
+<Layout title={tag.name}>
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">
+      <span class="text-muted-foreground">Tag:</span> {tag.name}
+    </h1>
+    <RecipeGrid recipes={tagRecipes} />
+  </div>
+</Layout>

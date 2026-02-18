@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import CollectionForm from "../../islands/CollectionForm";
+
+if (!Astro.locals.user) {
+  return Astro.redirect("/login?redirect=/collections/new");
+}
+---
+
+<Layout title="New Collection">
+  <div class="max-w-lg mx-auto">
+    <h1 class="text-3xl font-bold mb-6">New Collection</h1>
+    <CollectionForm client:load />
+  </div>
+</Layout>

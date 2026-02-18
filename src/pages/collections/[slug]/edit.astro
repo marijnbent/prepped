@@ -1,0 +1,34 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import CollectionForm from "../../../islands/CollectionForm";
+import { db } from "../../../lib/db";
+import { collections } from "../../../lib/schema";
+import { eq } from "drizzle-orm";
+
+const { slug } = Astro.params;
+
+if (!Astro.locals.user) {
+  return Astro.redirect(`/login?redirect=/collections/${slug}/edit`);
+}
+
+const collection = db.select().from(collections).where(eq(collections.slug, slug!)).get();
+if (!collection) {
+  return Astro.redirect("/collections");
+}
+---
+
+<Layout title={`Edit - ${collection.name}`}>
+  <div class="max-w-lg mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Edit: {collection.name}</h1>
+    <CollectionForm
+      initial={{
+        id: collection.id,
+        name: collection.name,
+        description: collection.description || "",
+        imageUrl: collection.imageUrl || "",
+        sortOrder: collection.sortOrder,
+      }}
+      client:load
+    />
+  </div>
+</Layout>
