@@ -4,10 +4,10 @@ services:
       context: .
       args:
         AUTH_MODE: ${AUTH_MODE:-password}
-        UI_LOCALE: ${UI_LOCALE:-en}
+        PUBLIC_UI_LOCALE: ${PUBLIC_UI_LOCALE:-en}
         INVITE_CODE: ${INVITE_CODE:-}
         MEASUREMENT_SYSTEM: ${MEASUREMENT_SYSTEM:-metric}
-        DATE_LOCALE: ${DATE_LOCALE:-}
+        PUBLIC_DATE_LOCALE: ${PUBLIC_DATE_LOCALE:-}
     ports:
       - "4321:4321"
     volumes:

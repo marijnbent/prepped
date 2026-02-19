@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { t } from "@/lib/i18n";
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -21,7 +22,7 @@ export default function ThemeToggle() {
     return (
       <button
         className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground"
-        aria-label="Toggle theme"
+        aria-label={t("theme.toggle")}
       >
         <span className="w-4 h-4" />
       </button>
@@ -32,7 +33,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 active:scale-95"
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={dark ? t("theme.light") : t("theme.dark")}
     >
       {dark ? (
         // Sun icon

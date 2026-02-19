@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Image as ImageIcon } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 interface Props {
   value?: string;
@@ -30,7 +31,7 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Upload failed");
+        setError(data.error || t("upload.failed"));
         setUploading(false);
         return;
       }
@@ -38,7 +39,7 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
       const { full } = await res.json();
       onChange(full);
     } catch {
-      setError("Upload failed");
+      setError(t("upload.failed"));
     }
     setUploading(false);
   }
@@ -67,7 +68,7 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
         <div className="relative inline-block">
           <img
             src={imageUrl}
-            alt="Upload preview"
+            alt={t("upload.preview")}
             className="rounded-lg max-w-xs max-h-48 object-cover"
           />
           <button
@@ -94,15 +95,15 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
           }`}
         >
           {uploading ? (
-            <p className="text-sm text-muted-foreground">Uploading...</p>
+            <p className="text-sm text-muted-foreground">{t("upload.uploading")}</p>
           ) : (
             <>
               <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
-                Drop an image here or click to browse
+                {t("upload.dropHint")}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                JPEG, PNG, or WebP (max 10MB)
+                {t("upload.fileTypes")}
               </p>
             </>
           )}

@@ -57,6 +57,24 @@ Rule of thumb for this codebase:
 - Keep AI/auth SDK clients server-side (API routes and server libs)
 - Keep client islands dependency-light and call server APIs via `fetch`
 
+### AI auth/config failures (`AI_APICallError`, `unregistered callers`)
+
+Symptom:
+- AI actions (new recipe import or recipe chat) fail with provider auth errors.
+
+Likely causes:
+- `GEMINI_API_KEY` is missing or empty in runtime environment.
+- API key is invalid, expired, or restricted to a different project/service.
+- Google AI API access is not enabled for the project tied to the key.
+
+Quick checks:
+- Verify `.env` has a valid `GEMINI_API_KEY`.
+- Restart the server after changing env vars.
+- Test with a newly generated key from Google AI Studio for the same project.
+
+Server-side behavior:
+- AI API routes sanitize provider errors and return JSON error responses (`{ error, code }`) so frontend actions can fail gracefully without raw error pages.
+
 ## Environment Variables
 
 | Variable | Required | Description |

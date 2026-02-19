@@ -4,6 +4,7 @@ import RecipeGrid from "../../components/RecipeGrid.astro";
 import { db } from "../../lib/db";
 import { tags, recipeTags, recipes } from "../../lib/schema";
 import { eq, and } from "drizzle-orm";
+import { t } from "../../lib/i18n";
 
 if (!Astro.locals.user) {
   return Astro.redirect("/login");
@@ -35,7 +36,7 @@ const tagRecipes = db
 <Layout title={tag.name}>
   <div class="max-w-6xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">
-      <span class="text-muted-foreground">Tag:</span> {tag.name}
+      <span class="text-muted-foreground">{t("tag.prefix")}</span> {tag.name}
     </h1>
     <RecipeGrid recipes={tagRecipes} />
   </div>

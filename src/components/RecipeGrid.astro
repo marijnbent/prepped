@@ -27,7 +27,7 @@ const { recipes } = Astro.props;
         </svg>
       </div>
       <p class="text-muted-foreground text-lg font-serif">{t("recipe.noRecipes")}</p>
-      <p class="text-muted-foreground/40 text-sm mt-2">Your kitchen awaits its first recipe</p>
+      <p class="text-muted-foreground/40 text-sm mt-2">{t("recipe.emptyHint")}</p>
     </div>
   ) : (
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">

@@ -63,7 +63,7 @@ const initials = profileUser.name
       <div>
         <h1 class="font-serif text-4xl md:text-5xl tracking-tight">{profileUser.name}</h1>
         <p class="text-muted-foreground/50 mt-2 text-sm">
-          {userRecipes.length} {userRecipes.length === 1 ? "recipe" : "recipes"}
+          {userRecipes.length} {userRecipes.length === 1 ? t("count.recipe") : t("count.recipes")}
         </p>
       </div>
     </div>

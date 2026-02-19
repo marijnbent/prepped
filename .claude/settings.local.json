@@ -11,7 +11,14 @@
       "Bash(SEED_DEFAULTS=true node -e \"\n  import\\(''./src/lib/seed.ts''\\).catch\\(\\(\\) => null\\);\n\")",
       "Bash(gh repo create:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx shadcn@latest add checkbox:*)",
+      "Bash(npx drizzle-kit push:*)",
+      "Bash(sqlite3:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx tsx:*)",
+      "Bash(git push:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

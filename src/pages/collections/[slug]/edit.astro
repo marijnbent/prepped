@@ -4,6 +4,7 @@ import CollectionForm from "../../../islands/CollectionForm";
 import { db } from "../../../lib/db";
 import { collections } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
+import { t } from "../../../lib/i18n";
 
 const { slug } = Astro.params;
 
@@ -21,9 +22,9 @@ if (!collection) {
 }
 ---
 
-<Layout title={`Edit - ${collection.name}`}>
+<Layout title={`${t("collection.editPrefix")} - ${collection.name}`}>
   <div class="max-w-lg mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Edit: {collection.name}</h1>
+    <h1 class="text-3xl font-bold mb-6">{t("collection.editPrefix")}: {collection.name}</h1>
     <CollectionForm
       initial={{
         id: collection.id,

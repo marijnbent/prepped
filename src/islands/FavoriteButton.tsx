@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 interface Props {
   recipeId: number;
@@ -43,7 +44,7 @@ export default function FavoriteButton({ recipeId, initialFavorited }: Props) {
         toggle();
       }}
       className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm transition-all duration-200 hover:scale-110 hover:border-rose-300 active:scale-95"
-      aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+      aria-label={favorited ? t("recipe.unfavorite") : t("recipe.favorite")}
     >
       <Heart
         className={`w-4 h-4 transition-colors duration-200 ${

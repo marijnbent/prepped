@@ -36,7 +36,7 @@ const favoriteRecipes = db
     <div class="mb-12">
       <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("collection.favorites")}</h1>
       <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
-        {favoriteRecipes.length} {favoriteRecipes.length === 1 ? "recipe" : "recipes"}
+        {favoriteRecipes.length} {favoriteRecipes.length === 1 ? t("count.recipe") : t("count.recipes")}
       </p>
     </div>
 
@@ -47,8 +47,8 @@ const favoriteRecipes = db
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </div>
-        <p class="text-muted-foreground text-lg font-serif">No favorites yet</p>
-        <p class="text-muted-foreground/40 text-sm mt-2">Heart a recipe to save it here</p>
+        <p class="text-muted-foreground text-lg font-serif">{t("favorites.noFavorites")}</p>
+        <p class="text-muted-foreground/40 text-sm mt-2">{t("favorites.heartHint")}</p>
       </div>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
@@ -87,7 +87,7 @@ const favoriteRecipes = db
                     </div>
                   )}
                   <div class="px-4 pb-4 pt-2">
-                    <p class="text-xs text-muted-foreground/60">by {recipe.authorName}</p>
+                    <p class="text-xs text-muted-foreground/60">{t("favorites.by")} {recipe.authorName}</p>
                   </div>
                   <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
                 </div>

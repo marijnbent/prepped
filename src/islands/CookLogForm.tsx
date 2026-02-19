@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Star } from "lucide-react";
 import ImageUpload from "./ImageUpload";
+import { t } from "@/lib/i18n";
 
 interface Props {
   recipeId: number;
@@ -39,14 +40,14 @@ export default function CookLogForm({ recipeId, recipeSlug }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || "Failed to save");
+        setError(data.error?.toString() || t("form.errorSaveGeneral"));
         setSaving(false);
         return;
       }
 
       window.location.href = `/recipes/${recipeSlug}`;
     } catch {
-      setError("Something went wrong");
+      setError(t("common.error"));
       setSaving(false);
     }
   }
@@ -55,7 +56,7 @@ export default function CookLogForm({ recipeId, recipeSlug }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Rating */}
       <div className="space-y-2">
-        <Label>Rating</Label>
+        <Label>{t("cookLog.rating")}</Label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
@@ -78,25 +79,25 @@ export default function CookLogForm({ recipeId, recipeSlug }: Props) {
 
       {/* Photo */}
       <div className="space-y-2">
-        <Label>Photo</Label>
+        <Label>{t("cookLog.photo")}</Label>
         <ImageUpload value={photoUrl} onChange={setPhotoUrl} subdir="cook-logs" />
       </div>
 
       {/* Notes */}
       <div className="space-y-2">
-        <Label htmlFor="cookNotes">Notes</Label>
+        <Label htmlFor="cookNotes">{t("cookLog.notes")}</Label>
         <Textarea
           id="cookNotes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="How did it turn out? Any modifications?"
+          placeholder={t("form.cookNotesPlaceholder")}
           rows={3}
         />
       </div>
 
       {/* Date */}
       <div className="space-y-2">
-        <Label htmlFor="cookedAt">Date</Label>
+        <Label htmlFor="cookedAt">{t("cookLog.date")}</Label>
         <Input
           id="cookedAt"
           type="date"
@@ -110,7 +111,7 @@ export default function CookLogForm({ recipeId, recipeSlug }: Props) {
 
       <div className="flex gap-3">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Add Cook Log"}
+          {saving ? t("form.saving") : t("form.addCookLog")}
         </Button>
       </div>
     </form>

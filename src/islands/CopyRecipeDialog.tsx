@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { t } from "@/lib/i18n";
 
 interface Props {
   recipeId: number;
@@ -51,18 +52,18 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
       <DialogTrigger asChild>
         <button className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/50 px-4 py-2 text-xs font-medium uppercase tracking-wide hover:bg-secondary hover:border-border transition-all duration-200">
           <Copy className="w-3.5 h-3.5" />
-          Copy
+          {t("recipe.copy")}
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Copy to My Recipes</DialogTitle>
+          <DialogTitle className="font-serif text-xl">{t("recipe.copyToMyRecipes")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-4">
           {collections.length > 0 && (
             <div>
               <p className="text-sm text-muted-foreground mb-3">
-                Add to collections (optional):
+                {t("recipe.addToCollections")}
               </p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {collections.map((col) => (
@@ -85,7 +86,7 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
             disabled={loading}
             className="w-full"
           >
-            {loading ? "Copying..." : "Copy Recipe"}
+            {loading ? t("recipe.copying") : t("recipe.copyRecipe")}
           </Button>
         </div>
       </DialogContent>

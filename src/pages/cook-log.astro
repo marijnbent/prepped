@@ -35,7 +35,7 @@ const logs = db
     <div class="mb-12">
       <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("cookLog.title")}</h1>
       <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
-        {logs.length} {logs.length === 1 ? "entry" : "entries"}
+        {logs.length} {logs.length === 1 ? t("count.entry") : t("count.entries")}
       </p>
     </div>
 
@@ -47,7 +47,7 @@ const logs = db
           </svg>
         </div>
         <p class="text-muted-foreground text-lg font-serif">{t("cookLog.noLogs")}</p>
-        <p class="text-muted-foreground/40 text-sm mt-2">Cook a recipe and log your experience</p>
+        <p class="text-muted-foreground/40 text-sm mt-2">{t("cookLog.emptyHint")}</p>
       </div>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
@@ -63,7 +63,7 @@ const logs = db
                 <div class="aspect-[16/9] overflow-hidden relative">
                   <img
                     src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
-                    alt="Cook log photo"
+                    alt={t("cookLog.photoAlt")}
                     class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
                     loading="lazy"
                   />

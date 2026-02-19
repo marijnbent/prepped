@@ -248,7 +248,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
     {/* ===== YouTube Video ===== */}
     {youtubeId && (
       <div class="mt-14">
-        <h2 class="font-serif text-xl tracking-tight mb-4">Video</h2>
+        <h2 class="font-serif text-xl tracking-tight mb-4">{t("recipe.video")}</h2>
         <div class="aspect-video rounded-2xl overflow-hidden border border-border/30">
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
@@ -265,7 +265,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
     {/* ===== Instagram Embed ===== */}
     {instagramEmbedPath && !youtubeId && (
       <div class="mt-14">
-        <h2 class="font-serif text-xl tracking-tight mb-4">Video</h2>
+        <h2 class="font-serif text-xl tracking-tight mb-4">{t("recipe.video")}</h2>
         <div class="flex justify-center">
           <iframe
             src={`https://www.instagram.com/${instagramEmbedPath}/embed/`}
@@ -285,7 +285,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
     {/* Source */}
     {recipe.sourceUrl && (
       <div class="mt-6 text-sm text-muted-foreground/50">
-        Source: <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-primary/70 hover:text-primary hover:underline transition-colors">{recipe.sourceUrl}</a>
+        {t("recipe.source")} <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-primary/70 hover:text-primary hover:underline transition-colors">{recipe.sourceUrl}</a>
       </div>
     )}
 

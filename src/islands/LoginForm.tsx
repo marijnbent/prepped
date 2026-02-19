@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { t } from "@/lib/i18n";
 
 interface Props {
   redirect?: string;
@@ -37,7 +38,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
       // Ignore parsing errors and use fallback below.
     }
 
-    return "Authentication failed";
+    return t("auth.errorAuth");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,7 +63,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
             body: JSON.stringify({ code: inviteCode }),
           });
           if (!res.ok) {
-            setError("Invalid invite code");
+            setError(t("auth.errorInvite"));
             setLoading(false);
             return;
           }
@@ -75,7 +76,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
         });
 
         if (signUpError) {
-          setError(signUpError || "Registration failed");
+          setError(signUpError || t("auth.errorRegister"));
           setLoading(false);
           return;
         }
@@ -86,7 +87,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
         });
 
         if (signInError) {
-          setError(signInError || "Login failed");
+          setError(signInError || t("auth.errorLogin"));
           setLoading(false);
           return;
         }
@@ -94,7 +95,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
 
       window.location.href = redirect || "/";
     } catch {
-      setError("Something went wrong");
+      setError(t("common.error"));
       setLoading(false);
     }
   }
@@ -103,14 +104,14 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">{t("auth.name")}</Label>
           <Input
             id="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            placeholder="Your first name"
+            placeholder={t("auth.namePlaceholder")}
             autoFocus
             autoComplete="off"
             data-1p-ignore
@@ -122,7 +123,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "..." : "Let's go"}
+          {loading ? "..." : t("auth.letsGo")}
         </Button>
       </form>
     );
@@ -132,31 +133,31 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
     <form onSubmit={handleSubmit} className="space-y-4">
       {isRegister && (
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">{t("auth.name")}</Label>
           <Input
             id="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t("auth.yourName")}
           />
         </div>
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.email")}</Label>
         <Input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          placeholder="you@example.com"
+          placeholder={t("auth.emailPlaceholder")}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("auth.password")}</Label>
         <Input
           id="password"
           type="password"
@@ -164,20 +165,20 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={8}
-          placeholder="Min. 8 characters"
+          placeholder={t("auth.passwordPlaceholder")}
         />
       </div>
 
       {isRegister && inviteRequired && (
         <div className="space-y-2">
-          <Label htmlFor="invite">Invite Code</Label>
+          <Label htmlFor="invite">{t("auth.inviteCode")}</Label>
           <Input
             id="invite"
             type="text"
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
             required
-            placeholder="Family invite code"
+            placeholder={t("auth.invitePlaceholder")}
           />
         </div>
       )}
@@ -185,11 +186,11 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "..." : isRegister ? "Create Account" : "Sign In"}
+        {loading ? "..." : isRegister ? t("auth.registerButton") : t("auth.loginButton")}
       </Button>
 
       <p className="text-sm text-center text-muted-foreground">
-        {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+        {isRegister ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
         <button
           type="button"
           onClick={() => {
@@ -198,7 +199,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
           }}
           className="text-primary hover:underline"
         >
-          {isRegister ? "Sign in" : "Register"}
+          {isRegister ? t("auth.signInLink") : t("auth.registerLink")}
         </button>
       </p>
     </form>

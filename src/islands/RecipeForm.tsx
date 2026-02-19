@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
 import ImageUpload from "./ImageUpload";
+import { t } from "@/lib/i18n";
 
 interface Ingredient {
   amount: string;
@@ -162,12 +163,12 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       .map((s, i) => ({ ...s, order: i + 1 }));
 
     if (validIngredients.length === 0) {
-      setError("Add at least one ingredient");
+      setError(t("form.errorIngredient"));
       setSaving(false);
       return;
     }
     if (validSteps.length === 0) {
-      setError("Add at least one step");
+      setError(t("form.errorStep"));
       setSaving(false);
       return;
     }
@@ -201,7 +202,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || "Failed to save recipe");
+        setError(data.error?.toString() || t("form.errorSave"));
         setSaving(false);
         return;
       }
@@ -209,7 +210,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       const recipe = await res.json();
       window.location.href = `/recipes/${recipe.slug}`;
     } catch {
-      setError("Something went wrong");
+      setError(t("common.error"));
       setSaving(false);
     }
   }
@@ -219,22 +220,22 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       {/* Title & Description */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="title">Title *</Label>
+          <Label htmlFor="title">{t("form.titleRequired")}</Label>
           <Input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            placeholder="Recipe title"
+            placeholder={t("form.titlePlaceholder")}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{t("recipe.description")}</Label>
           <Textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Brief description"
+            placeholder={t("form.descriptionPlaceholder")}
             rows={2}
           />
         </div>
@@ -243,7 +244,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       {/* Metadata */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="servings">Servings</Label>
+          <Label htmlFor="servings">{t("recipe.servings")}</Label>
           <Input
             id="servings"
             type="number"
@@ -253,7 +254,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="prepTime">Prep (min)</Label>
+          <Label htmlFor="prepTime">{t("form.prepMin")}</Label>
           <Input
             id="prepTime"
             type="number"
@@ -263,7 +264,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cookTime">Cook (min)</Label>
+          <Label htmlFor="cookTime">{t("form.cookMin")}</Label>
           <Input
             id="cookTime"
             type="number"
@@ -273,45 +274,45 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="difficulty">Difficulty</Label>
+          <Label htmlFor="difficulty">{t("recipe.difficulty")}</Label>
           <select
             id="difficulty"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as "easy" | "medium" | "hard")}
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+            <option value="easy">{t("recipe.easy")}</option>
+            <option value="medium">{t("recipe.medium")}</option>
+            <option value="hard">{t("recipe.hard")}</option>
           </select>
         </div>
       </div>
 
       {/* Ingredients */}
       <div className="space-y-3">
-        <Label>Ingredients *</Label>
+        <Label>{t("form.ingredientsRequired")}</Label>
         {ingredients.map((ing, i) => (
           <div key={i} className="flex items-center gap-2">
             <Input
-              placeholder="Amount"
+              placeholder={t("form.amount")}
               value={ing.amount}
               onChange={(e) => updateIngredient(i, "amount", e.target.value)}
               className="w-20"
             />
             <Input
-              placeholder="Unit"
+              placeholder={t("form.unit")}
               value={ing.unit}
               onChange={(e) => updateIngredient(i, "unit", e.target.value)}
               className="w-20"
             />
             <Input
-              placeholder="Ingredient name"
+              placeholder={t("form.ingredientName")}
               value={ing.name}
               onChange={(e) => updateIngredient(i, "name", e.target.value)}
               className="flex-1"
             />
             <Input
-              placeholder="Group"
+              placeholder={t("form.group")}
               value={ing.group || ""}
               onChange={(e) => updateIngredient(i, "group", e.target.value)}
               className="w-28 hidden sm:block"
@@ -329,20 +330,20 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
           <Plus className="h-4 w-4 mr-1" />
-          Add Ingredient
+          {t("recipe.addIngredient")}
         </Button>
       </div>
 
       {/* Steps */}
       <div className="space-y-3">
-        <Label>Steps *</Label>
+        <Label>{t("form.stepsRequired")}</Label>
         {steps.map((step, i) => (
           <div key={i} className="flex items-start gap-2">
             <span className="flex items-center justify-center h-9 w-9 rounded-full bg-muted text-sm font-medium shrink-0">
               {i + 1}
             </span>
             <Textarea
-              placeholder={`Step ${i + 1}`}
+              placeholder={`${t("form.step")} ${i + 1}`}
               value={step.instruction}
               onChange={(e) => updateStep(i, e.target.value)}
               rows={2}
@@ -361,19 +362,19 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addStep}>
           <Plus className="h-4 w-4 mr-1" />
-          Add Step
+          {t("recipe.addStep")}
         </Button>
       </div>
 
       {/* Image Upload */}
       <div className="space-y-2">
-        <Label>Image</Label>
+        <Label>{t("recipe.image")}</Label>
         <ImageUpload value={imageUrl} onChange={setImageUrl} />
       </div>
 
       {/* Tags */}
       <div className="space-y-2">
-        <Label>Tags</Label>
+        <Label>{t("recipe.tags")}</Label>
         <div className="flex flex-wrap gap-2">
           {availableTags.map((tag) => (
             <button
@@ -398,7 +399,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         </div>
         <div className="flex gap-2 items-center">
           <Input
-            placeholder="New tag..."
+            placeholder={t("form.newTag")}
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}
             onKeyDown={(e) => {
@@ -417,14 +418,14 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             disabled={creatingTag || !newTagName.trim()}
           >
             <Plus className="h-3 w-3 mr-1" />
-            Add
+            {t("form.add")}
           </Button>
         </div>
       </div>
 
       {/* Collections */}
       <div className="space-y-2">
-        <Label>Collections</Label>
+        <Label>{t("recipe.collections")}</Label>
         <div className="flex flex-wrap gap-2">
           {availableCollections.map((col) => (
             <button
@@ -449,7 +450,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         </div>
         <div className="flex gap-2 items-center">
           <Input
-            placeholder="New collection..."
+            placeholder={t("form.newCollection")}
             value={newCollectionName}
             onChange={(e) => setNewCollectionName(e.target.value)}
             onKeyDown={(e) => {
@@ -468,7 +469,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             disabled={creatingCollection || !newCollectionName.trim()}
           >
             <Plus className="h-3 w-3 mr-1" />
-            Add
+            {t("form.add")}
           </Button>
         </div>
       </div>
@@ -476,7 +477,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       {/* Source URL, Video URL & Notes */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="sourceUrl">Source URL</Label>
+          <Label htmlFor="sourceUrl">{t("recipe.sourceUrl")}</Label>
           <Input
             id="sourceUrl"
             type="url"
@@ -486,7 +487,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="videoUrl">YouTube Video URL</Label>
+          <Label htmlFor="videoUrl">{t("form.videoUrl")}</Label>
           <Input
             id="videoUrl"
             type="url"
@@ -496,12 +497,12 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="notes">Notes</Label>
+          <Label htmlFor="notes">{t("recipe.notes")}</Label>
           <Textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Personal notes, tips, variations..."
+            placeholder={t("form.notesPlaceholder")}
             rows={3}
           />
         </div>
@@ -511,10 +512,10 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
 
       <div className="flex gap-3">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : isEdit ? "Update Recipe" : "Create Recipe"}
+          {saving ? t("form.saving") : isEdit ? t("form.updateRecipe") : t("form.createRecipe")}
         </Button>
         <Button type="button" variant="outline" onClick={() => history.back()}>
-          Cancel
+          {t("recipe.cancel")}
         </Button>
       </div>
     </form>

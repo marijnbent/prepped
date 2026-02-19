@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "./ImageUpload";
+import { t } from "@/lib/i18n";
 
 interface Props {
   initial?: {
@@ -46,7 +47,7 @@ export default function CollectionForm({ initial }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || "Failed to save");
+        setError(data.error?.toString() || t("form.errorSaveGeneral"));
         setSaving(false);
         return;
       }
@@ -54,7 +55,7 @@ export default function CollectionForm({ initial }: Props) {
       const collection = await res.json();
       window.location.href = `/collections/${collection.slug}`;
     } catch {
-      setError("Something went wrong");
+      setError(t("common.error"));
       setSaving(false);
     }
   }
@@ -62,31 +63,31 @@ export default function CollectionForm({ initial }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
       <div className="space-y-2">
-        <Label htmlFor="name">Name *</Label>
+        <Label htmlFor="name">{t("form.nameRequired")}</Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          placeholder="Collection name"
+          placeholder={t("form.collectionPlaceholder")}
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t("recipe.description")}</Label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Brief description"
+          placeholder={t("form.descriptionPlaceholder")}
           rows={3}
         />
       </div>
       <div className="space-y-2">
-        <Label>Image</Label>
+        <Label>{t("recipe.image")}</Label>
         <ImageUpload value={imageUrl} onChange={setImageUrl} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="sortOrder">Sort Order</Label>
+        <Label htmlFor="sortOrder">{t("form.sortOrder")}</Label>
         <Input
           id="sortOrder"
           type="number"
@@ -100,10 +101,10 @@ export default function CollectionForm({ initial }: Props) {
 
       <div className="flex gap-3">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : isEdit ? "Update" : "Create Collection"}
+          {saving ? t("form.saving") : isEdit ? t("form.update") : t("form.createCollection")}
         </Button>
         <Button type="button" variant="outline" onClick={() => history.back()}>
-          Cancel
+          {t("recipe.cancel")}
         </Button>
       </div>
     </form>

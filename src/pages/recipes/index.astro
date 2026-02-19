@@ -25,7 +25,7 @@ const allRecipes = db
       <div>
         <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("nav.recipes")}</h1>
         <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
-          {allRecipes.length} {allRecipes.length === 1 ? "recipe" : "recipes"}
+          {allRecipes.length} {allRecipes.length === 1 ? t("count.recipe") : t("count.recipes")}
         </p>
       </div>
       <a

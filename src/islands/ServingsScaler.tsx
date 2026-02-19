@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 interface Ingredient {
   amount: string;
@@ -52,7 +53,7 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
       {/* Scaler control */}
       <div className="sticky top-14 z-10 bg-card/90 backdrop-blur-sm py-3 mb-5 border-b border-border/30">
         <div className="flex items-center gap-3">
-          <span className="text-[11px] uppercase tracking-[0.1em] font-medium text-muted-foreground/60">Servings</span>
+          <span className="text-[11px] uppercase tracking-[0.1em] font-medium text-muted-foreground/60">{t("recipe.servings")}</span>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -78,7 +79,7 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
               onClick={() => setServings(defaultServings)}
               className="text-[11px] uppercase tracking-wide text-primary/60 hover:text-primary transition-colors"
             >
-              Reset
+              {t("recipe.reset")}
             </button>
           )}
         </div>
