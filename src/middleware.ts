@@ -7,6 +7,10 @@ import { eq } from "drizzle-orm";
 const isSimpleAuth = import.meta.env.AUTH_MODE === "simple";
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  if (isSimpleAuth && new URL(context.request.url).pathname === "/register") {
+    return context.redirect("/login");
+  }
+
   if (isSimpleAuth) {
     const userId = context.cookies.get("simple_session")?.value;
     if (userId) {
