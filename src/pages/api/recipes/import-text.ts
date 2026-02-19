@@ -3,10 +3,11 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { getChatModel } from "../../../lib/ai";
 import { db } from "../../../lib/db";
-import { tags, collections } from "../../../lib/schema";
+import { tags, collections, users } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
 import { slugify } from "../../../lib/slugify";
 import { defaultCollections, defaultTags } from "../../../lib/defaults";
+import { toAiClientError } from "../../../lib/ai-errors";
 
 const recipeOutputSchema = z.object({
   title: z.string(),
@@ -94,7 +95,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const existingTagNames = existingTags.map((t) => t.name);
   const existingCollectionNames = existingCollections.map((c) => c.name);
 
+  const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
+
   try {
+    const userInstruction = userRow?.importPrompt
+      ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
+      : "";
+
     const { object: recipe } = await generateObject({
       model: getChatModel(),
       schema: recipeOutputSchema,
@@ -110,7 +117,7 @@ IMPORTANT RULES:
   - teaspoons → ml (1 tsp ≈ 5ml) — but keep "tsp" for small amounts like spices
   - ounces → grams (1 oz ≈ 28g), pounds → grams (1 lb ≈ 454g)
   - Fahrenheit → Celsius in step instructions
-- The recipe title should be in normal Title Case (not ALL CAPS, not all lowercase)
+- Keep the recipe title exactly as it appears on the page — do not translate it, do not change capitalization, do not "correct" spelling. Only fix ALL CAPS to normal sentence case (capitalize first word only).
 - Keep ingredient amounts as strings (e.g., "250", "0.5", "a pinch")
 - If amounts are given as fractions (like 1/2), convert to decimal (0.5)
 - Extract all preparation steps in order with clear instructions
@@ -119,7 +126,7 @@ IMPORTANT RULES:
 - For collections: use Title Case with an emoji prefix. Prefer existing: [${existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${defaultCollections.join(", ")}].
 
 Text:
-${text.slice(0, 10000)}`,
+${text.slice(0, 10000)}${userInstruction}`,
     });
 
     const tagIds = recipe.tags?.length ? resolveTagIds(recipe.tags) : [];
@@ -135,10 +142,19 @@ ${text.slice(0, 10000)}`,
       }),
       { headers: { "Content-Type": "application/json" } }
     );
-  } catch (err: any) {
+  } catch (err) {
+    const normalized = toAiClientError(err);
+    console.error("[recipes/import-text] AI request failed", {
+      code: normalized.code,
+      details: normalized.details,
+    });
+
     return new Response(
-      JSON.stringify({ error: err.message || "Failed to parse recipe" }),
-      { status: 500 }
+      JSON.stringify({ error: normalized.message, code: normalized.code }),
+      {
+        status: normalized.status,
+        headers: { "Content-Type": "application/json" },
+      },
     );
   }
 };

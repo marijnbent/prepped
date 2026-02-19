@@ -4,11 +4,12 @@ import { z } from "zod";
 import { getChatModel } from "../../../lib/ai";
 import { scrapeUrl } from "../../../lib/scraper";
 import { db } from "../../../lib/db";
-import { tags, collections } from "../../../lib/schema";
+import { tags, collections, users } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
 import { slugify } from "../../../lib/slugify";
 import { downloadAndSaveImage } from "../../../lib/images";
 import { defaultCollections, defaultTags } from "../../../lib/defaults";
+import { toAiClientError } from "../../../lib/ai-errors";
 
 const recipeOutputSchema = z.object({
   title: z.string(),
@@ -98,8 +99,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const existingTagNames = existingTags.map((t) => t.name);
   const existingCollectionNames = existingCollections.map((c) => c.name);
 
+  const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
+
   try {
     const { title, content, imageUrl, videoUrl } = await scrapeUrl(url);
+
+    const userInstruction = userRow?.importPrompt
+      ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
+      : "";
 
     const { object: recipe } = await generateObject({
       model: getChatModel(),
@@ -118,7 +125,7 @@ IMPORTANT RULES:
   - pounds → grams (1 lb ≈ 454g)
   - Fahrenheit → Celsius in step instructions (e.g., 350°F → 175°C)
   - inches → cm
-- The recipe title should be in normal Title Case (not ALL CAPS, not all lowercase)
+- Keep the recipe title exactly as it appears on the page — do not translate it, do not change capitalization, do not "correct" spelling. Only fix ALL CAPS to normal sentence case (capitalize first word only).
 - Keep ingredient amounts as strings (e.g., "250", "0.5", "a pinch")
 - If amounts are given as fractions (like 1/2), convert to decimal (0.5)
 - Extract all preparation steps in order with clear instructions
@@ -129,7 +136,7 @@ IMPORTANT RULES:
 Page title: ${title}
 
 Content:
-${content.slice(0, 10000)}`,
+${content.slice(0, 10000)}${userInstruction}`,
     });
 
     // Resolve tag and collection names to IDs
@@ -161,10 +168,19 @@ ${content.slice(0, 10000)}`,
       }),
       { headers: { "Content-Type": "application/json" } }
     );
-  } catch (err: any) {
+  } catch (err) {
+    const normalized = toAiClientError(err);
+    console.error("[recipes/import] AI request failed", {
+      code: normalized.code,
+      details: normalized.details,
+    });
+
     return new Response(
-      JSON.stringify({ error: err.message || "Failed to import recipe" }),
-      { status: 500 }
+      JSON.stringify({ error: normalized.message, code: normalized.code }),
+      {
+        status: normalized.status,
+        headers: { "Content-Type": "application/json" },
+      },
     );
   }
 };

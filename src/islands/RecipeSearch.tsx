@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { t } from "@/lib/i18n";
 
 interface Recipe {
   id: number;
@@ -21,9 +22,9 @@ interface Props {
 
 export default function RecipeSearch({
   recipes,
-  searchPlaceholder = "Search recipes...",
-  noResultsText = "No recipes found",
-  minutesLabel = "min",
+  searchPlaceholder = t("recipe.search"),
+  noResultsText = t("recipe.noRecipes"),
+  minutesLabel = t("recipe.minutes"),
 }: Props) {
   const [query, setQuery] = useState("");
 
@@ -37,12 +38,19 @@ export default function RecipeSearch({
     );
   }, [recipes, query]);
 
+  const difficultyLabel = (d: string) => {
+    if (d === "easy") return t("recipe.easy");
+    if (d === "medium") return t("recipe.medium");
+    if (d === "hard") return t("recipe.hard");
+    return d;
+  };
+
   return (
     <div>
       {/* Search input — dark, minimal with warm focus glow */}
       <div className="relative mb-10 max-w-md">
         <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 pointer-events-none"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 pointer-events-none"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -58,7 +66,7 @@ export default function RecipeSearch({
           placeholder={searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-11 h-12 rounded-xl bg-secondary/60 backdrop-blur-sm border-border/30 border shadow-inner shadow-black/10 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all placeholder:text-muted-foreground/40 text-sm"
+          className="pl-11 h-12 rounded-xl bg-secondary/60 backdrop-blur-sm border-border/30 border shadow-inner shadow-black/10 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all placeholder:text-muted-foreground/60 text-sm"
         />
       </div>
 
@@ -79,11 +87,11 @@ export default function RecipeSearch({
             </svg>
           </div>
           <p className="text-muted-foreground text-lg" style={{ fontFamily: 'var(--font-serif)' }}>
-            {query ? noResultsText : "No recipes yet"}
+            {query ? noResultsText : t("recipe.noRecipesYet")}
           </p>
           {query && (
             <p className="text-muted-foreground/40 text-sm mt-2">
-              Try a different search term
+              {t("recipe.tryDifferent")}
             </p>
           )}
         </div>
@@ -181,7 +189,7 @@ export default function RecipeSearch({
                                   : "bg-rose-400"
                               }`}
                             />
-                            {recipe.difficulty}
+                            {difficultyLabel(recipe.difficulty)}
                           </span>
                         )}
                       </div>

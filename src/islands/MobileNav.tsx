@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Menu, Plus, LogOut } from "lucide-react";
+import { Menu, Plus, LogOut, Settings } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 interface Props {
   user?: { id: string; name: string; email: string } | null;
@@ -52,14 +53,22 @@ export default function MobileNav({ user, navLinks, authMode }: Props) {
                 onClick={() => setOpen(false)}
               >
                 <Plus className="h-4 w-4" />
-                New Recipe
+                {t("nav.newRecipe")}
+              </a>
+              <a
+                href="/profile"
+                className="text-sm py-2.5 px-3 rounded-lg hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5 text-muted-foreground"
+                onClick={() => setOpen(false)}
+              >
+                <Settings className="h-4 w-4" />
+                {t("profile.title")}
               </a>
               <button
                 onClick={handleLogout}
                 className="text-sm py-2.5 px-3 rounded-lg hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5 text-left text-muted-foreground"
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                {t("nav.logout")}
               </button>
             </>
           ) : (
@@ -70,7 +79,7 @@ export default function MobileNav({ user, navLinks, authMode }: Props) {
                 className="text-sm py-2.5 px-3 rounded-lg hover:bg-secondary/60 transition-all duration-200 text-primary"
                 onClick={() => setOpen(false)}
               >
-                Login
+                {t("nav.login")}
               </a>
             </>
           )}

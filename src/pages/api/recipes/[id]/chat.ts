@@ -1,11 +1,12 @@
 import type { APIRoute } from "astro";
 import { generateText } from "ai";
 import { getChatModel } from "../../../../lib/ai";
+import { toAiClientError } from "../../../../lib/ai-errors";
 import { db } from "../../../../lib/db";
-import { recipes } from "../../../../lib/schema";
+import { recipes, users } from "../../../../lib/schema";
 import { eq } from "drizzle-orm";
 
-export const POST: APIRoute = async ({ params, request }) => {
+export const POST: APIRoute = async ({ params, request, locals }) => {
   const id = Number(params.id);
   if (isNaN(id)) {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
@@ -26,7 +27,15 @@ export const POST: APIRoute = async ({ params, request }) => {
 
   const measurementSystem = import.meta.env.MEASUREMENT_SYSTEM || process.env.MEASUREMENT_SYSTEM || "metric";
 
-  const systemPrompt = `You are a helpful cooking assistant. You have full knowledge of the following recipe and can answer questions about it - substitutions, technique tips, serving suggestions, dietary adaptations, etc. Be concise and practical.
+  let userChatInstruction = "";
+  if (locals.user) {
+    const userRow = db.select({ chatPrompt: users.chatPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
+    if (userRow?.chatPrompt) {
+      userChatInstruction = `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.chatPrompt}\n`;
+    }
+  }
+
+  const systemPrompt = `You are a helpful cooking assistant.${userChatInstruction} You have full knowledge of the following recipe and can answer questions about it - substitutions, technique tips, serving suggestions, dietary adaptations, etc. Be concise and practical.
 
 Respond in plain text only. You may use **bold** for emphasis when needed, but no other markdown formatting (no headers, lists, links, or code blocks).
 
@@ -69,14 +78,33 @@ ${recipe.notes ? `Notes: ${recipe.notes}` : ""}`;
     return new Response(JSON.stringify({ error: "No messages provided" }), { status: 400 });
   }
 
-  const result = await generateText({
-    model: getChatModel(),
-    system: systemPrompt,
-    messages,
-  });
+  try {
+    const result = await generateText({
+      model: getChatModel(),
+      system: systemPrompt,
+      messages,
+    });
 
-  return new Response(JSON.stringify({ text: result.text }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+    return new Response(JSON.stringify({ text: result.text }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    const normalized = toAiClientError(err);
+    console.error("[recipes/chat] AI request failed", {
+      code: normalized.code,
+      details: normalized.details,
+    });
+
+    return new Response(
+      JSON.stringify({
+        error: normalized.message,
+        code: normalized.code,
+      }),
+      {
+        status: normalized.status,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 };

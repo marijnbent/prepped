@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 interface Props {
   user?: { id: string; name: string; email: string } | null;
@@ -40,7 +41,7 @@ export default function UserMenu({ user, authMode }: Props) {
         href="/login"
         className="inline-flex items-center gap-2 rounded-lg border border-border/40 bg-secondary/40 px-4 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border/60 transition-all duration-200"
       >
-        Login
+        {t("nav.login")}
       </a>
     );
   }
@@ -75,12 +76,19 @@ export default function UserMenu({ user, authMode }: Props) {
       {open && (
         <div className="absolute right-0 top-full pt-1 z-50">
           <div className="bg-card/95 backdrop-blur-xl border border-border/30 rounded-md p-1 shadow-md min-w-[160px]">
+            <a
+              href="/profile"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
+            >
+              <Settings className="h-4 w-4" />
+              {t("profile.title")}
+            </a>
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
-              Logout
+              {t("nav.logout")}
             </button>
           </div>
         </div>
