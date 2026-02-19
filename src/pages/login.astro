@@ -4,6 +4,8 @@ import LoginForm from "../islands/LoginForm";
 
 const redirect = Astro.url.searchParams.get("redirect") || "/";
 const inviteRequired = !!import.meta.env.INVITE_CODE;
+const authMode = import.meta.env.AUTH_MODE || "password";
+const isSimple = authMode === "simple";
 
 if (Astro.locals.user) {
   return Astro.redirect(redirect);
@@ -19,20 +21,20 @@ if (Astro.locals.user) {
     </div>
 
     <div class="relative w-full max-w-sm mx-auto animate-fade-up">
-      {/* Branding */}
-      <div class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary mb-5 border border-primary/20">
-          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-          </svg>
+      <div class="rounded-2xl bg-card/60 backdrop-blur-sm border border-border/30 p-8">
+        {/* Branding */}
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 border border-primary/20">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+            </svg>
+          </div>
+          <h1 class="font-serif text-2xl tracking-tight text-foreground">{isSimple ? "Who's cooking?" : "Welcome back"}</h1>
+          <p class="text-sm text-muted-foreground/60 mt-1">{isSimple ? "Enter your name to get started" : "Sign in to your family recipes"}</p>
         </div>
-        <h1 class="font-serif text-3xl tracking-tight text-foreground">Welcome back</h1>
-        <p class="text-sm text-muted-foreground/60 mt-2">Sign in to your family recipes</p>
-      </div>
 
-      {/* Login form */}
-      <div class="rounded-2xl bg-card/60 backdrop-blur-sm border border-border/30 p-6">
-        <LoginForm redirect={redirect} inviteRequired={inviteRequired} client:load />
+        {/* Login form */}
+        <LoginForm redirect={redirect} inviteRequired={inviteRequired} authMode={authMode} client:load />
       </div>
     </div>
   </div>

@@ -13,7 +13,7 @@ sqlite.pragma("foreign_keys = ON");
 
 export const db = drizzle(sqlite, { schema });
 
-// Seed default tags and collections on first run
+// Seed default tags on first run (collections are seeded per-user on signup)
 const shouldSeed = import.meta.env.SEED_DEFAULTS || process.env.SEED_DEFAULTS;
 if (shouldSeed === "true" || shouldSeed === "1") {
   import("./seed").then(({ seedDefaults }) => seedDefaults());

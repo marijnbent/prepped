@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getChatModel } from "../../../lib/ai";
 import { db } from "../../../lib/db";
 import { tags, collections } from "../../../lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { slugify } from "../../../lib/slugify";
 import { defaultCollections, defaultTags } from "../../../lib/defaults";
 
@@ -56,7 +56,11 @@ function resolveCollectionIds(collectionNames: string[], userId: string): number
   for (const name of collectionNames) {
     const slug = slugify(name);
     if (!slug) continue;
-    const existing = db.select().from(collections).where(eq(collections.slug, slug)).get();
+    const existing = db
+      .select()
+      .from(collections)
+      .where(and(eq(collections.slug, slug), eq(collections.createdBy, userId)))
+      .get();
     if (existing) {
       ids.push(existing.id);
     } else {
@@ -82,7 +86,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const existingTags = db.select().from(tags).all();
-  const existingCollections = db.select().from(collections).all();
+  const existingCollections = db
+    .select()
+    .from(collections)
+    .where(eq(collections.createdBy, locals.user.id))
+    .all();
   const existingTagNames = existingTags.map((t) => t.name);
   const existingCollectionNames = existingCollections.map((c) => c.name);
 

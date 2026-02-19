@@ -3,10 +3,17 @@ import { db } from "../../../lib/db";
 import { collections } from "../../../lib/schema";
 import { collectionSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
-export const GET: APIRoute = async () => {
-  const all = db.select({ id: collections.id, name: collections.name }).from(collections).all();
+export const GET: APIRoute = async ({ locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
+  const all = db
+    .select({ id: collections.id, name: collections.name })
+    .from(collections)
+    .where(eq(collections.createdBy, locals.user.id))
+    .all();
   return new Response(JSON.stringify(all), {
     headers: { "Content-Type": "application/json" },
   });
@@ -25,7 +32,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const data = result.data;
   let slug = slugify(data.name);
-  const existing = db.select().from(collections).where(eq(collections.slug, slug)).get();
+  const existing = db
+    .select()
+    .from(collections)
+    .where(and(eq(collections.slug, slug), eq(collections.createdBy, locals.user.id)))
+    .get();
   if (existing) slug = `${slug}-${Date.now()}`;
 
   const collection = db

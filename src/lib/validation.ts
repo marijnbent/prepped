@@ -51,3 +51,16 @@ export const collectionSchema = z.object({
 });
 
 export type CollectionInput = z.infer<typeof collectionSchema>;
+
+export const copyRecipeSchema = z.object({
+  recipeId: z.number().int().positive(),
+  collectionIds: z.array(z.number()).optional(),
+});
+
+export type CopyRecipeInput = z.infer<typeof copyRecipeSchema>;
+
+export const favoriteToggleSchema = z.object({
+  recipeId: z.number().int().positive(),
+});
+
+export type FavoriteToggleInput = z.infer<typeof favoriteToggleSchema>;

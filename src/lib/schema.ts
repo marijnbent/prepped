@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ---- Auth tables (managed by Better Auth) ----
 
@@ -57,7 +57,7 @@ export const verifications = sqliteTable("verifications", {
 export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull(),
   description: text("description"),
   ingredients: text("ingredients", { mode: "json" }).notNull().$type<Ingredient[]>(),
   steps: text("steps", { mode: "json" }).notNull().$type<Step[]>(),
@@ -70,30 +70,35 @@ export const recipes = sqliteTable("recipes", {
   videoUrl: text("video_url"),
   notes: text("notes"),
   isPublished: integer("is_published", { mode: "boolean" }).notNull().default(true),
-  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  copiedFrom: integer("copied_from").references(() => recipes.id, { onDelete: "set null" }),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
-});
+}, (table) => [
+  uniqueIndex("recipes_slug_created_by_unique").on(table.slug, table.createdBy),
+]);
 
 export const collections = sqliteTable("collections", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull(),
   description: text("description"),
   imageUrl: text("image_url"),
   sortOrder: integer("sort_order").notNull().default(0),
-  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
-});
+}, (table) => [
+  uniqueIndex("collections_slug_created_by_unique").on(table.slug, table.createdBy),
+]);
 
 export const recipeCollections = sqliteTable("recipe_collections", {
   recipeId: integer("recipe_id")
@@ -130,11 +135,21 @@ export const cookLogs = sqliteTable("cook_logs", {
   cookedAt: integer("cooked_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
-  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+export const favorites = sqliteTable("favorites", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  recipeId: integer("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+}, (table) => [
+  uniqueIndex("favorites_user_recipe_unique").on(table.userId, table.recipeId),
+]);
 
 // ---- Types ----
 

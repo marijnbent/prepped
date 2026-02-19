@@ -14,6 +14,15 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
   }
 
+  // Verify ownership
+  const log = db.select().from(cookLogs).where(eq(cookLogs.id, id)).get();
+  if (!log) {
+    return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+  }
+  if (log.createdBy !== locals.user.id) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+  }
+
   const body = await request.json();
   const result = cookLogSchema.safeParse(body);
   if (!result.success) {
@@ -51,6 +60,15 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   const id = Number(params.id);
   if (isNaN(id)) {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
+  }
+
+  // Verify ownership
+  const log = db.select().from(cookLogs).where(eq(cookLogs.id, id)).get();
+  if (!log) {
+    return new Response(null, { status: 204 });
+  }
+  if (log.createdBy !== locals.user.id) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
   db.delete(cookLogs).where(eq(cookLogs.id, id)).run();

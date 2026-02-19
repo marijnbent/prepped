@@ -1,0 +1,68 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import RecipeCard from "../../../../components/RecipeCard.astro";
+import { db } from "../../../../lib/db";
+import { collections, recipeCollections, recipes, users } from "../../../../lib/schema";
+import { eq, and } from "drizzle-orm";
+import { t } from "../../../../lib/i18n";
+
+const { id: userId, slug } = Astro.params;
+
+const profileUser = db.select().from(users).where(eq(users.id, userId!)).get();
+if (!profileUser) {
+  return Astro.redirect("/users");
+}
+
+const collection = db
+  .select()
+  .from(collections)
+  .where(and(eq(collections.slug, slug!), eq(collections.createdBy, userId!)))
+  .get();
+if (!collection) {
+  return Astro.redirect(`/users/${userId}`);
+}
+
+const collectionRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    description: recipes.description,
+    imageUrl: recipes.imageUrl,
+    prepTime: recipes.prepTime,
+    cookTime: recipes.cookTime,
+    difficulty: recipes.difficulty,
+  })
+  .from(recipeCollections)
+  .innerJoin(recipes, eq(recipeCollections.recipeId, recipes.id))
+  .where(eq(recipeCollections.collectionId, collection.id))
+  .all();
+---
+
+<Layout title={`${collection.name} — ${profileUser.name}`}>
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+      <a href={`/users/${userId}`} class="text-sm text-muted-foreground/60 hover:text-primary transition-colors">
+        &larr; {profileUser.name}
+      </a>
+      <h1 class="font-serif text-3xl md:text-4xl tracking-tight mt-2">{collection.name}</h1>
+      {collection.description && (
+        <p class="text-muted-foreground mt-2">{collection.description}</p>
+      )}
+    </div>
+
+    {collectionRecipes.length === 0 ? (
+      <div class="text-center py-20">
+        <p class="text-muted-foreground text-lg font-serif">{t("recipe.noRecipes")}</p>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        {collectionRecipes.map((recipe, i) => (
+          <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
+            <RecipeCard recipe={recipe} href={`/users/${userId}/recipes/${recipe.slug}`} />
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

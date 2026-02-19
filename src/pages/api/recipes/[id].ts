@@ -15,6 +15,15 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
   }
 
+  // Verify ownership
+  const recipe = db.select().from(recipes).where(eq(recipes.id, id)).get();
+  if (!recipe) {
+    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
+  if (recipe.createdBy !== locals.user.id) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+  }
+
   const body = await request.json();
   const result = recipeSchema.safeParse(body);
   if (!result.success) {
@@ -24,11 +33,11 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   const data = result.data;
   let slug = slugify(data.title);
 
-  // Ensure unique slug (excluding current recipe)
+  // Ensure unique slug within this user's recipes (excluding current recipe)
   const existing = db
     .select()
     .from(recipes)
-    .where(and(eq(recipes.slug, slug), ne(recipes.id, id)))
+    .where(and(eq(recipes.slug, slug), eq(recipes.createdBy, locals.user.id), ne(recipes.id, id)))
     .get();
   if (existing) {
     slug = `${slug}-${Date.now()}`;
@@ -56,10 +65,6 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     .where(eq(recipes.id, id))
     .returning()
     .get();
-
-  if (!updated) {
-    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
-  }
 
   // Update tags
   db.delete(recipeTags).where(eq(recipeTags.recipeId, id)).run();
@@ -90,6 +95,15 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   const id = Number(params.id);
   if (isNaN(id)) {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
+  }
+
+  // Verify ownership
+  const recipe = db.select().from(recipes).where(eq(recipes.id, id)).get();
+  if (!recipe) {
+    return new Response(null, { status: 204 });
+  }
+  if (recipe.createdBy !== locals.user.id) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
   db.delete(recipes).where(eq(recipes.id, id)).run();

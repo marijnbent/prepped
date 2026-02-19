@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import { generateText } from "ai";
 import { getChatModel } from "../../../../lib/ai";
 import { db } from "../../../../lib/db";
 import { recipes } from "../../../../lib/schema";
@@ -46,13 +46,37 @@ ${steps}
 
 ${recipe.notes ? `Notes: ${recipe.notes}` : ""}`;
 
-  const { messages }: { messages: UIMessage[] } = await request.json();
+  const body: unknown = await request.json().catch(() => null);
+  const rawMessages =
+    typeof body === "object" &&
+    body !== null &&
+    "messages" in body &&
+    Array.isArray((body as { messages?: unknown[] }).messages)
+      ? (body as { messages: unknown[] }).messages
+      : [];
 
-  const result = streamText({
+  const messages = rawMessages
+    .map((item) => {
+      if (typeof item !== "object" || item === null) return null;
+      const role = (item as { role?: unknown }).role;
+      const content = (item as { content?: unknown }).content;
+      if ((role !== "user" && role !== "assistant") || typeof content !== "string") return null;
+      return { role, content: content.trim() };
+    })
+    .filter((m): m is { role: "user" | "assistant"; content: string } => Boolean(m && m.content.length > 0));
+
+  if (messages.length === 0) {
+    return new Response(JSON.stringify({ error: "No messages provided" }), { status: 400 });
+  }
+
+  const result = await generateText({
     model: getChatModel(),
     system: systemPrompt,
-    messages: await convertToModelMessages(messages),
+    messages,
   });
 
-  return result.toUIMessageStreamResponse();
+  return new Response(JSON.stringify({ text: result.text }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 };

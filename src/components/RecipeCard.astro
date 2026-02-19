@@ -1,5 +1,6 @@
 ---
 import { t } from "../lib/i18n";
+import FavoriteButton from "../islands/FavoriteButton";
 
 interface Props {
   recipe: {
@@ -12,13 +13,17 @@ interface Props {
     cookTime?: number | null;
     difficulty?: string | null;
   };
+  href?: string;
+  isFavorited?: boolean;
+  showFavorite?: boolean;
 }
 
-const { recipe } = Astro.props;
+const { recipe, href, isFavorited = false, showFavorite = false } = Astro.props;
 const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+const link = href || `/recipes/${recipe.slug}`;
 ---
 
-<a href={`/recipes/${recipe.slug}`} class="group block">
+<a href={link} class="group block">
   <div
     class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5"
   >
@@ -39,6 +44,12 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             {recipe.title}
           </h3>
         </div>
+        {/* Favorite button overlay */}
+        {showFavorite && (
+          <div class="absolute top-3 right-3 z-10">
+            <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
+          </div>
+        )}
       </div>
     ) : (
       <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
@@ -54,6 +65,12 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             {recipe.title}
           </h3>
         </div>
+        {/* Favorite button overlay */}
+        {showFavorite && (
+          <div class="absolute top-3 right-3 z-10">
+            <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
+          </div>
+        )}
       </div>
     )}
 

@@ -1,0 +1,294 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import ServingsScaler from "../../../../islands/ServingsScaler";
+import RecipeChat from "../../../../islands/RecipeChat";
+import FavoriteButton from "../../../../islands/FavoriteButton";
+import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
+import { db } from "../../../../lib/db";
+import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../../../lib/schema";
+import { eq, and } from "drizzle-orm";
+import { t, formatDate } from "../../../../lib/i18n";
+
+const { id: userId, slug } = Astro.params;
+
+// Verify user exists
+const profileUser = db.select().from(users).where(eq(users.id, userId!)).get();
+if (!profileUser) {
+  return Astro.redirect("/users");
+}
+
+// Find recipe by slug + owner
+const recipe = db
+  .select()
+  .from(recipes)
+  .where(and(eq(recipes.slug, slug!), eq(recipes.createdBy, userId!)))
+  .get();
+if (!recipe) {
+  return Astro.redirect(`/users/${userId}`);
+}
+
+// If this is the user's own recipe, redirect to the owner view
+if (Astro.locals.user?.id === userId) {
+  return Astro.redirect(`/recipes/${slug}`);
+}
+
+// Get tags for this recipe
+const recipeTags_ = db
+  .select({ name: tags.name, slug: tags.slug })
+  .from(recipeTags)
+  .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+  .where(eq(recipeTags.recipeId, recipe.id))
+  .all();
+
+// Get collections for this recipe
+const recipeCollections_ = db
+  .select({ name: collections.name, slug: collections.slug })
+  .from(recipeCollections)
+  .innerJoin(collections, eq(recipeCollections.collectionId, collections.id))
+  .where(eq(recipeCollections.recipeId, recipe.id))
+  .all();
+
+// Check if favorited by current user
+const currentUser = Astro.locals.user;
+const isFavorited = currentUser
+  ? !!db
+      .select()
+      .from(favorites)
+      .where(and(eq(favorites.userId, currentUser.id), eq(favorites.recipeId, recipe.id)))
+      .get()
+  : false;
+
+// Get user's own collections for copy dialog
+const userCollections = currentUser
+  ? db
+      .select({ id: collections.id, name: collections.name })
+      .from(collections)
+      .where(eq(collections.createdBy, currentUser.id))
+      .all()
+  : [];
+
+const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
+const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
+
+// Extract YouTube video ID
+function getYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+const youtubeId = recipe.videoUrl ? getYouTubeId(recipe.videoUrl) : null;
+
+// Extract Instagram embed path
+function getInstagramEmbedPath(url: string): string | null {
+  const match = url.match(/instagram\.com\/((?:p|reel)\/[A-Za-z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+const instagramUrl = recipe.videoUrl || recipe.sourceUrl || "";
+const instagramEmbedPath = getInstagramEmbedPath(instagramUrl);
+
+const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+---
+
+<Layout title={recipe.title} description={recipe.description || undefined}>
+  <article class="max-w-4xl mx-auto">
+
+    {/* ===== Hero image ===== */}
+    {recipe.imageUrl && (
+      <div class="-mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-8 animate-fade-in">
+        <div class="aspect-[16/9] md:aspect-[2/1]">
+          <img
+            src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
+            alt={recipe.title}
+            class="w-full h-full object-cover"
+          />
+        </div>
+      </div>
+    )}
+
+    {/* ===== Title + description ===== */}
+    <div class="mb-10 animate-fade-up">
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1]">
+        {recipe.title}
+      </h1>
+      {recipe.description && (
+        <p class="text-lg text-muted-foreground mt-3 max-w-2xl leading-relaxed">
+          {recipe.description}
+        </p>
+      )}
+    </div>
+
+    {/* ===== Meta bar ===== */}
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-10 animate-fade-up" style="animation-delay: 120ms;">
+      <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground/70">
+        <a href={`/users/${userId}`} class="inline-flex items-center gap-1.5 hover:text-primary transition-colors">
+          <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 0 0-16 0" />
+          </svg>
+          {profileUser.name}
+        </a>
+        {recipe.prepTime && (
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+            </svg>
+            {t("recipe.prepTime")} {recipe.prepTime}{t("recipe.minutes")}
+          </span>
+        )}
+        {recipe.cookTime && (
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+            </svg>
+            {t("recipe.cookTime")} {recipe.cookTime}{t("recipe.minutes")}
+          </span>
+        )}
+        {recipe.difficulty && (
+          <span class="inline-flex items-center gap-1.5 capitalize">
+            <span class:list={[
+              "w-2 h-2 rounded-full",
+              recipe.difficulty === "easy" ? "bg-emerald-400" :
+              recipe.difficulty === "medium" ? "bg-amber-400" : "bg-rose-400"
+            ]} />
+            {t(`recipe.${recipe.difficulty}` as any)}
+          </span>
+        )}
+      </div>
+
+      <div class="flex-1" />
+
+      {/* Actions for viewers */}
+      {currentUser && (
+        <div class="flex gap-2 shrink-0">
+          <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
+          <CopyRecipeDialog
+            recipeId={recipe.id}
+            collections={userCollections}
+            client:load
+          />
+        </div>
+      )}
+    </div>
+
+    {/* Collections + Tags */}
+    {(recipeCollections_.length > 0 || recipeTags_.length > 0) && (
+      <div class="flex flex-wrap gap-2 mb-10 animate-fade-up" style="animation-delay: 160ms;">
+        {recipeCollections_.map((col) => (
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            {col.name}
+          </span>
+        ))}
+        {recipeTags_.map((tag) => (
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border/30">
+            {tag.name}
+          </span>
+        ))}
+      </div>
+    )}
+
+    {/* ===== Main content: Ingredients + Steps ===== */}
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-10 lg:gap-14 animate-fade-up" style="animation-delay: 200ms;">
+      <div>
+        <h2 class="font-serif text-2xl tracking-tight mb-5 flex items-center gap-3">
+          {t("recipe.ingredients")}
+          <span class="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+        </h2>
+        <div class="rounded-2xl bg-card/50 border border-border/30 p-5">
+          <ServingsScaler
+            defaultServings={recipe.servings || 4}
+            ingredients={ingredients}
+            client:visible
+          />
+        </div>
+      </div>
+
+      <div>
+        <h2 class="font-serif text-2xl tracking-tight mb-5 flex items-center gap-3">
+          {t("recipe.steps")}
+          <span class="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+        </h2>
+        <ol class="space-y-6">
+          {steps.map((step, si) => (
+            <li class="flex gap-5 group/step">
+              <span class="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-sm font-semibold shrink-0 border border-primary/20 transition-colors duration-300 group-hover/step:bg-primary group-hover/step:text-primary-foreground">
+                {step.order}
+              </span>
+              <div class="flex-1 pt-1">
+                <p class="text-[15px] leading-[1.7] text-foreground/90">{step.instruction}</p>
+                {step.duration && (
+                  <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 mt-2">
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                    </svg>
+                    ~{step.duration} {t("recipe.minutes")}
+                  </span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+
+    {/* ===== Notes + Chat ===== */}
+    {(recipe.notes || currentUser) && (
+      <div class:list={["mt-14 gap-6", recipe.notes && currentUser ? "grid grid-cols-1 md:grid-cols-2" : ""]}>
+        {recipe.notes && (
+          <div class="rounded-2xl bg-card/50 border border-border/30 p-6">
+            <h2 class="font-serif text-xl tracking-tight mb-3">{t("recipe.notes")}</h2>
+            <p class="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">{recipe.notes}</p>
+          </div>
+        )}
+        {currentUser && (
+          <div class="rounded-2xl bg-card/50 border border-border/30 p-6">
+            <RecipeChat recipeId={recipe.id} title={t("chat.title")} placeholder={t("chat.placeholder")} client:visible />
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* ===== YouTube Video ===== */}
+    {youtubeId && (
+      <div class="mt-14">
+        <h2 class="font-serif text-xl tracking-tight mb-4">Video</h2>
+        <div class="aspect-video rounded-2xl overflow-hidden border border-border/30">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
+            title={`${recipe.title} video`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            class="w-full h-full"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    )}
+
+    {/* ===== Instagram Embed ===== */}
+    {instagramEmbedPath && !youtubeId && (
+      <div class="mt-14">
+        <h2 class="font-serif text-xl tracking-tight mb-4">Video</h2>
+        <div class="flex justify-center">
+          <iframe
+            src={`https://www.instagram.com/${instagramEmbedPath}/embed/`}
+            title={`${recipe.title} video`}
+            class="rounded-2xl border border-border/30"
+            width="400"
+            height="500"
+            frameborder="0"
+            scrolling="no"
+            allowtransparency="true"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    )}
+
+    {/* Source */}
+    {recipe.sourceUrl && (
+      <div class="mt-6 text-sm text-muted-foreground/50">
+        Source: <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-primary/70 hover:text-primary hover:underline transition-colors">{recipe.sourceUrl}</a>
+      </div>
+    )}
+
+    {/* No cook log form for other users' recipes */}
+  </article>
+</Layout>

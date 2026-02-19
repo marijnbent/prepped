@@ -3,11 +3,19 @@ import Layout from "../../layouts/Layout.astro";
 import RecipeGrid from "../../components/RecipeGrid.astro";
 import { db } from "../../lib/db";
 import { collections, recipeCollections, recipes } from "../../lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { t } from "../../lib/i18n";
 
+if (!Astro.locals.user) {
+  return Astro.redirect("/login?redirect=/collections");
+}
+
 const { slug } = Astro.params;
-const collection = db.select().from(collections).where(eq(collections.slug, slug!)).get();
+const collection = db
+  .select()
+  .from(collections)
+  .where(and(eq(collections.slug, slug!), eq(collections.createdBy, Astro.locals.user.id)))
+  .get();
 if (!collection) {
   return Astro.redirect("/collections");
 }
@@ -27,8 +35,6 @@ const collectionRecipes = db
   .innerJoin(recipes, eq(recipeCollections.recipeId, recipes.id))
   .where(eq(recipeCollections.collectionId, collection.id))
   .all();
-
-const isOwner = Astro.locals.user?.id === collection.createdBy;
 ---
 
 <Layout title={collection.name}>
@@ -40,23 +46,21 @@ const isOwner = Astro.locals.user?.id === collection.createdBy;
           <p class="text-muted-foreground mt-2">{collection.description}</p>
         )}
       </div>
-      {isOwner && (
-        <div class="flex gap-2 shrink-0">
-          <a
-            href={`/collections/${collection.slug}/edit`}
-            class="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
-          >
-            {t("common.edit")}
-          </a>
-          <button
-            id="delete-collection"
-            data-id={collection.id}
-            class="inline-flex items-center justify-center rounded-md border border-destructive text-destructive px-4 py-2 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground transition-colors"
-          >
-            {t("common.delete")}
-          </button>
-        </div>
-      )}
+      <div class="flex gap-2 shrink-0">
+        <a
+          href={`/collections/${collection.slug}/edit`}
+          class="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
+        >
+          {t("common.edit")}
+        </a>
+        <button
+          id="delete-collection"
+          data-id={collection.id}
+          class="inline-flex items-center justify-center rounded-md border border-destructive text-destructive px-4 py-2 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground transition-colors"
+        >
+          {t("common.delete")}
+        </button>
+      </div>
     </div>
     <RecipeGrid recipes={collectionRecipes} />
   </div>

@@ -3,7 +3,11 @@ import Layout from "../../layouts/Layout.astro";
 import RecipeGrid from "../../components/RecipeGrid.astro";
 import { db } from "../../lib/db";
 import { tags, recipeTags, recipes } from "../../lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+
+if (!Astro.locals.user) {
+  return Astro.redirect("/login");
+}
 
 const { tag: tagSlug } = Astro.params;
 const tag = db.select().from(tags).where(eq(tags.slug, tagSlug!)).get();
@@ -24,7 +28,7 @@ const tagRecipes = db
   })
   .from(recipeTags)
   .innerJoin(recipes, eq(recipeTags.recipeId, recipes.id))
-  .where(eq(recipeTags.tagId, tag.id))
+  .where(and(eq(recipeTags.tagId, tag.id), eq(recipes.createdBy, Astro.locals.user.id)))
   .all();
 ---
 

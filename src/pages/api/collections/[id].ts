@@ -15,6 +15,15 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
   }
 
+  // Verify ownership
+  const collection = db.select().from(collections).where(eq(collections.id, id)).get();
+  if (!collection) {
+    return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+  }
+  if (collection.createdBy !== locals.user.id) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+  }
+
   const body = await request.json();
   const result = collectionSchema.safeParse(body);
   if (!result.success) {
@@ -26,7 +35,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   const existing = db
     .select()
     .from(collections)
-    .where(and(eq(collections.slug, slug), ne(collections.id, id)))
+    .where(and(eq(collections.slug, slug), eq(collections.createdBy, locals.user.id), ne(collections.id, id)))
     .get();
   if (existing) slug = `${slug}-${Date.now()}`;
 
@@ -61,6 +70,15 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   const id = Number(params.id);
   if (isNaN(id)) {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
+  }
+
+  // Verify ownership
+  const collection = db.select().from(collections).where(eq(collections.id, id)).get();
+  if (!collection) {
+    return new Response(null, { status: 204 });
+  }
+  if (collection.createdBy !== locals.user.id) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
   db.delete(collections).where(eq(collections.id, id)).run();

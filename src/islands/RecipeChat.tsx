@@ -1,6 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,14 +16,17 @@ interface Props {
   placeholder: string;
 }
 
-function getTextContent(message: { parts?: { type: string; text?: string }[]; content?: string }) {
-  if (message.parts) {
-    return message.parts
-      .filter((p) => p.type === "text")
-      .map((p) => p.text)
-      .join("");
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
+
+function createId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
   }
-  return message.content ?? "";
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function formatText(text: string) {
@@ -39,7 +40,7 @@ function formatText(text: string) {
 }
 
 function MessageList({ messages, isLoading, messagesEndRef }: {
-  messages: { id: string; role: string; parts?: any[]; content?: string }[];
+  messages: ChatMessage[];
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -57,7 +58,7 @@ function MessageList({ messages, isLoading, messagesEndRef }: {
                 : "bg-muted"
             }`}
           >
-            <p className="whitespace-pre-wrap">{formatText(getTextContent(message))}</p>
+            <p className="whitespace-pre-wrap">{formatText(message.content)}</p>
           </div>
         </div>
       ))}
@@ -75,21 +76,15 @@ function MessageList({ messages, isLoading, messagesEndRef }: {
 
 export default function RecipeChat({ recipeId, title, placeholder }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState("");
   const inlineEndRef = useRef<HTMLDivElement>(null);
   const dialogEndRef = useRef<HTMLDivElement>(null);
   const dialogInputRef = useRef<HTMLInputElement>(null);
 
-  const transport = useMemo(
-    () => new DefaultChatTransport({ api: `/api/recipes/${recipeId}/chat` }),
-    [recipeId],
-  );
-
-  const { messages, status, sendMessage } = useChat({ transport });
-
-  const isLoading = status === "submitted" || status === "streaming";
-
   useEffect(() => {
+    inlineEndRef.current?.scrollIntoView({ behavior: "smooth" });
     if (expanded) {
       dialogEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
@@ -99,12 +94,48 @@ export default function RecipeChat({ recipeId, title, placeholder }: Props) {
     if (expanded) dialogInputRef.current?.focus();
   }, [expanded]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const text = input.trim();
     if (!text || isLoading) return;
+    const userMessage: ChatMessage = { id: createId(), role: "user", content: text };
+    const nextMessages = [...messages, userMessage];
+
+    setMessages(nextMessages);
     setInput("");
-    sendMessage({ text });
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`/api/recipes/${recipeId}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Chat request failed: ${response.status}`);
+      }
+
+      const data: unknown = await response.json();
+      const assistantText =
+        typeof data === "object" &&
+        data !== null &&
+        "text" in data &&
+        typeof (data as { text?: unknown }).text === "string"
+          ? (data as { text: string }).text
+          : "Sorry, I couldn't generate a response.";
+
+      setMessages((prev) => [...prev, { id: createId(), role: "assistant", content: assistantText }]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { id: createId(), role: "assistant", content: "Sorry, I ran into an error. Please try again." },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

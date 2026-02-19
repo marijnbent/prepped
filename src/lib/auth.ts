@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
 import * as schema from "./schema";
+import { seedUserDefaults } from "./seed";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -20,6 +21,15 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          seedUserDefaults(user.id);
+        },
+      },
     },
   },
 });

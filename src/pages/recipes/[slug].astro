@@ -3,14 +3,24 @@ import Layout from "../../layouts/Layout.astro";
 import ServingsScaler from "../../islands/ServingsScaler";
 import RecipeChat from "../../islands/RecipeChat";
 import CookLogForm from "../../islands/CookLogForm";
+import FavoriteButton from "../../islands/FavoriteButton";
 import { db } from "../../lib/db";
-import { recipes, cookLogs, recipeTags, tags, recipeCollections, collections, users } from "../../lib/schema";
-import { eq } from "drizzle-orm";
+import { recipes, cookLogs, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../lib/schema";
+import { eq, and } from "drizzle-orm";
 import { t, formatDate } from "../../lib/i18n";
 
 const { slug } = Astro.params;
 
-const recipe = db.select().from(recipes).where(eq(recipes.slug, slug!)).get();
+if (!Astro.locals.user) {
+  return Astro.redirect("/login?redirect=/recipes/" + slug);
+}
+
+// Own recipe: scoped by slug + user
+const recipe = db
+  .select()
+  .from(recipes)
+  .where(and(eq(recipes.slug, slug!), eq(recipes.createdBy, Astro.locals.user.id)))
+  .get();
 if (!recipe) {
   return Astro.redirect("/recipes");
 }
@@ -52,7 +62,28 @@ const recipeAuthor = recipe.createdBy
   ? db.select({ name: users.name }).from(users).where(eq(users.id, recipe.createdBy)).get()
   : null;
 
-const isOwner = Astro.locals.user?.id === recipe.createdBy;
+// If copied, get the original recipe and its author
+const copiedFromSource = recipe.copiedFrom
+  ? db
+      .select({
+        id: recipes.id,
+        slug: recipes.slug,
+        createdBy: recipes.createdBy,
+        authorName: users.name,
+      })
+      .from(recipes)
+      .innerJoin(users, eq(recipes.createdBy, users.id))
+      .where(eq(recipes.id, recipe.copiedFrom))
+      .get()
+  : null;
+
+const isFavorited = !!db
+  .select()
+  .from(favorites)
+  .where(and(eq(favorites.userId, Astro.locals.user.id), eq(favorites.recipeId, recipe.id)))
+  .get();
+
+const isOwner = true; // This route is for own recipes only
 const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
 const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
 
@@ -77,9 +108,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 <Layout title={recipe.title} description={recipe.description || undefined}>
   <article class="max-w-4xl mx-auto">
 
-    {/* ===== Hero image — full-bleed with overlay ===== */}
+    {/* ===== Hero image ===== */}
     {recipe.imageUrl && (
-      <div class="relative -mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-10 animate-fade-in">
+      <div class="-mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-8 animate-fade-in">
         <div class="aspect-[16/9] md:aspect-[2/1]">
           <img
             src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
@@ -87,35 +118,20 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             class="w-full h-full object-cover"
           />
         </div>
-        {/* Cinematic gradient over image */}
-        <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        {/* Title floating on image */}
-        <div class="absolute bottom-0 inset-x-0 p-6 md:p-10">
-          <h1 class="font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight text-foreground leading-[1.1] drop-shadow-2xl animate-fade-up">
-            {recipe.title}
-          </h1>
-          {recipe.description && (
-            <p class="text-base md:text-lg text-foreground/70 mt-3 max-w-2xl leading-relaxed animate-fade-up" style="animation-delay: 80ms;">
-              {recipe.description}
-            </p>
-          )}
-        </div>
       </div>
     )}
 
-    {/* If no image, show title differently */}
-    {!recipe.imageUrl && (
-      <div class="mb-10 animate-fade-up">
-        <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1]">
-          {recipe.title}
-        </h1>
-        {recipe.description && (
-          <p class="text-lg text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            {recipe.description}
-          </p>
-        )}
-      </div>
-    )}
+    {/* ===== Title + description ===== */}
+    <div class="mb-10 animate-fade-up">
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1]">
+        {recipe.title}
+      </h1>
+      {recipe.description && (
+        <p class="text-lg text-muted-foreground mt-3 max-w-2xl leading-relaxed">
+          {recipe.description}
+        </p>
+      )}
+    </div>
 
     {/* ===== Meta bar — clean horizontal strip ===== */}
     <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-10 animate-fade-up" style="animation-delay: 120ms;">
@@ -128,6 +144,17 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             </svg>
             {recipeAuthor.name}
           </span>
+        )}
+        {copiedFromSource && (
+          <a
+            href={`/users/${copiedFromSource.createdBy}/recipes/${copiedFromSource.slug}`}
+            class="inline-flex items-center gap-1.5 text-primary/70 hover:text-primary transition-colors"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+            </svg>
+            {t("recipe.copiedFrom")} {copiedFromSource.authorName}
+          </a>
         )}
         {recipe.prepTime && (
           <span class="inline-flex items-center gap-1.5">
@@ -169,8 +196,10 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       <div class="flex-1" />
 
       {/* Actions */}
+      <div class="flex gap-2 shrink-0">
+        <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
       {isOwner && (
-        <div class="flex gap-2 shrink-0">
+        <>
           <a
             href={`/recipes/${recipe.slug}/edit`}
             class="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/50 px-4 py-2 text-xs font-medium uppercase tracking-wide hover:bg-secondary hover:border-border transition-all duration-200"
@@ -190,8 +219,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             </svg>
             {t("recipe.delete")}
           </button>
-        </div>
+        </>
       )}
+      </div>
     </div>
 
     {/* Collections + Tags */}

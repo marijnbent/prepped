@@ -40,6 +40,23 @@ npx drizzle-kit push
 npm run dev
 ```
 
+## Dev Troubleshooting
+
+### `504 (Outdated Optimize Dep)` in the browser console
+
+This error means Vite's pre-bundled dependency cache is stale relative to currently loaded client islands.  
+It can happen during active development when dependencies or import graphs change.
+
+Use the clean dev command to reset cache and force re-optimization:
+
+```sh
+npm run dev:clean
+```
+
+Rule of thumb for this codebase:
+- Keep AI/auth SDK clients server-side (API routes and server libs)
+- Keep client islands dependency-light and call server APIs via `fetch`
+
 ## Environment Variables
 
 | Variable | Required | Description |
@@ -76,6 +93,16 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 - [Better Auth](https://better-auth.com) (email/password)
 - [AI SDK](https://sdk.vercel.ai) + Google Gemini Flash
 - [Sharp](https://sharp.pixelplumbing.com) for image processing
+
+## Local Quality Gate
+
+There is no CI workflow configured in this repository right now.  
+Before opening a PR, run at minimum:
+
+```sh
+npm run check:client-boundaries
+npm run build
+```
 
 ## License
 

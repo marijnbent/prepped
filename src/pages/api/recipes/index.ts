@@ -3,7 +3,7 @@ import { db } from "../../../lib/db";
 import { recipes, recipeTags, recipeCollections, tags } from "../../../lib/schema";
 import { recipeSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
@@ -19,8 +19,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const data = result.data;
   let slug = slugify(data.title);
 
-  // Ensure unique slug
-  const existing = db.select().from(recipes).where(eq(recipes.slug, slug)).get();
+  // Ensure unique slug within this user's recipes
+  const existing = db
+    .select()
+    .from(recipes)
+    .where(and(eq(recipes.slug, slug), eq(recipes.createdBy, locals.user.id)))
+    .get();
   if (existing) {
     slug = `${slug}-${Date.now()}`;
   }

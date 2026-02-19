@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly INVITE_CODE: string;
   readonly MEASUREMENT_SYSTEM: "metric" | "imperial";
   readonly UI_LOCALE: "en" | "nl";
+  readonly AUTH_MODE?: "simple" | "password";
 }
 
 interface ImportMeta {

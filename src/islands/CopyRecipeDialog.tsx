@@ -1,0 +1,94 @@
+import { useState } from "react";
+import { Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+
+interface Props {
+  recipeId: number;
+  collections: { id: number; name: string }[];
+}
+
+export default function CopyRecipeDialog({ recipeId, collections }: Props) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  function toggleCollection(id: number) {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  }
+
+  async function handleCopy() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/recipes/copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipeId,
+          collectionIds: selected.length > 0 ? selected : undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = `/recipes/${data.slug}`;
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/50 px-4 py-2 text-xs font-medium uppercase tracking-wide hover:bg-secondary hover:border-border transition-all duration-200">
+          <Copy className="w-3.5 h-3.5" />
+          Copy
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-xl">Copy to My Recipes</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-4">
+          {collections.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Add to collections (optional):
+              </p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {collections.map((col) => (
+                  <label
+                    key={col.id}
+                    className="flex items-center gap-3 rounded-lg p-2 hover:bg-secondary/50 transition-colors cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selected.includes(col.id)}
+                      onCheckedChange={() => toggleCollection(col.id)}
+                    />
+                    <span className="text-sm">{col.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          <Button
+            onClick={handleCopy}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Copying..." : "Copy Recipe"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

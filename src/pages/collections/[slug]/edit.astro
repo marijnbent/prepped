@@ -3,7 +3,7 @@ import Layout from "../../../layouts/Layout.astro";
 import CollectionForm from "../../../islands/CollectionForm";
 import { db } from "../../../lib/db";
 import { collections } from "../../../lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const { slug } = Astro.params;
 
@@ -11,7 +11,11 @@ if (!Astro.locals.user) {
   return Astro.redirect(`/login?redirect=/collections/${slug}/edit`);
 }
 
-const collection = db.select().from(collections).where(eq(collections.slug, slug!)).get();
+const collection = db
+  .select()
+  .from(collections)
+  .where(and(eq(collections.slug, slug!), eq(collections.createdBy, Astro.locals.user.id)))
+  .get();
 if (!collection) {
   return Astro.redirect("/collections");
 }

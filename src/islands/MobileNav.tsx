@@ -6,13 +6,20 @@ import { Menu, Plus, LogOut } from "lucide-react";
 interface Props {
   user?: { id: string; name: string; email: string } | null;
   navLinks: { href: string; label: string }[];
+  authMode?: string;
 }
 
-export default function MobileNav({ user, navLinks }: Props) {
+export default function MobileNav({ user, navLinks, authMode }: Props) {
   const [open, setOpen] = useState(false);
 
   async function handleLogout() {
-    await fetch("/api/auth/sign-out", { method: "POST" });
+    const url = authMode === "simple" ? "/api/auth/simple-logout" : "/api/auth/sign-out";
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!response.ok) return;
     window.location.href = "/";
   }
 

@@ -2,8 +2,12 @@
 import Layout from "../layouts/Layout.astro";
 import { db } from "../lib/db";
 import { cookLogs, recipes, users } from "../lib/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import { t, formatDate } from "../lib/i18n";
+
+if (!Astro.locals.user) {
+  return Astro.redirect("/login?redirect=/cook-log");
+}
 
 const logs = db
   .select({
@@ -20,6 +24,7 @@ const logs = db
   .from(cookLogs)
   .innerJoin(recipes, eq(cookLogs.recipeId, recipes.id))
   .leftJoin(users, eq(cookLogs.createdBy, users.id))
+  .where(eq(cookLogs.createdBy, Astro.locals.user.id))
   .orderBy(desc(cookLogs.cookedAt))
   .all();
 ---

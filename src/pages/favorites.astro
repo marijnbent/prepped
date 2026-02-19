@@ -1,0 +1,101 @@
+---
+import Layout from "../layouts/Layout.astro";
+import RecipeCard from "../components/RecipeCard.astro";
+import { db } from "../lib/db";
+import { favorites, recipes, users } from "../lib/schema";
+import { eq, desc } from "drizzle-orm";
+import { t } from "../lib/i18n";
+
+if (!Astro.locals.user) {
+  return Astro.redirect("/login?redirect=/favorites");
+}
+
+const favoriteRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    description: recipes.description,
+    imageUrl: recipes.imageUrl,
+    prepTime: recipes.prepTime,
+    cookTime: recipes.cookTime,
+    difficulty: recipes.difficulty,
+    createdBy: recipes.createdBy,
+    authorName: users.name,
+  })
+  .from(favorites)
+  .innerJoin(recipes, eq(favorites.recipeId, recipes.id))
+  .innerJoin(users, eq(recipes.createdBy, users.id))
+  .where(eq(favorites.userId, Astro.locals.user.id))
+  .orderBy(desc(favorites.createdAt))
+  .all();
+---
+
+<Layout title={t("collection.favorites")}>
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-12">
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("collection.favorites")}</h1>
+      <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
+        {favoriteRecipes.length} {favoriteRecipes.length === 1 ? "recipe" : "recipes"}
+      </p>
+    </div>
+
+    {favoriteRecipes.length === 0 ? (
+      <div class="text-center py-28">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 mb-6 border border-border/30">
+          <svg class="w-9 h-9 text-rose-300/40" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </div>
+        <p class="text-muted-foreground text-lg font-serif">No favorites yet</p>
+        <p class="text-muted-foreground/40 text-sm mt-2">Heart a recipe to save it here</p>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        {favoriteRecipes.map((recipe, i) => {
+          const isOwn = recipe.createdBy === Astro.locals.user!.id;
+          const href = isOwn
+            ? `/recipes/${recipe.slug}`
+            : `/users/${recipe.createdBy}/recipes/${recipe.slug}`;
+          return (
+            <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
+              <a href={href} class="group block">
+                <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
+                  {recipe.imageUrl ? (
+                    <div class="aspect-[4/3] overflow-hidden relative">
+                      <img
+                        src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
+                        alt={recipe.title}
+                        class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
+                        loading="lazy"
+                      />
+                      <div class="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
+                      <div class="absolute bottom-0 inset-x-0 p-4 pb-3">
+                        <h3 class="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
+                          {recipe.title}
+                        </h3>
+                      </div>
+                    </div>
+                  ) : (
+                    <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
+                      <svg class="w-14 h-14 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+                      </svg>
+                      <div class="absolute bottom-0 inset-x-0 p-4 pb-3">
+                        <h3 class="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">{recipe.title}</h3>
+                      </div>
+                    </div>
+                  )}
+                  <div class="px-4 pb-4 pt-2">
+                    <p class="text-xs text-muted-foreground/60">by {recipe.authorName}</p>
+                  </div>
+                  <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+                </div>
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</Layout>

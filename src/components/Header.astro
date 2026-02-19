@@ -10,11 +10,13 @@ interface Props {
 
 const { user } = Astro.props;
 const pathname = Astro.url.pathname;
+const authMode = import.meta.env.AUTH_MODE || "password";
 
 const navLinks = [
   { href: "/recipes", label: t("nav.recipes") },
   { href: "/collections", label: t("nav.collections") },
   { href: "/cook-log", label: t("nav.cookLog") },
+  { href: "/users", label: t("nav.community") },
 ];
 ---
 
@@ -56,10 +58,6 @@ const navLinks = [
               ]}
             >
               {link.label}
-              {/* Subtle underline indicator for active nav */}
-              {isActive && (
-                <span class="absolute bottom-1 left-4 right-4 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-              )}
             </a>
           );
         })}
@@ -83,11 +81,11 @@ const navLinks = [
         <ThemeToggle client:load />
       </div>
       <div class="hidden md:block">
-        <UserMenu user={user} client:load />
+        <UserMenu user={user} authMode={authMode} client:load />
       </div>
       <div class="md:hidden flex items-center gap-1">
         <ThemeToggle client:load />
-        <MobileNav user={user} navLinks={navLinks} client:load />
+        <MobileNav user={user} navLinks={navLinks} authMode={authMode} client:load />
       </div>
     </div>
   </div>

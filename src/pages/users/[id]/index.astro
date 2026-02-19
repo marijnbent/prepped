@@ -1,0 +1,127 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import RecipeCard from "../../../components/RecipeCard.astro";
+import { db } from "../../../lib/db";
+import { users, recipes, collections, recipeCollections } from "../../../lib/schema";
+import { eq, desc, count } from "drizzle-orm";
+import { t } from "../../../lib/i18n";
+
+const { id } = Astro.params;
+const profileUser = db.select().from(users).where(eq(users.id, id!)).get();
+if (!profileUser) {
+  return Astro.redirect("/users");
+}
+
+const userRecipes = db
+  .select()
+  .from(recipes)
+  .where(eq(recipes.createdBy, profileUser.id))
+  .orderBy(desc(recipes.createdAt))
+  .all();
+
+const userCollections = db
+  .select()
+  .from(collections)
+  .where(eq(collections.createdBy, profileUser.id))
+  .orderBy(collections.sortOrder)
+  .all();
+
+// Get recipe counts per collection
+const collectionCounts = db
+  .select({
+    collectionId: recipeCollections.collectionId,
+    count: count(),
+  })
+  .from(recipeCollections)
+  .groupBy(recipeCollections.collectionId)
+  .all();
+const countsMap = new Map(collectionCounts.map((c) => [c.collectionId, c.count]));
+
+const initials = profileUser.name
+  .split(" ")
+  .map((n) => n[0])
+  .join("")
+  .toUpperCase()
+  .slice(0, 2);
+---
+
+<Layout title={profileUser.name}>
+  <div class="max-w-6xl mx-auto">
+    {/* Profile header */}
+    <div class="flex items-center gap-6 mb-12 animate-fade-up">
+      {profileUser.image ? (
+        <img
+          src={profileUser.image}
+          alt={profileUser.name}
+          class="w-24 h-24 rounded-full object-cover border-2 border-border/30"
+        />
+      ) : (
+        <div class="w-24 h-24 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+          <span class="text-3xl font-serif text-primary">{initials}</span>
+        </div>
+      )}
+      <div>
+        <h1 class="font-serif text-4xl md:text-5xl tracking-tight">{profileUser.name}</h1>
+        <p class="text-muted-foreground/50 mt-2 text-sm">
+          {userRecipes.length} {userRecipes.length === 1 ? "recipe" : "recipes"}
+        </p>
+      </div>
+    </div>
+
+    {/* Recipes */}
+    {userRecipes.length > 0 ? (
+      <section class="mb-16">
+        <h2 class="font-serif text-2xl tracking-tight mb-6">{t("user.recipes")}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+          {userRecipes.map((recipe, i) => (
+            <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
+              <RecipeCard recipe={recipe} href={`/users/${profileUser.id}/recipes/${recipe.slug}`} />
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : (
+      <div class="text-center py-20">
+        <p class="text-muted-foreground text-lg font-serif">{t("user.noRecipes")}</p>
+      </div>
+    )}
+
+    {/* Collections */}
+    {userCollections.length > 0 && (
+      <section class="mb-16">
+        <h2 class="font-serif text-2xl tracking-tight mb-6">{t("nav.collections")}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+          {userCollections.map((col, i) => {
+            const recipeCount = countsMap.get(col.id) || 0;
+            return (
+              <a
+                href={`/users/${profileUser.id}/collections/${col.slug}`}
+                class="group block animate-fade-up"
+                style={`animation-delay: ${i * 50}ms;`}
+              >
+                <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
+                  <div class="aspect-[16/9] bg-gradient-to-br from-secondary via-muted to-accent/20 flex items-center justify-center relative overflow-hidden">
+                    <svg class="w-10 h-10 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                    </svg>
+                  </div>
+                  <div class="p-4 pb-5">
+                    <h3 class="font-serif text-lg leading-snug group-hover:text-primary transition-colors duration-300">
+                      {col.name}
+                    </h3>
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
+                      <span class="text-xs text-muted-foreground/50 tabular-nums">
+                        {recipeCount} {t("collection.recipes")}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )}
+  </div>
+</Layout>

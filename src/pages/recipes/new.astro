@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import NewRecipePage from "../../islands/NewRecipePage";
 import { db } from "../../lib/db";
 import { tags, collections } from "../../lib/schema";
+import { eq } from "drizzle-orm";
 import { t } from "../../lib/i18n";
 
 if (!Astro.locals.user) {
@@ -10,7 +11,11 @@ if (!Astro.locals.user) {
 }
 
 const allTags = db.select({ id: tags.id, name: tags.name }).from(tags).all();
-const allCollections = db.select({ id: collections.id, name: collections.name }).from(collections).all();
+const allCollections = db
+  .select({ id: collections.id, name: collections.name })
+  .from(collections)
+  .where(eq(collections.createdBy, Astro.locals.user.id))
+  .all();
 ---
 
 <Layout title={t("nav.newRecipe")}>

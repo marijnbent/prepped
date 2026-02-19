@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Link, FileText, PenLine } from "lucide-react";
+import { Loader2, Link, FileText, PenLine, Camera } from "lucide-react";
 import RecipeForm from "./RecipeForm";
 
 type Mode = "choose" | "manual" | "importing" | "review";
@@ -81,6 +81,39 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
       setMode("review");
     } catch {
       setError("Failed to parse recipe");
+      setMode("choose");
+    }
+    setLoading(false);
+  }
+
+  async function handleImportPhoto(file: File) {
+    setError("");
+    setLoading(true);
+    setMode("importing");
+
+    try {
+      const formData = new FormData();
+      formData.append("photo", file);
+
+      const res = await fetch("/api/recipes/import-photo", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Import failed");
+        setLoading(false);
+        setMode("choose");
+        return;
+      }
+
+      const data = await res.json();
+      await refreshTagsCollections();
+      setImported(data);
+      setMode("review");
+    } catch {
+      setError("Failed to extract recipe from photo");
       setMode("choose");
     }
     setLoading(false);
@@ -229,6 +262,39 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
         <Button onClick={handleImportText} disabled={!pasteText.trim()}>
           Parse Recipe
         </Button>
+      </div>
+
+      {/* Import from photo */}
+      <div className="border border-border rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10">
+              <Camera className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold">Import from photo</h2>
+              <p className="text-sm text-muted-foreground">
+                Take a photo of a cookbook page or upload an image
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" asChild>
+            <label className="cursor-pointer">
+              Upload
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportPhoto(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </Button>
+        </div>
       </div>
 
       {/* Manual */}

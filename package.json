@@ -4,13 +4,14 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
+    "dev:clean": "rm -rf node_modules/.vite && astro dev --force",
     "build": "astro build",
+    "check:client-boundaries": "node scripts/check-client-boundaries.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",
-    "@ai-sdk/react": "^3.0.89",
     "@astrojs/node": "^9.5.3",
     "@astrojs/react": "^4.4.2",
     "@mozilla/readability": "^0.6.0",
