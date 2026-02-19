@@ -530,12 +530,20 @@ export function t(key: StringKey): string {
 
 export const locale = getLocale();
 
-const dateLocale = import.meta.env.PUBLIC_DATE_LOCALE || (getLocale() === "nl" ? "nl-NL" : "en-US");
+const dateLocale = (import.meta.env.PUBLIC_DATE_LOCALE || (getLocale() === "nl" ? "nl-NL" : "en-US")).replace(/_/g, "-");
 
 export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString(dateLocale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  try {
+    return new Date(date).toLocaleDateString(dateLocale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 }
