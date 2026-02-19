@@ -11,6 +11,19 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Build-time config (Vite bakes import.meta.env at build)
+ARG AUTH_MODE=password
+ARG UI_LOCALE=en
+ARG INVITE_CODE=
+ARG MEASUREMENT_SYSTEM=metric
+ARG DATE_LOCALE=
+
+ENV AUTH_MODE=$AUTH_MODE
+ENV UI_LOCALE=$UI_LOCALE
+ENV INVITE_CODE=$INVITE_CODE
+ENV MEASUREMENT_SYSTEM=$MEASUREMENT_SYSTEM
+ENV DATE_LOCALE=$DATE_LOCALE
+
 # Copy source and build
 COPY . .
 RUN npm run build

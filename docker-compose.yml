@@ -1,6 +1,13 @@
 services:
   prepped:
-    build: .
+    build:
+      context: .
+      args:
+        AUTH_MODE: ${AUTH_MODE:-password}
+        UI_LOCALE: ${UI_LOCALE:-en}
+        INVITE_CODE: ${INVITE_CODE:-}
+        MEASUREMENT_SYSTEM: ${MEASUREMENT_SYSTEM:-metric}
+        DATE_LOCALE: ${DATE_LOCALE:-}
     ports:
       - "4321:4321"
     volumes:

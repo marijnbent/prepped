@@ -5,7 +5,7 @@ let _google: ReturnType<typeof createGoogleGenerativeAI> | null = null;
 function getGoogle() {
   if (!_google) {
     _google = createGoogleGenerativeAI({
-      apiKey: import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "",
+      apiKey: process.env.GEMINI_API_KEY || "",
     });
   }
   return _google;
