@@ -28,6 +28,14 @@ COPY --from=base /app/dist ./dist
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./
 
+# Drizzle needs config + schema to run push
+COPY --from=base /app/drizzle.config.ts ./
+COPY --from=base /app/src/lib/schema.ts ./src/lib/schema.ts
+
+# Entrypoint runs drizzle-kit push then starts the server
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 # Data directory for SQLite + uploads
 RUN mkdir -p /app/data
 VOLUME /app/data
@@ -38,4 +46,4 @@ ENV NODE_ENV=production
 
 EXPOSE 4321
 
-CMD ["node", "./dist/server/entry.mjs"]
+CMD ["./docker-entrypoint.sh"]
