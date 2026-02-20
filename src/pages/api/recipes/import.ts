@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { getChatModel } from "../../../lib/ai";
-import { scrapeUrl } from "../../../lib/scraper";
+import { scrapeUrl, ScrapeError } from "../../../lib/scraper";
 import { db } from "../../../lib/db";
 import { tags, collections, users } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
@@ -130,6 +130,8 @@ IMPORTANT RULES:
 - If amounts are given as fractions (like 1/2), convert to decimal (0.5)
 - Extract all preparation steps in order with clear instructions
 - Include any tips, notes, or serving suggestions from the recipe in the "notes" field
+- For "to taste" / unquantified ingredients (salt, pepper, oil, herbs used as garnish, etc.): always list each ingredient separately (never combine like "salt and pepper"), leave amount empty, and keep the name clean (just the ingredient, no "to taste" or "naar smaak" suffix).
+- For ingredient grouping: common pantry/cupboard staples (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped under "Cupboard" if the recipe doesn't already organize them into a specific group. This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
 - For tags: always lowercase (e.g., "cookies", "pasta", "vegetarian"). Prefer existing: [${existingTagNames.join(", ")}]. Add new ones if needed. Defaults for reference: [${defaultTags.join(", ")}].
 - For collections: use Title Case with an emoji prefix. Prefer existing: [${existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${defaultCollections.join(", ")}].
 
@@ -169,6 +171,17 @@ ${content.slice(0, 10000)}${userInstruction}`,
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
+    if (err instanceof ScrapeError) {
+      console.error("[recipes/import] Scrape failed", { code: err.code, message: err.message });
+      const message = err.code === "SCRAPE_BLOCKED"
+        ? "This website blocks automated access. Try copying the recipe text and using paste import instead."
+        : `Could not read the page: ${err.message}`;
+      return new Response(
+        JSON.stringify({ error: message, code: err.code }),
+        { status: 422, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     const normalized = toAiClientError(err);
     console.error("[recipes/import] AI request failed", {
       code: normalized.code,

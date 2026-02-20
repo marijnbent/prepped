@@ -88,12 +88,16 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
             <ul className="space-y-2">
               {ings.map((ing, i) => (
                 <li key={i} className="flex items-baseline gap-2.5 text-sm py-1 border-b border-border/15 last:border-0">
-                  {ing.amount && (
-                    <span className="font-medium tabular-nums text-primary/80 min-w-[3rem]">
-                      {ing.amount}
-                      {ing.unit && <span className="text-muted-foreground/50 ml-0.5">{ing.unit}</span>}
-                    </span>
-                  )}
+                  <span className="font-medium tabular-nums text-primary/80 min-w-[3rem]">
+                    {ing.amount ? (
+                      <>
+                        {ing.amount}
+                        {ing.unit && <span className="text-muted-foreground/50 ml-0.5">{ing.unit}</span>}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground/40 text-xs font-normal">{t("recipe.toTaste")}</span>
+                    )}
+                  </span>
                   <span className="text-foreground/80">
                     {(() => {
                       const parenIdx = ing.name.indexOf("(");
