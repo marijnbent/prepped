@@ -9,6 +9,7 @@ import { slugify } from "../../../lib/slugify";
 import { defaultCollections, defaultTags } from "../../../lib/defaults";
 import sharp from "sharp";
 import { toAiClientError } from "../../../lib/ai-errors";
+import { t } from "../../../lib/i18n";
 
 const recipeOutputSchema = z.object({
   title: z.string(),
@@ -145,7 +146,8 @@ IMPORTANT RULES:
 - Extract all preparation steps in order with clear instructions
 - Include any tips, notes, or serving suggestions in the "notes" field
 - For "to taste" / unquantified ingredients (salt, pepper, oil, herbs used as garnish, etc.): always list each ingredient separately (never combine like "salt and pepper"), leave amount empty, and keep the name clean (just the ingredient, no "to taste" or "naar smaak" suffix).
-- For ingredient grouping: common pantry/cupboard staples (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped under "Cupboard" if the recipe doesn't already organize them into a specific group. This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
+- Translate all ingredient names and group names to ${t("site.language")}. Keep the recipe title as-is, but ingredient names should be in the local language.
+- For ingredient grouping: common pantry/cupboard staples (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped under "${t("recipe.cupboard")}" if the recipe doesn't already organize them into a specific group. This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
 - For tags: always lowercase (e.g., "cookies", "pasta", "vegetarian"). Prefer existing: [${existingTagNames.join(", ")}]. Add new ones if needed. Defaults for reference: [${defaultTags.join(", ")}].
 - For collections: use Title Case with an emoji prefix. Prefer existing: [${existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${defaultCollections.join(", ")}].${userInstruction}`,
             },

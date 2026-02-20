@@ -3,6 +3,7 @@ const strings = {
     // Site
     "site.title": "Prepped",
     "site.description": "Family recipes",
+    "site.language": "English",
 
     // Nav
     "nav.home": "Home",
@@ -75,6 +76,7 @@ const strings = {
     "recipe.emptyHint": "Your kitchen awaits its first recipe",
     "recipe.reset": "Reset",
     "recipe.toTaste": "to taste",
+    "recipe.cupboard": "Cupboard",
     "recipe.copyToMyRecipes": "Copy to my recipes",
     "recipe.addToCollections": "Add to collections (optional):",
     "recipe.copying": "Copying...",
@@ -285,6 +287,7 @@ const strings = {
     // Site
     "site.title": "Prepped",
     "site.description": "Familierecepten",
+    "site.language": "Nederlands",
 
     // Nav
     "nav.home": "Home",
@@ -357,6 +360,7 @@ const strings = {
     "recipe.emptyHint": "Je keuken wacht op het eerste recept",
     "recipe.reset": "Reset",
     "recipe.toTaste": "naar smaak",
+    "recipe.cupboard": "Voorraadkast",
     "recipe.copyToMyRecipes": "Kopiëren naar mijn recepten",
     "recipe.addToCollections": "Toevoegen aan collecties (optioneel):",
     "recipe.copying": "Kopiëren...",
