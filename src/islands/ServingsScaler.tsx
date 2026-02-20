@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { scaleAmount } from "@/lib/scale-amount";
 
 interface Ingredient {
   amount: string;
@@ -13,14 +14,6 @@ interface Ingredient {
 interface Props {
   defaultServings: number;
   ingredients: Ingredient[];
-}
-
-function scaleAmount(amount: string, factor: number): string {
-  const num = parseFloat(amount);
-  if (isNaN(num)) return amount; // non-numeric like "a pinch"
-  const scaled = num * factor;
-  if (scaled === Math.floor(scaled)) return String(scaled);
-  return (Math.round(scaled * 100) / 100).toString();
 }
 
 export default function ServingsScaler({ defaultServings, ingredients }: Props) {
@@ -101,7 +94,26 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
                       {ing.unit && <span className="text-muted-foreground/50 ml-0.5">{ing.unit}</span>}
                     </span>
                   )}
-                  <span className="text-foreground/80">{ing.name}</span>
+                  <span className="text-foreground/80">
+                    {(() => {
+                      const parenIdx = ing.name.indexOf("(");
+                      const commaIdx = ing.name.indexOf(",");
+                      let splitIdx = -1;
+                      if (parenIdx !== -1 && commaIdx !== -1) splitIdx = Math.min(parenIdx, commaIdx);
+                      else if (parenIdx !== -1) splitIdx = parenIdx;
+                      else if (commaIdx !== -1) splitIdx = commaIdx;
+
+                      if (splitIdx === -1) return ing.name;
+                      return (
+                        <>
+                          {ing.name.slice(0, splitIdx).trim()}
+                          <span className="block text-xs text-muted-foreground/50 mt-0.5">
+                            {ing.name.slice(splitIdx).trim()}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </span>
                 </li>
               ))}
             </ul>
