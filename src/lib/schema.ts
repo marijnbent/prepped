@@ -10,6 +10,7 @@ export const users = sqliteTable("users", {
   image: text("image"),
   importPrompt: text("import_prompt"),
   chatPrompt: text("chat_prompt"),
+  shoppingPrompt: text("shopping_prompt"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

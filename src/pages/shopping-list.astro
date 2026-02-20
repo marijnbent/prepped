@@ -1,0 +1,62 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ShoppingListPage from "../islands/ShoppingListPage";
+import { db } from "../lib/db";
+import { recipes, favorites } from "../lib/schema";
+import { eq, and } from "drizzle-orm";
+import { t } from "../lib/i18n";
+
+if (!Astro.locals.user) {
+  return Astro.redirect("/login?redirect=/shopping-list");
+}
+
+const userId = Astro.locals.user.id;
+
+// Get user's own recipes
+const ownRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    servings: recipes.servings,
+    ingredients: recipes.ingredients,
+    imageUrl: recipes.imageUrl,
+  })
+  .from(recipes)
+  .where(eq(recipes.createdBy, userId))
+  .all();
+
+// Get favorited recipes from other users
+const favRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    servings: recipes.servings,
+    ingredients: recipes.ingredients,
+    imageUrl: recipes.imageUrl,
+  })
+  .from(favorites)
+  .innerJoin(recipes, eq(favorites.recipeId, recipes.id))
+  .where(and(eq(favorites.userId, userId)))
+  .all();
+
+// Deduplicate (own recipes take precedence)
+const seenIds = new Set(ownRecipes.map((r) => r.id));
+const allRecipes = [...ownRecipes];
+for (const r of favRecipes) {
+  if (!seenIds.has(r.id)) {
+    allRecipes.push(r);
+    seenIds.add(r.id);
+  }
+}
+
+const recipesData = allRecipes.map((r) => ({
+  ...r,
+  imageUrl: r.imageUrl || null,
+}));
+---
+
+<Layout title={t("shopping.title")}>
+  <ShoppingListPage recipes={recipesData} client:load />
+</Layout>

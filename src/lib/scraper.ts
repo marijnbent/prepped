@@ -1,6 +1,16 @@
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
 
+export class ScrapeError extends Error {
+  code: "SCRAPE_BLOCKED" | "SCRAPE_FAILED" | "SCRAPE_PARSE_FAILED";
+
+  constructor(message: string, code: ScrapeError["code"]) {
+    super(message);
+    this.name = "ScrapeError";
+    this.code = code;
+  }
+}
+
 interface ScrapeResult {
   title: string;
   content: string;
@@ -46,8 +56,18 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     },
   });
 
+  if (response.status === 403 || response.status === 503) {
+    throw new ScrapeError(
+      `Website blocked the request (${response.status})`,
+      "SCRAPE_BLOCKED",
+    );
+  }
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch URL: ${response.status}`);
+    throw new ScrapeError(
+      `Failed to fetch URL: ${response.status}`,
+      "SCRAPE_FAILED",
+    );
   }
 
   const html = await response.text();
@@ -100,7 +120,7 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   const article = reader.parse();
 
   if (!article) {
-    throw new Error("Could not parse page content");
+    throw new ScrapeError("Could not parse page content", "SCRAPE_PARSE_FAILED");
   }
 
   return {

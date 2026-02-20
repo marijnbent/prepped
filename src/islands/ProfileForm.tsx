@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Globe, MessageCircle, Check } from "lucide-react";
+import { Globe, MessageCircle, ShoppingBasket, Check } from "lucide-react";
 import { t } from "@/lib/i18n";
 
 interface Props {
   importPrompt: string;
   chatPrompt: string;
+  shoppingPrompt: string;
 }
 
-export default function ProfileForm({ importPrompt: initialImport, chatPrompt: initialChat }: Props) {
+export default function ProfileForm({ importPrompt: initialImport, chatPrompt: initialChat, shoppingPrompt: initialShopping }: Props) {
   const [importPrompt, setImportPrompt] = useState(initialImport);
   const [chatPrompt, setChatPrompt] = useState(initialChat);
+  const [shoppingPrompt, setShoppingPrompt] = useState(initialShopping);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ export default function ProfileForm({ importPrompt: initialImport, chatPrompt: i
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importPrompt, chatPrompt }),
+        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt }),
       });
 
       if (!res.ok) {
@@ -85,6 +87,28 @@ export default function ProfileForm({ importPrompt: initialImport, chatPrompt: i
           value={chatPrompt}
           onChange={(e) => setChatPrompt(e.target.value)}
           placeholder={t("profile.chatPromptPlaceholder")}
+          rows={3}
+          maxLength={500}
+          className="resize-none"
+        />
+      </div>
+
+      {/* Shopping list instructions card */}
+      <div className="bg-card/50 border border-border/30 rounded-2xl p-6 space-y-4 transition-colors duration-200 hover:border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 shrink-0">
+            <ShoppingBasket className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold">{t("profile.shoppingPrompt")}</h2>
+            <p className="text-sm text-muted-foreground/60">{t("profile.shoppingPromptDesc")}</p>
+          </div>
+        </div>
+        <Textarea
+          id="shoppingPrompt"
+          value={shoppingPrompt}
+          onChange={(e) => setShoppingPrompt(e.target.value)}
+          placeholder={t("profile.shoppingPromptPlaceholder")}
           rows={3}
           maxLength={500}
           className="resize-none"

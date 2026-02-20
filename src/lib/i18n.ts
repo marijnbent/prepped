@@ -135,6 +135,7 @@ const strings = {
     "cookLog.noLogs": "No cook logs yet",
     "cookLog.emptyHint": "Cook a recipe and log your experience",
     "cookLog.photoAlt": "Cook log photo",
+    "cookLog.forRecipe": "for",
 
     // Chat
     "chat.title": "Ask about this recipe",
@@ -419,6 +420,7 @@ const strings = {
     "cookLog.noLogs": "Nog geen kooklogboek",
     "cookLog.emptyHint": "Kook een recept en noteer je ervaring",
     "cookLog.photoAlt": "Kooklogfoto",
+    "cookLog.forRecipe": "voor",
 
     // Chat
     "chat.title": "Vraag over dit recept",

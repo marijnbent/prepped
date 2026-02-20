@@ -50,75 +50,78 @@ const logs = db
         <p class="text-muted-foreground/40 text-sm mt-2">{t("cookLog.emptyHint")}</p>
       </div>
     ) : (
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+      <div class="flex flex-col gap-4 md:gap-5 max-w-3xl">
         {logs.map((log, i) => (
           <a
             href={`/recipes/${log.recipeSlug}`}
             class="group block animate-fade-up"
             style={`animation-delay: ${i * 50}ms;`}
           >
-            <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
-              {/* Photo area */}
-              {log.photoUrl ? (
-                <div class="aspect-[16/9] overflow-hidden relative">
-                  <img
-                    src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
-                    alt={t("cookLog.photoAlt")}
-                    class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
-                    loading="lazy"
-                  />
-                  <div class="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-60 pointer-events-none" />
-                </div>
-              ) : log.recipeImageUrl ? (
-                <div class="aspect-[16/9] overflow-hidden relative">
-                  <img
-                    src={log.recipeImageUrl.startsWith("/") ? `/api/uploads${log.recipeImageUrl}` : log.recipeImageUrl}
-                    alt=""
-                    class="w-full h-full object-cover opacity-25 blur-[1px]"
-                    loading="lazy"
-                  />
-                  <div class="absolute inset-0 bg-gradient-to-br from-secondary/60 to-accent/20 pointer-events-none" />
-                </div>
-              ) : null}
-
-              {/* Content */}
-              <div class="p-5 pb-5">
-                <div class="flex items-start justify-between gap-3 mb-2">
-                  <h3 class="font-serif text-lg leading-snug group-hover:text-primary transition-colors duration-300 line-clamp-1">
-                    {log.recipeTitle}
-                  </h3>
-                  {/* Dot rating */}
+            <div class="relative rounded-2xl bg-card/50 overflow-hidden border border-border/30 transition-all duration-300 hover:border-border/50 hover:bg-card/80">
+              <div class="p-5 md:p-6">
+                {/* Top row: date, author, rating */}
+                <div class="flex items-center gap-3 mb-3">
+                  <time class="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground/50 tabular-nums">{formatDate(log.cookedAt)}</time>
+                  {log.authorName && (
+                    <>
+                      <span class="text-border/40">&middot;</span>
+                      <span class="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground/50">{log.authorName}</span>
+                    </>
+                  )}
                   {log.rating && (
-                    <div class="shrink-0 flex items-center gap-1 mt-1.5">
-                      {Array.from({ length: 5 }).map((_, starIndex) => (
-                        <span
-                          class:list={[
-                            "inline-block w-2 h-2 rounded-full transition-colors",
-                            starIndex < log.rating!
-                              ? "bg-primary"
-                              : "bg-border/40",
-                          ]}
-                        />
-                      ))}
+                    <>
+                      <span class="text-border/40">&middot;</span>
+                      <div class="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, starIndex) => (
+                          <span
+                            class:list={[
+                              "inline-block w-2 h-2 rounded-full transition-colors",
+                              starIndex < log.rating!
+                                ? "bg-primary"
+                                : "bg-border/40",
+                            ]}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Main content: notes + optional photo side by side */}
+                <div class:list={[
+                  "flex gap-5",
+                  log.photoUrl ? "items-start" : "",
+                ]}>
+                  {/* Notes area -- the star of the show */}
+                  <div class="flex-1 min-w-0">
+                    {log.notes ? (
+                      <p class="text-[15px] md:text-base leading-relaxed text-foreground/85">{log.notes}</p>
+                    ) : (
+                      <p class="text-sm text-muted-foreground/30 italic leading-relaxed">{t("cookLog.emptyHint")}</p>
+                    )}
+
+                    {/* Recipe link as subtle tag */}
+                    <div class="mt-3 pt-3 border-t border-border/20">
+                      <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 group-hover:text-primary/70 transition-colors duration-200">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+                        </svg>
+                        {t("cookLog.forRecipe")} <span class="font-medium text-muted-foreground/70 group-hover:text-primary transition-colors duration-200">{log.recipeTitle}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cook's own photo -- medium, rounded, not dominant */}
+                  {log.photoUrl && (
+                    <div class="shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden ring-1 ring-border/20">
+                      <img
+                        src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
+                        alt={t("cookLog.photoAlt")}
+                        class="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
                     </div>
                   )}
-                </div>
-
-                {log.notes && (
-                  <p class="text-sm text-muted-foreground/70 line-clamp-2 leading-relaxed">{log.notes}</p>
-                )}
-
-                <div class="flex items-center gap-2 mt-4 pt-3 border-t border-border/30 text-xs text-muted-foreground/50">
-                  {log.authorName && (
-                    <span class="inline-flex items-center gap-1.5 font-medium text-muted-foreground/70">
-                      <svg class="w-3 h-3 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 0 0-16 0" />
-                      </svg>
-                      {log.authorName}
-                    </span>
-                  )}
-                  {log.authorName && <span class="text-border/30">&middot;</span>}
-                  <time class="tabular-nums">{formatDate(log.cookedAt)}</time>
                 </div>
               </div>
 

@@ -4,6 +4,7 @@ import ServingsScaler from "../../islands/ServingsScaler";
 import RecipeChat from "../../islands/RecipeChat";
 import CookLogForm from "../../islands/CookLogForm";
 import FavoriteButton from "../../islands/FavoriteButton";
+import AddToShoppingListButton from "../../islands/AddToShoppingListButton";
 import { db } from "../../lib/db";
 import { recipes, cookLogs, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../lib/schema";
 import { eq, and } from "drizzle-orm";
@@ -198,6 +199,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       {/* Actions */}
       <div class="flex gap-2 shrink-0">
         <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
+        <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} client:load />
       {isOwner && (
         <>
           <a
@@ -262,6 +264,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             ingredients={ingredients}
             client:visible
           />
+          <div class="mt-4 pt-4 border-t border-border/20">
+            <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} showLabel client:load />
+          </div>
         </div>
       </div>
 

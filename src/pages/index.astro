@@ -210,37 +210,54 @@ const firstName = user?.name?.split(" ")[0] || "";
                   class="group shrink-0 w-56 sm:w-auto animate-fade-up"
                   style={`animation-delay: ${i * 50}ms;`}
                 >
-                  <div class="rounded-2xl bg-card/60 border border-border/30 overflow-hidden transition-all duration-500 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/[0.04] hover:-translate-y-1">
-                    {(log.photoUrl || log.recipeImageUrl) ? (
-                      <div class="aspect-[4/3] overflow-hidden relative">
-                        <img
-                          src={(() => {
-                            const url = log.photoUrl || log.recipeImageUrl!;
-                            return url.startsWith("/") ? `/api/uploads${url}` : url;
-                          })()}
-                          alt=""
-                          class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                          loading="lazy"
-                        />
-                        <div class="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-60 pointer-events-none" />
-                        {log.rating && (
-                          <div class="absolute top-3 right-3 flex items-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, si) => (
-                              <span class:list={[
-                                "inline-block w-1.5 h-1.5 rounded-full",
-                                si < log.rating! ? "bg-primary shadow-sm" : "bg-background/50"
-                              ]} />
-                            ))}
+                  <div class="relative rounded-2xl bg-card/50 border border-border/30 overflow-hidden transition-all duration-300 hover:border-border/50 hover:bg-card/80 h-full flex flex-col">
+                    <div class="p-4 flex flex-col flex-1">
+                      {/* Notes as the main content */}
+                      {log.notes ? (
+                        <p class="text-sm leading-relaxed text-foreground/80 line-clamp-3 flex-1">{log.notes}</p>
+                      ) : (
+                        <p class="text-sm text-muted-foreground/25 italic leading-relaxed flex-1">{t("cookLog.emptyHint")}</p>
+                      )}
+
+                      {/* Bottom section: recipe context + meta */}
+                      <div class="mt-3 pt-3 border-t border-border/20">
+                        {/* Recipe name as subtle context */}
+                        <div class="flex items-center gap-2">
+                          {log.photoUrl && (
+                            <div class="shrink-0 w-8 h-8 rounded-lg overflow-hidden ring-1 ring-border/20">
+                              <img
+                                src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
+                                alt=""
+                                class="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
+                          <div class="min-w-0 flex-1">
+                            <span class="text-xs text-muted-foreground/60 group-hover:text-primary/70 transition-colors duration-200 font-medium line-clamp-1 block">{log.recipeTitle}</span>
+                            <div class="flex items-center gap-2 mt-0.5">
+                              <time class="text-[11px] text-muted-foreground/40 tabular-nums">{formatDate(log.cookedAt)}</time>
+                              {log.rating && (
+                                <>
+                                  <span class="text-border/30">&middot;</span>
+                                  <div class="flex items-center gap-0.5">
+                                    {Array.from({ length: 5 }).map((_, si) => (
+                                      <span class:list={[
+                                        "inline-block w-1.5 h-1.5 rounded-full",
+                                        si < log.rating! ? "bg-primary" : "bg-border/40"
+                                      ]} />
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    ) : (
-                      <div class="aspect-[4/3] bg-gradient-to-br from-secondary to-accent/20" />
-                    )}
-                    <div class="p-3">
-                      <h4 class="text-sm font-medium line-clamp-1 group-hover:text-primary transition-colors">{log.recipeTitle}</h4>
-                      <time class="text-[11px] text-muted-foreground/50 tabular-nums mt-1 block">{formatDate(log.cookedAt)}</time>
                     </div>
+
+                    {/* Hover glow */}
+                    <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
                   </div>
                 </a>
               ))}

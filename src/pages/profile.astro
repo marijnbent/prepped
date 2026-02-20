@@ -10,7 +10,7 @@ if (!Astro.locals.user) {
   return Astro.redirect("/login?redirect=/profile");
 }
 
-const user = db.select({ importPrompt: users.importPrompt, chatPrompt: users.chatPrompt })
+const user = db.select({ importPrompt: users.importPrompt, chatPrompt: users.chatPrompt, shoppingPrompt: users.shoppingPrompt })
   .from(users)
   .where(eq(users.id, Astro.locals.user.id))
   .get();
@@ -28,6 +28,7 @@ const user = db.select({ importPrompt: users.importPrompt, chatPrompt: users.cha
         client:load
         importPrompt={user?.importPrompt || ""}
         chatPrompt={user?.chatPrompt || ""}
+        shoppingPrompt={user?.shoppingPrompt || ""}
       />
     </div>
   </div>
