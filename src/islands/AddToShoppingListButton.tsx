@@ -35,10 +35,10 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
           e.stopPropagation();
           toggle();
         }}
-        className={`inline-flex items-center gap-2 w-full justify-center rounded-lg border px-3 py-2 text-xs font-medium uppercase tracking-wide transition-all duration-200 ${
+        className={`inline-flex items-center gap-1.5 text-[13px] transition-colors duration-200 ${
           inList
-            ? "border-amber-300/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
-            : "border-border/40 bg-secondary/40 text-muted-foreground hover:bg-secondary hover:border-border/60"
+            ? "text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+            : "text-muted-foreground/60 hover:text-muted-foreground"
         }`}
       >
         {inList ? (
