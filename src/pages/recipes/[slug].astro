@@ -135,9 +135,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
     </div>
 
     {/* ===== Meta bar — clean horizontal strip ===== */}
-    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-10 animate-fade-up" style="animation-delay: 120ms;">
+    <div class="flex items-start gap-x-6 gap-y-3 mb-10 animate-fade-up" style="animation-delay: 120ms;">
       {/* Meta pills */}
-      <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground/70">
+      <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground/70 min-w-0">
         {recipeAuthor && (
           <span class="inline-flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
