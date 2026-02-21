@@ -26,6 +26,21 @@ async function readErrorMessage(response: Response, fallback: string) {
   return `${fallback} (HTTP ${response.status})`;
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("Failed to read file"));
+    };
+    reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function NewRecipePage({ tags: initialTags, collections: initialCollections }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
   const [url, setUrl] = useState("");
@@ -116,10 +131,20 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
         formData.append("photo", file);
       }
 
-      const res = await fetch("/api/recipes/import-photo", {
+      let res = await fetch("/api/recipes/import-photo", {
         method: "POST",
         body: formData,
       });
+
+      // Some deployment WAF/proxies block multipart uploads with 403; retry as JSON.
+      if (res.status === 403) {
+        const photos = await Promise.all(files.map(fileToDataUrl));
+        res = await fetch("/api/recipes/import-photo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ photos }),
+        });
+      }
 
       if (!res.ok) {
         setError(await readErrorMessage(res, t("import.errorImport")));

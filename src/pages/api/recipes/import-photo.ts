@@ -83,23 +83,40 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const formData = await request.formData();
-  const photoEntries = formData.getAll("photo");
-  const photos = photoEntries.filter((entry): entry is File => entry instanceof File);
+  const contentType = request.headers.get("content-type") || "";
+  const photoBuffers: Buffer[] = [];
 
-  if (photos.length === 0) {
+  if (contentType.includes("application/json")) {
+    const body = await request.json().catch(() => null) as { photos?: unknown } | null;
+    const photos = Array.isArray(body?.photos) ? body.photos : [];
+
+    for (const photo of photos) {
+      if (typeof photo !== "string") continue;
+      const base64Payload = photo.includes(",") ? photo.split(",")[1] : photo;
+      if (!base64Payload) continue;
+      photoBuffers.push(Buffer.from(base64Payload, "base64"));
+    }
+  } else {
+    const formData = await request.formData();
+    const photoEntries = formData.getAll("photo");
+    const photos = photoEntries.filter((entry): entry is File => entry instanceof File);
+
+    for (const photo of photos) {
+      photoBuffers.push(Buffer.from(await photo.arrayBuffer()));
+    }
+  }
+
+  if (photoBuffers.length === 0) {
     return new Response(JSON.stringify({ error: "At least one photo is required" }), { status: 400 });
   }
 
-  if (photos.length > 2) {
+  if (photoBuffers.length > 2) {
     return new Response(JSON.stringify({ error: "You can upload up to 2 photos" }), { status: 400 });
   }
 
   try {
     const base64Photos = await Promise.all(
-      photos.map(async (photo) => {
-        const buffer = Buffer.from(await photo.arrayBuffer());
-
+      photoBuffers.map(async (buffer) => {
         // Resize for AI processing (max 1600px wide, convert to JPEG for smaller payload)
         const processed = await sharp(buffer)
           .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
@@ -140,7 +157,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
               ...imageContent,
               {
                 type: "text",
-                text: `Extract a structured recipe from ${photos.length > 1 ? "these photos" : "this photo"} of a cookbook page or recipe. If there are two photos, combine both pages into one complete recipe.
+                text: `Extract a structured recipe from ${photoBuffers.length > 1 ? "these photos" : "this photo"} of a cookbook page or recipe. If there are two photos, combine both pages into one complete recipe.
 
 IMPORTANT RULES:
 - Convert ALL measurements to metric (grams, ml, liters, celsius)
