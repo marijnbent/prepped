@@ -3,8 +3,8 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "dev:clean": "rm -rf node_modules/.vite && astro dev --force",
+    "dev": "NODE_ENV=development astro dev",
+    "dev:clean": "rm -rf node_modules/.vite && NODE_ENV=development astro dev --force",
     "build": "astro build",
     "check:client-boundaries": "node scripts/check-client-boundaries.mjs",
     "preview": "astro preview",

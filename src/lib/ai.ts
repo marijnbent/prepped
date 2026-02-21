@@ -14,7 +14,7 @@ export class AIConfigError extends Error {
 let _openrouter: ReturnType<typeof createOpenAI> | null = null;
 
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-const DEFAULT_OPENROUTER_PRIMARY_MODEL = "google/gemini-flash-latest";
+const DEFAULT_OPENROUTER_PRIMARY_MODEL = "google/gemini-3-flash-preview";
 const DEFAULT_OPENROUTER_FALLBACK_MODEL = "openai/gpt-5-mini";
 
 function resolveOpenRouterApiKey() {

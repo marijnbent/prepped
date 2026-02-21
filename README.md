@@ -42,6 +42,16 @@ npm run dev
 
 ## Dev Troubleshooting
 
+### `Uncaught TypeError: jsxDEV is not a function`
+
+This happens when the dev server runs with `NODE_ENV=production`, which makes React's dev JSX runtime invalid.
+
+Use the project scripts (they force dev mode) and clear Vite cache once:
+
+```sh
+npm run dev:clean
+```
+
 ### `504 (Outdated Optimize Dep)` in the browser console
 
 This error means Vite's pre-bundled dependency cache is stale relative to currently loaded client islands.  
@@ -83,7 +93,7 @@ Server-side behavior:
 | `BETTER_AUTH_SECRET` | Yes | Session secret. Generate with `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | Yes | Public URL (e.g., `https://prepped.example.com`) |
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key for AI features ([get one here](https://openrouter.ai/keys)) |
-| `OPENROUTER_PRIMARY_MODEL` | No | Primary OpenRouter model (default: `google/gemini-flash-latest`) |
+| `OPENROUTER_PRIMARY_MODEL` | No | Primary OpenRouter model (default: `google/gemini-3-flash-preview`) |
 | `OPENROUTER_FALLBACK_MODEL` | No | Backup OpenRouter model (default: `openai/gpt-5-mini`) |
 | `OPENROUTER_FALLBACK_MODELS` | No | Optional comma-separated backups (overrides `OPENROUTER_FALLBACK_MODEL`) |
 | `OPENROUTER_BASE_URL` | No | OpenRouter API base URL (default: `https://openrouter.ai/api/v1`) |
@@ -115,7 +125,7 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 - [Shadcn UI](https://ui.shadcn.com) + Tailwind CSS v4
 - [SQLite](https://sqlite.org) (better-sqlite3) + [Drizzle ORM](https://orm.drizzle.team)
 - [Better Auth](https://better-auth.com) (email/password)
-- [AI SDK](https://sdk.vercel.ai) + [OpenRouter](https://openrouter.ai) (`google/gemini-flash-latest` with `openai/gpt-5-mini` fallback)
+- [AI SDK](https://sdk.vercel.ai) + [OpenRouter](https://openrouter.ai) (`google/gemini-3-flash-preview` with `openai/gpt-5-mini` fallback)
 - [Sharp](https://sharp.pixelplumbing.com) for image processing
 
 ## Local Quality Gate

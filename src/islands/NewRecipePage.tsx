@@ -293,8 +293,6 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
-                multiple
                 className="hidden"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
