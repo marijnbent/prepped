@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getChatModel } from "../../../lib/ai";
+import { withChatModelFallback } from "../../../lib/ai";
 import { db } from "../../../lib/db";
 import { users } from "../../../lib/schema";
 import { eq } from "drizzle-orm";
@@ -49,10 +49,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       )
       .join("\n");
 
-    const { object: result } = await generateObject({
-      model: getChatModel(),
-      schema: organizeOutputSchema,
-      prompt: `You are a shopping list organizer. Given a list of ingredients, merge duplicates intelligently, round amounts to practical shopping quantities, and organize them by supermarket category.
+    const { object: result } = await withChatModelFallback((model) =>
+      generateObject({
+        model,
+        schema: organizeOutputSchema,
+        prompt: `You are a shopping list organizer. Given a list of ingredients, merge duplicates intelligently, round amounts to practical shopping quantities, and organize them by supermarket category.
 
 CRITICAL RULES:
 - KEEP THE SAME LANGUAGE as the input ingredients. If the ingredients are in Dutch, use Dutch category names and Dutch ingredient names. If in English, use English. NEVER translate ingredient names or category names to a different language.
@@ -65,7 +66,8 @@ CRITICAL RULES:
 
 Ingredients:
 ${ingredientList}${userInstruction}`,
-    });
+      })
+    );
 
     return new Response(JSON.stringify(result), {
       headers: { "Content-Type": "application/json" },

@@ -89,6 +89,7 @@ const strings = {
     "import.loading": "Importing recipe...",
     "import.photo": "Import from photo",
     "import.photoDesc": "Take a photo of a cookbook page",
+    "import.photoCountHint": "Upload up to 2 photos (for example, both cookbook pages)",
     "import.importing": "Importing and structuring recipe...",
     "import.reviewMessage": "Recipe imported. Review and edit below before saving.",
     "import.startOver": "Start over",
@@ -108,6 +109,7 @@ const strings = {
     "import.errorImport": "Import failed",
     "import.errorParse": "Failed to parse recipe",
     "import.errorPhoto": "Failed to extract recipe from photo",
+    "import.errorTooManyPhotos": "Please upload at most 2 photos",
     "import.errorImportRecipe": "Failed to import recipe",
 
     // Collection
@@ -374,6 +376,7 @@ const strings = {
     "import.loading": "Recept importeren...",
     "import.photo": "Importeren van foto",
     "import.photoDesc": "Maak een foto van een kookboekpagina",
+    "import.photoCountHint": "Upload maximaal 2 foto's (bijvoorbeeld beide pagina's)",
     "import.importing": "Recept importeren en structureren...",
     "import.reviewMessage": "Recept geïmporteerd. Bekijk en bewerk hieronder voor het opslaan.",
     "import.startOver": "Opnieuw beginnen",
@@ -393,6 +396,7 @@ const strings = {
     "import.errorImport": "Importeren mislukt",
     "import.errorParse": "Recept verwerken mislukt",
     "import.errorPhoto": "Recept uit foto halen mislukt",
+    "import.errorTooManyPhotos": "Upload maximaal 2 foto's",
     "import.errorImportRecipe": "Recept importeren mislukt",
 
     // Collection

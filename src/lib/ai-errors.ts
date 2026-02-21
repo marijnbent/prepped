@@ -18,7 +18,7 @@ export function toAiClientError(error: unknown): AiClientError {
     return {
       status: 503,
       code: error.code,
-      message: "AI is not configured on the server. Please set GEMINI_API_KEY.",
+      message: "AI is not configured on the server. Please set GEMINI_API_KEY or OPENROUTER_API_KEY.",
       details: error.message,
     };
   }
@@ -35,7 +35,7 @@ export function toAiClientError(error: unknown): AiClientError {
     return {
       status: 401,
       code: "AI_PROVIDER_AUTH",
-      message: "AI provider rejected credentials. Check GEMINI_API_KEY and provider access settings.",
+      message: "AI provider rejected credentials. Check GEMINI_API_KEY/OPENROUTER_API_KEY and provider access settings.",
       details: rawMessage,
     };
   }

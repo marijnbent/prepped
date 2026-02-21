@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getChatModel } from "../../../lib/ai";
+import { withChatModelFallback } from "../../../lib/ai";
 import { db } from "../../../lib/db";
 import { tags, collections, users } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
@@ -84,21 +84,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const formData = await request.formData();
-  const photo = formData.get("photo");
+  const photoEntries = formData.getAll("photo");
+  const photos = photoEntries.filter((entry): entry is File => entry instanceof File);
 
-  if (!photo || !(photo instanceof File)) {
-    return new Response(JSON.stringify({ error: "Photo required" }), { status: 400 });
+  if (photos.length === 0) {
+    return new Response(JSON.stringify({ error: "At least one photo is required" }), { status: 400 });
   }
 
-  const buffer = Buffer.from(await photo.arrayBuffer());
+  if (photos.length > 2) {
+    return new Response(JSON.stringify({ error: "You can upload up to 2 photos" }), { status: 400 });
+  }
+  const base64Photos = await Promise.all(
+    photos.map(async (photo) => {
+      const buffer = Buffer.from(await photo.arrayBuffer());
 
-  // Resize for AI processing (max 1600px wide, convert to JPEG for smaller payload)
-  const processed = await sharp(buffer)
-    .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 80 })
-    .toBuffer();
+      // Resize for AI processing (max 1600px wide, convert to JPEG for smaller payload)
+      const processed = await sharp(buffer)
+        .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
 
-  const base64 = processed.toString("base64");
+      return processed.toString("base64");
+    })
+  );
 
   const existingTags = db.select().from(tags).all();
   const existingCollections = db
@@ -114,21 +122,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
     ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
     : "";
 
+  const imageContent = base64Photos.map((base64) => ({
+    type: "image" as const,
+    image: `data:image/jpeg;base64,${base64}`,
+  }));
+
   try {
-    const { object: recipe } = await generateObject({
-      model: getChatModel(),
-      schema: recipeOutputSchema,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              image: `data:image/jpeg;base64,${base64}`,
-            },
-            {
-              type: "text",
-              text: `Extract a structured recipe from this photo of a cookbook page or recipe.
+    const { object: recipe } = await withChatModelFallback((model) =>
+      generateObject({
+        model,
+        schema: recipeOutputSchema,
+        messages: [
+          {
+            role: "user",
+            content: [
+              ...imageContent,
+              {
+                type: "text",
+                text: `Extract a structured recipe from ${photos.length > 1 ? "these photos" : "this photo"} of a cookbook page or recipe. If there are two photos, combine both pages into one complete recipe.
 
 IMPORTANT RULES:
 - Convert ALL measurements to metric (grams, ml, liters, celsius)
@@ -150,11 +161,12 @@ IMPORTANT RULES:
 - For ingredient grouping: common pantry/cupboard staples (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped under "${t("recipe.cupboard")}" if the recipe doesn't already organize them into a specific group. This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
 - For tags: always lowercase (e.g., "cookies", "pasta", "vegetarian"). Prefer existing: [${existingTagNames.join(", ")}]. Add new ones if needed. Defaults for reference: [${defaultTags.join(", ")}].
 - For collections: use Title Case with an emoji prefix. Prefer existing: [${existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${defaultCollections.join(", ")}].${userInstruction}`,
-            },
-          ],
-        },
-      ],
-    });
+              },
+            ],
+          },
+        ],
+      })
+    );
 
     const tagIds = recipe.tags?.length ? resolveTagIds(recipe.tags) : [];
     const collectionIds = recipe.collections?.length

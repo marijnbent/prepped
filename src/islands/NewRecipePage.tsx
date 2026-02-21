@@ -97,14 +97,22 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
     setLoading(false);
   }
 
-  async function handleImportPhoto(file: File) {
+  async function handleImportPhoto(files: File[]) {
+    if (files.length === 0) return;
+    if (files.length > 2) {
+      setError(t("import.errorTooManyPhotos"));
+      return;
+    }
+
     setError("");
     setLoading(true);
     setMode("importing");
 
     try {
       const formData = new FormData();
-      formData.append("photo", file);
+      for (const file of files) {
+        formData.append("photo", file);
+      }
 
       const res = await fetch("/api/recipes/import-photo", {
         method: "POST",
@@ -270,17 +278,20 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImportPhoto(file);
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) handleImportPhoto(files);
                   e.target.value = "";
                 }}
               />
             </label>
             <div className="flex-1 h-px bg-border/30" />
           </div>
+          <p className="mt-2 text-xs text-muted-foreground/70 text-center">
+            {t("import.photoCountHint")}
+          </p>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { generateText } from "ai";
-import { getChatModel } from "../../../../lib/ai";
+import { withChatModelFallback } from "../../../../lib/ai";
 import { toAiClientError } from "../../../../lib/ai-errors";
 import { db } from "../../../../lib/db";
 import { recipes, users } from "../../../../lib/schema";
@@ -79,11 +79,13 @@ ${recipe.notes ? `Notes: ${recipe.notes}` : ""}`;
   }
 
   try {
-    const result = await generateText({
-      model: getChatModel(),
-      system: systemPrompt,
-      messages,
-    });
+    const result = await withChatModelFallback((model) =>
+      generateText({
+        model,
+        system: systemPrompt,
+        messages,
+      })
+    );
 
     return new Response(JSON.stringify({ text: result.text }), {
       status: 200,

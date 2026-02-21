@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getChatModel } from "../../../lib/ai";
+import { withChatModelFallback } from "../../../lib/ai";
 import { scrapeUrl, ScrapeError } from "../../../lib/scraper";
 import { db } from "../../../lib/db";
 import { tags, collections, users } from "../../../lib/schema";
@@ -109,10 +109,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
       : "";
 
-    const { object: recipe } = await generateObject({
-      model: getChatModel(),
-      schema: recipeOutputSchema,
-      prompt: `Extract a structured recipe from the following web page content.
+    const { object: recipe } = await withChatModelFallback((model) =>
+      generateObject({
+        model,
+        schema: recipeOutputSchema,
+        prompt: `Extract a structured recipe from the following web page content.
 
 IMPORTANT RULES:
 - Convert ALL measurements to metric (grams, ml, liters, celsius). For example:
@@ -141,7 +142,8 @@ Page title: ${title}
 
 Content:
 ${content.slice(0, 10000)}${userInstruction}`,
-    });
+      })
+    );
 
     // Resolve tag and collection names to IDs
     const tagIds = recipe.tags?.length ? resolveTagIds(recipe.tags) : [];
