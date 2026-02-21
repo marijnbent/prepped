@@ -18,13 +18,54 @@ export function toAiClientError(error: unknown): AiClientError {
     return {
       status: 503,
       code: error.code,
-      message: "AI is not configured on the server. Please set GEMINI_API_KEY or OPENROUTER_API_KEY.",
+      message: "AI is not configured on the server. Please set OPENROUTER_API_KEY.",
       details: error.message,
     };
   }
 
   const rawMessage = getErrorMessage(error);
   const msg = rawMessage.toLowerCase();
+  const statusCode = (() => {
+    const candidate = (error as { statusCode?: unknown; status?: unknown })?.statusCode
+      ?? (error as { statusCode?: unknown; status?: unknown })?.status;
+    return typeof candidate === "number" ? candidate : null;
+  })();
+
+  if (statusCode === 401 || statusCode === 403) {
+    return {
+      status: 401,
+      code: "AI_PROVIDER_AUTH",
+      message: "AI provider rejected credentials. Check OPENROUTER_API_KEY and model access in OpenRouter.",
+      details: rawMessage,
+    };
+  }
+
+  if (statusCode === 429) {
+    return {
+      status: 503,
+      code: "AI_PROVIDER_RATE_LIMIT",
+      message: "AI provider is currently rate-limited. Please retry shortly.",
+      details: rawMessage,
+    };
+  }
+
+  if (statusCode === 408 || statusCode === 504) {
+    return {
+      status: 502,
+      code: "AI_PROVIDER_TIMEOUT",
+      message: "AI provider timed out. Please try again.",
+      details: rawMessage,
+    };
+  }
+
+  if (statusCode === 400) {
+    return {
+      status: 400,
+      code: "AI_PROVIDER_BAD_REQUEST",
+      message: "AI request was rejected by the provider. Please retry with a shorter or simpler input.",
+      details: rawMessage,
+    };
+  }
 
   if (
     msg.includes("unregistered callers") ||
@@ -35,7 +76,7 @@ export function toAiClientError(error: unknown): AiClientError {
     return {
       status: 401,
       code: "AI_PROVIDER_AUTH",
-      message: "AI provider rejected credentials. Check GEMINI_API_KEY/OPENROUTER_API_KEY and provider access settings.",
+      message: "AI provider rejected credentials. Check OPENROUTER_API_KEY and model access in OpenRouter.",
       details: rawMessage,
     };
   }
@@ -54,16 +95,6 @@ export function toAiClientError(error: unknown): AiClientError {
       status: 502,
       code: "AI_PROVIDER_TIMEOUT",
       message: "AI provider timed out. Please try again.",
-      details: rawMessage,
-    };
-  }
-
-  const errorWithStatus = error as { statusCode?: unknown };
-  if (typeof errorWithStatus.statusCode === "number" && errorWithStatus.statusCode === 400) {
-    return {
-      status: 400,
-      code: "AI_PROVIDER_BAD_REQUEST",
-      message: "AI request was rejected by the provider. Please retry with a shorter or simpler input.",
       details: rawMessage,
     };
   }

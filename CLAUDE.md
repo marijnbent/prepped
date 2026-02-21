@@ -25,9 +25,9 @@ No test runner or linter is configured.
 
 **Image pipeline:** Sharp converts uploads to WebP in two sizes (1600px full, 400px thumb). Stored in `data/uploads/{recipes,cook-logs}/`. Served via catch-all route `src/pages/api/uploads/[...path].ts`.
 
-**AI features:** Vercel AI SDK with Google Gemini Flash (`@ai-sdk/google`). Used for recipe import (URL scraping + AI extraction), text-to-recipe parsing, and per-recipe chat. Model configured in `src/lib/ai.ts`.
+**AI features:** Vercel AI SDK with OpenRouter (`@ai-sdk/openai`). Used for recipe import (URL scraping + AI extraction), text-to-recipe parsing, and per-recipe chat. Model chain (primary + fallback) is configured in `src/lib/ai.ts`.
 
-**i18n:** Static string map in `src/lib/i18n.ts` — English and Dutch. Locale selected via `UI_LOCALE` env var. Use `t("key")` for translations.
+**i18n:** Static string map in `src/lib/i18n.ts` — English and Dutch. Locale selected via `PUBLIC_UI_LOCALE` env var. Use `t("key")` for translations.
 
 **Validation:** Zod schemas in `src/lib/validation.ts` validate all API input (recipes, cook logs, collections).
 

@@ -34,6 +34,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
   const [imported, setImported] = useState<any>(null);
   const [tags, setTags] = useState(initialTags);
   const [collections, setCollections] = useState(initialCollections);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
   async function handleImportUrl() {
     if (!url.trim()) return;
@@ -135,6 +136,20 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
       setMode("choose");
     }
     setLoading(false);
+  }
+
+  function handlePhotoSelection(files: File[]) {
+    if (files.length === 0) return;
+
+    const merged = [...photoFiles, ...files];
+    if (merged.length > 2) {
+      setError(t("import.errorTooManyPhotos"));
+      setPhotoFiles(merged.slice(0, 2));
+      return;
+    }
+
+    setError("");
+    setPhotoFiles(merged);
   }
 
   async function refreshTagsCollections() {
@@ -274,15 +289,16 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
             <div className="flex-1 h-px bg-border/30" />
             <label className="group/photo inline-flex items-center gap-2 cursor-pointer rounded-full border border-border/40 bg-background/60 pl-3.5 pr-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary hover:shadow-sm hover:shadow-primary/[0.06]">
               <Camera className="h-4 w-4 transition-transform duration-200 group-hover/photo:scale-110" />
-              {t("import.photo")}
+              {photoFiles.length === 1 ? t("import.addSecondPhoto") : t("import.photo")}
               <input
                 type="file"
                 accept="image/*"
+                capture="environment"
                 multiple
                 className="hidden"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
-                  if (files.length > 0) handleImportPhoto(files);
+                  handlePhotoSelection(files);
                   e.target.value = "";
                 }}
               />
@@ -292,6 +308,28 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
           <p className="mt-2 text-xs text-muted-foreground/70 text-center">
             {t("import.photoCountHint")}
           </p>
+          {photoFiles.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {photoFiles.length}/2 {t("import.photosSelected")}
+              </span>
+              <Button
+                onClick={() => handleImportPhoto(photoFiles)}
+                size="sm"
+                className="h-8 rounded-lg"
+              >
+                {t("import.import")}
+              </Button>
+              <Button
+                onClick={() => setPhotoFiles([])}
+                size="sm"
+                variant="ghost"
+                className="h-8 rounded-lg"
+              >
+                {t("import.startOver")}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

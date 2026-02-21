@@ -1,4 +1,3 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 
@@ -12,16 +11,11 @@ export class AIConfigError extends Error {
   }
 }
 
-let _google: ReturnType<typeof createGoogleGenerativeAI> | null = null;
 let _openrouter: ReturnType<typeof createOpenAI> | null = null;
 
-function resolveGeminiApiKey() {
-  const apiKey = (import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "").trim();
-  if (!apiKey) {
-    throw new AIConfigError("GEMINI_API_KEY is not configured");
-  }
-  return apiKey;
-}
+const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_OPENROUTER_PRIMARY_MODEL = "google/gemini-flash-latest";
+const DEFAULT_OPENROUTER_FALLBACK_MODEL = "openai/gpt-5-mini";
 
 function resolveOpenRouterApiKey() {
   const apiKey = (import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "").trim();
@@ -31,28 +25,70 @@ function resolveOpenRouterApiKey() {
   return apiKey;
 }
 
-function resolveOpenRouterModel() {
-  return (import.meta.env.OPENROUTER_MODEL || process.env.OPENROUTER_MODEL || "openai/gpt-5-mini").trim();
+function resolveOpenRouterPrimaryModel() {
+  return (
+    import.meta.env.OPENROUTER_PRIMARY_MODEL ||
+    process.env.OPENROUTER_PRIMARY_MODEL ||
+    import.meta.env.OPENROUTER_MODEL ||
+    process.env.OPENROUTER_MODEL ||
+    DEFAULT_OPENROUTER_PRIMARY_MODEL
+  ).trim();
+}
+
+function splitModels(raw: string) {
+  return raw
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean);
+}
+
+function resolveOpenRouterFallbackModels() {
+  const modelsCsv = (import.meta.env.OPENROUTER_FALLBACK_MODELS || process.env.OPENROUTER_FALLBACK_MODELS || "").trim();
+  if (modelsCsv) return splitModels(modelsCsv);
+
+  const singleFallbackModel = (
+    import.meta.env.OPENROUTER_FALLBACK_MODEL ||
+    process.env.OPENROUTER_FALLBACK_MODEL ||
+    DEFAULT_OPENROUTER_FALLBACK_MODEL
+  ).trim();
+  return singleFallbackModel ? [singleFallbackModel] : [];
 }
 
 function resolveOpenRouterBaseUrl() {
-  return (import.meta.env.OPENROUTER_BASE_URL || process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").trim();
+  return (import.meta.env.OPENROUTER_BASE_URL || process.env.OPENROUTER_BASE_URL || DEFAULT_OPENROUTER_BASE_URL).trim();
 }
 
-function getGoogle() {
-  if (!_google) {
-    _google = createGoogleGenerativeAI({
-      apiKey: resolveGeminiApiKey(),
-    });
+function getConfiguredOpenRouterModels() {
+  const uniqueModels: string[] = [];
+  const seen = new Set<string>();
+  for (const model of [resolveOpenRouterPrimaryModel(), ...resolveOpenRouterFallbackModels()]) {
+    if (seen.has(model)) continue;
+    seen.add(model);
+    uniqueModels.push(model);
   }
-  return _google;
+
+  if (uniqueModels.length === 0) {
+    throw new AIConfigError(
+      "No OpenRouter model configured. Set OPENROUTER_PRIMARY_MODEL/OPENROUTER_MODEL and optionally OPENROUTER_FALLBACK_MODEL(S).",
+    );
+  }
+
+  return uniqueModels;
 }
 
 function getOpenRouter() {
   if (!_openrouter) {
+    const headers: Record<string, string> = {};
+    const appUrl = (import.meta.env.BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || "").trim();
+    const appName = (import.meta.env.OPENROUTER_APP_NAME || process.env.OPENROUTER_APP_NAME || "Prepped").trim();
+
+    if (appUrl) headers["HTTP-Referer"] = appUrl;
+    if (appName) headers["X-Title"] = appName;
+
     _openrouter = createOpenAI({
       apiKey: resolveOpenRouterApiKey(),
       baseURL: resolveOpenRouterBaseUrl(),
+      headers,
     });
   }
   return _openrouter;
@@ -64,30 +100,10 @@ type ChatModelCandidate = {
 };
 
 function getConfiguredChatModels(): ChatModelCandidate[] {
-  const candidates: ChatModelCandidate[] = [];
-
-  const geminiKey = (import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "").trim();
-  if (geminiKey) {
-    candidates.push({
-      name: "gemini-3-flash-preview",
-      model: getGoogle()("gemini-3-flash-preview"),
-    });
-  }
-
-  const openRouterKey = (import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "").trim();
-  if (openRouterKey) {
-    const openRouterModel = resolveOpenRouterModel();
-    candidates.push({
-      name: `openrouter:${openRouterModel}`,
-      model: getOpenRouter()(openRouterModel),
-    });
-  }
-
-  if (candidates.length === 0) {
-    throw new AIConfigError("No AI model configured. Set GEMINI_API_KEY and/or OPENROUTER_API_KEY.");
-  }
-
-  return candidates;
+  return getConfiguredOpenRouterModels().map((modelId) => ({
+    name: `openrouter:${modelId}`,
+    model: getOpenRouter()(modelId),
+  }));
 }
 
 export function getChatModel() {
