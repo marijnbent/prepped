@@ -59,6 +59,15 @@ export function toAiClientError(error: unknown): AiClientError {
   }
 
   if (statusCode === 400) {
+    if (msg.includes("image") || msg.includes("vision") || msg.includes("multimodal")) {
+      return {
+        status: 400,
+        code: "AI_PROVIDER_UNSUPPORTED_IMAGE",
+        message: "The configured AI model cannot read photos. Set OPENROUTER_PRIMARY_MODEL to a vision-capable model.",
+        details: rawMessage,
+      };
+    }
+
     return {
       status: 400,
       code: "AI_PROVIDER_BAD_REQUEST",

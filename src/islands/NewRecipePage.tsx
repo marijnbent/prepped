@@ -20,9 +20,10 @@ async function readErrorMessage(response: Response, fallback: string) {
       return data.error;
     }
   } catch {
-    // Ignore parsing failures and use fallback.
+    // Non-JSON responses can happen on unexpected server errors.
   }
-  return fallback;
+
+  return `${fallback} (HTTP ${response.status})`;
 }
 
 export default function NewRecipePage({ tags: initialTags, collections: initialCollections }: Props) {

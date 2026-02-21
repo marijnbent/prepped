@@ -94,40 +94,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (photos.length > 2) {
     return new Response(JSON.stringify({ error: "You can upload up to 2 photos" }), { status: 400 });
   }
-  const base64Photos = await Promise.all(
-    photos.map(async (photo) => {
-      const buffer = Buffer.from(await photo.arrayBuffer());
-
-      // Resize for AI processing (max 1600px wide, convert to JPEG for smaller payload)
-      const processed = await sharp(buffer)
-        .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-        .jpeg({ quality: 80 })
-        .toBuffer();
-
-      return processed.toString("base64");
-    })
-  );
-
-  const existingTags = db.select().from(tags).all();
-  const existingCollections = db
-    .select()
-    .from(collections)
-    .where(eq(collections.createdBy, locals.user.id))
-    .all();
-  const existingTagNames = existingTags.map((t) => t.name);
-  const existingCollectionNames = existingCollections.map((c) => c.name);
-
-  const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
-  const userInstruction = userRow?.importPrompt
-    ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
-    : "";
-
-  const imageContent = base64Photos.map((base64) => ({
-    type: "image" as const,
-    image: `data:image/jpeg;base64,${base64}`,
-  }));
 
   try {
+    const base64Photos = await Promise.all(
+      photos.map(async (photo) => {
+        const buffer = Buffer.from(await photo.arrayBuffer());
+
+        // Resize for AI processing (max 1600px wide, convert to JPEG for smaller payload)
+        const processed = await sharp(buffer)
+          .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toBuffer();
+
+        return processed.toString("base64");
+      })
+    );
+
+    const existingTags = db.select().from(tags).all();
+    const existingCollections = db
+      .select()
+      .from(collections)
+      .where(eq(collections.createdBy, locals.user.id))
+      .all();
+    const existingTagNames = existingTags.map((t) => t.name);
+    const existingCollectionNames = existingCollections.map((c) => c.name);
+
+    const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
+    const userInstruction = userRow?.importPrompt
+      ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
+      : "";
+
+    const imageContent = base64Photos.map((base64) => ({
+      type: "image" as const,
+      image: `data:image/jpeg;base64,${base64}`,
+    }));
+
     const { object: recipe } = await withChatModelFallback((model) =>
       generateObject({
         model,
@@ -182,6 +183,21 @@ IMPORTANT RULES:
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
+    const rawMessage = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+    if (
+      rawMessage.includes("unsupported image format") ||
+      rawMessage.includes("heif") ||
+      rawMessage.includes("heic")
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Could not process this image format. Please use JPG, PNG, or WebP." }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const normalized = toAiClientError(err);
     console.error("[recipes/import-photo] AI request failed", {
       code: normalized.code,
