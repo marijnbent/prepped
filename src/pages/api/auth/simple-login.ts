@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       })
       .run();
 
-    seedUserDefaults(id);
+    seedUserDefaults(id, import.meta.env.PUBLIC_UI_LOCALE);
     user = db.select().from(users).where(eq(users.id, id)).get()!;
   }
 

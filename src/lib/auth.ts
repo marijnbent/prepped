@@ -27,7 +27,7 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          seedUserDefaults(user.id);
+          seedUserDefaults(user.id, import.meta.env.PUBLIC_UI_LOCALE);
         },
       },
     },

@@ -6,7 +6,7 @@ import { db } from "../../../lib/db";
 import { tags, collections, users } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
 import { slugify } from "../../../lib/slugify";
-import { defaultCollections, defaultTags } from "../../../lib/defaults";
+import { getDefaultCollections, defaultTags } from "../../../lib/defaults";
 import { toAiClientError } from "../../../lib/ai-errors";
 import { t } from "../../../lib/i18n";
 
@@ -95,6 +95,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     .all();
   const existingTagNames = existingTags.map((t) => t.name);
   const existingCollectionNames = existingCollections.map((c) => c.name);
+  const defaultCollectionNames = getDefaultCollections(import.meta.env.PUBLIC_UI_LOCALE);
 
   const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
 
@@ -128,7 +129,7 @@ IMPORTANT RULES:
 - Translate all ingredient names and group names to ${t("site.language")}. Keep the recipe title as-is, but ingredient names should be in the local language.
 - For ingredient grouping: common pantry/cupboard staples (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped under "${t("recipe.cupboard")}" if the recipe doesn't already organize them into a specific group. This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
 - For tags: always lowercase (e.g., "cookies", "pasta", "vegetarian"). Prefer existing: [${existingTagNames.join(", ")}]. Add new ones if needed. Defaults for reference: [${defaultTags.join(", ")}].
-- For collections: use Title Case with an emoji prefix. Prefer existing: [${existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${defaultCollections.join(", ")}].
+- For collections: use Title Case with an emoji prefix. Prefer existing: [${existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${defaultCollectionNames.join(", ")}].
 
 Text:
 ${text.slice(0, 10000)}${userInstruction}`,

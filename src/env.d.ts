@@ -15,8 +15,8 @@ interface ImportMetaEnv {
   readonly SCRAPE_DO_GEO_CODE?: string;
   readonly INVITE_CODE: string;
   readonly MEASUREMENT_SYSTEM: "metric" | "imperial";
-  readonly PUBLIC_UI_LOCALE: "en" | "nl";
-  readonly PUBLIC_DATE_LOCALE: string;
+  readonly PUBLIC_UI_LOCALE?: string;
+  readonly PUBLIC_DATE_LOCALE?: string;
   readonly AUTH_MODE?: "simple" | "password";
 }
 

@@ -2,7 +2,7 @@ import { db } from "./db";
 import { tags, collections } from "./schema";
 import { slugify } from "./slugify";
 import { eq, and } from "drizzle-orm";
-import { defaultCollections, defaultTags } from "./defaults";
+import { getDefaultCollections, defaultTags } from "./defaults";
 
 export function seedTags() {
   for (const name of defaultTags) {
@@ -15,8 +15,8 @@ export function seedTags() {
   }
 }
 
-export function seedUserDefaults(userId: string) {
-  for (const name of defaultCollections) {
+export function seedUserDefaults(userId: string, locale?: string) {
+  for (const name of getDefaultCollections(locale ?? import.meta.env.PUBLIC_UI_LOCALE)) {
     const slug = slugify(name);
     if (!slug) continue;
     const existing = db
