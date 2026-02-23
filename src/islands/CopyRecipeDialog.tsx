@@ -50,9 +50,12 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/50 px-4 py-2 text-xs font-medium uppercase tracking-wide hover:bg-secondary hover:border-border transition-all duration-200">
+        <button
+          className="inline-flex items-center justify-center gap-1.5 h-9 w-9 sm:h-auto sm:w-auto rounded-full sm:rounded-lg border border-border/50 bg-secondary/50 px-0 sm:px-4 py-0 sm:py-2 text-xs font-medium sm:uppercase sm:tracking-wide hover:bg-secondary hover:border-border transition-all duration-200"
+          aria-label={t("recipe.copy")}
+        >
           <Copy className="w-3.5 h-3.5" />
-          {t("recipe.copy")}
+          <span className="sr-only sm:not-sr-only">{t("recipe.copy")}</span>
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

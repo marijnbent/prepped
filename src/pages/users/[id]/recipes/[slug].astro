@@ -118,13 +118,13 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
     </div>
 
     {/* ===== Meta bar ===== */}
-    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-10 animate-fade-up" style="animation-delay: 120ms;">
-      <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground/70">
-        <a href={`/users/${userId}`} class="inline-flex items-center gap-1.5 hover:text-primary transition-colors">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-x-6 sm:gap-y-3 mb-8 sm:mb-10 animate-fade-up" style="animation-delay: 120ms;">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-muted-foreground/70 min-w-0">
+        <a href={`/users/${userId}`} class="inline-flex items-center gap-1.5 hover:text-primary transition-colors max-w-full">
           <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 0 0-16 0" />
           </svg>
-          {profileUser.name}
+          <span class="truncate">{profileUser.name}</span>
         </a>
         {recipe.prepTime && (
           <span class="inline-flex items-center gap-1.5">
@@ -154,11 +154,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         )}
       </div>
 
-      <div class="flex-1" />
-
       {/* Actions for viewers */}
       {currentUser && (
-        <div class="flex gap-2 shrink-0">
+        <div class="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
           <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
           <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} client:load />
           <CopyRecipeDialog
