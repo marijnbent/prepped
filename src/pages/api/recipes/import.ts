@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { withChatModelFallback } from "../../../lib/ai";
-import { scrapeUrl, ScrapeError } from "../../../lib/scraper";
+import { scrapeUrl, ScrapeError, type ScrapeMode } from "../../../lib/scraper";
 import { db } from "../../../lib/db";
 import { tags, collections, users } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
@@ -11,6 +11,8 @@ import { downloadAndSaveImage } from "../../../lib/images";
 import { t } from "../../../lib/i18n";
 import { defaultCollections, defaultTags } from "../../../lib/defaults";
 import { toAiClientError } from "../../../lib/ai-errors";
+
+type ImportMode = ScrapeMode | "auto";
 
 const recipeOutputSchema = z.object({
   title: z.string(),
@@ -79,14 +81,62 @@ function resolveCollectionIds(collectionNames: string[], userId: string): number
   return ids;
 }
 
+function nextModeFor(currentMode: ImportMode): ScrapeMode | undefined {
+  if (currentMode === "direct") return "scrape";
+  if (currentMode === "scrape") return "scrape-super";
+  return undefined;
+}
+
+function canAutoRetry(err: ScrapeError): boolean {
+  return (
+    err.code === "SCRAPE_BLOCKED" ||
+    err.code === "SCRAPE_PARSE_FAILED" ||
+    err.code === "SCRAPE_FAILED"
+  );
+}
+
+async function scrapeWithMode(url: string, mode: ImportMode) {
+  if (mode !== "auto") {
+    return scrapeUrl(url, mode);
+  }
+
+  const sequence: ScrapeMode[] = ["direct", "scrape", "scrape-super"];
+  let lastError: ScrapeError | null = null;
+
+  for (const stage of sequence) {
+    try {
+      return await scrapeUrl(url, stage);
+    } catch (err) {
+      if (err instanceof ScrapeError) {
+        lastError = err;
+        const isLastStage = stage === "scrape-super";
+        if (!isLastStage && canAutoRetry(err)) {
+          continue;
+        }
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new ScrapeError("Could not read page content", "SCRAPE_FAILED");
+}
+
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const { url } = await request.json();
+  const body = await request.json().catch(() => ({}));
+  const url = typeof body?.url === "string" ? body.url : "";
+  const rawMode = body?.mode;
+  const mode: ImportMode = rawMode === undefined ? "auto" : rawMode;
+
   if (!url || typeof url !== "string") {
     return new Response(JSON.stringify({ error: "URL required" }), { status: 400 });
+  }
+
+  if (!["direct", "scrape", "scrape-super", "auto"].includes(mode)) {
+    return new Response(JSON.stringify({ error: "Invalid mode" }), { status: 400 });
   }
 
   // Fetch existing tags and collections to help the AI pick from them
@@ -103,7 +153,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
 
   try {
-    const { title, content, imageUrl, videoUrl } = await scrapeUrl(url);
+    const { title, content, imageUrl, videoUrl } = await scrapeWithMode(url, mode);
 
     const userInstruction = userRow?.importPrompt
       ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
@@ -177,11 +227,18 @@ ${content.slice(0, 10000)}${userInstruction}`,
   } catch (err) {
     if (err instanceof ScrapeError) {
       console.error("[recipes/import] Scrape failed", { code: err.code, message: err.message });
+      const nextMode = nextModeFor(mode);
       const message = err.code === "SCRAPE_BLOCKED"
         ? "This website blocks automated access. Try copying the recipe text and using paste import instead."
+        : err.code === "SCRAPE_CONFIG_MISSING"
+          ? "Scrape fallback is not configured on the server."
         : `Could not read the page: ${err.message}`;
       return new Response(
-        JSON.stringify({ error: message, code: err.code }),
+        JSON.stringify({
+          error: message,
+          code: err.code,
+          ...(err.code === "SCRAPE_BLOCKED" && nextMode ? { nextMode } : {}),
+        }),
         { status: 422, headers: { "Content-Type": "application/json" } },
       );
     }

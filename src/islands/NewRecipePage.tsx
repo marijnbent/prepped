@@ -7,6 +7,8 @@ import RecipeForm from "./RecipeForm";
 import { t } from "@/lib/i18n";
 
 type Mode = "choose" | "manual" | "importing" | "review";
+type UrlImportMode = "direct" | "scrape" | "scrape-super";
+
 const PHOTO_UPLOAD_TIMEOUT_MS = 120_000;
 const PHOTO_MAX_EDGE = 1600;
 const PHOTO_JPEG_QUALITY = 0.82;
@@ -17,17 +19,40 @@ interface Props {
   collections: { id: number; name: string }[];
 }
 
-async function readErrorMessage(response: Response, fallback: string) {
+interface ImportApiError {
+  message: string;
+  code?: string;
+  nextMode?: UrlImportMode;
+}
+
+function isUrlImportMode(value: unknown): value is UrlImportMode {
+  return value === "direct" || value === "scrape" || value === "scrape-super";
+}
+
+async function readError(response: Response, fallback: string): Promise<ImportApiError> {
   try {
-    const data = await response.json() as { error?: unknown };
+    const data = await response.json() as { error?: unknown; code?: unknown; nextMode?: unknown };
     if (typeof data.error === "string" && data.error.trim().length > 0) {
-      return data.error;
+      return {
+        message: data.error,
+        code: typeof data.code === "string" ? data.code : undefined,
+        nextMode: isUrlImportMode(data.nextMode) ? data.nextMode : undefined,
+      };
     }
   } catch {
     // Non-JSON responses can happen on unexpected server errors.
   }
 
-  return `${fallback} (HTTP ${response.status})`;
+  return {
+    message: `${fallback} (HTTP ${response.status})`,
+  };
+}
+
+function importStageLabel(stage: UrlImportMode | null) {
+  if (stage === "direct") return t("import.progressDirect");
+  if (stage === "scrape") return t("import.progressScrape");
+  if (stage === "scrape-super") return t("import.progressScrapeSuper");
+  return t("import.importing");
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -133,35 +158,59 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
   const [tags, setTags] = useState(initialTags);
   const [collections, setCollections] = useState(initialCollections);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [urlImportStage, setUrlImportStage] = useState<UrlImportMode | null>(null);
 
   async function handleImportUrl() {
     if (!url.trim()) return;
     setError("");
     setLoading(true);
     setMode("importing");
+    setUrlImportStage("direct");
 
     try {
-      const res = await fetch("/api/recipes/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
+      const seenModes = new Set<UrlImportMode>();
+      let currentMode: UrlImportMode | null = "direct";
 
-      if (!res.ok) {
-        setError(await readErrorMessage(res, t("import.errorImport")));
+      while (currentMode && !seenModes.has(currentMode)) {
+        seenModes.add(currentMode);
+        setUrlImportStage(currentMode);
+
+        const res = await fetch("/api/recipes/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, mode: currentMode }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          await refreshTagsCollections();
+          setImported(data);
+          setMode("review");
+          setLoading(false);
+          setUrlImportStage(null);
+          return;
+        }
+
+        const parsed = await readError(res, t("import.errorImport"));
+        if (parsed.code === "SCRAPE_BLOCKED" && parsed.nextMode) {
+          currentMode = parsed.nextMode;
+          continue;
+        }
+
+        setError(parsed.message);
         setLoading(false);
         setMode("choose");
+        setUrlImportStage(null);
         return;
       }
 
-      const data = await res.json();
-      await refreshTagsCollections();
-      setImported(data);
-      setMode("review");
+      setError(t("import.errorImport"));
+      setMode("choose");
     } catch {
       setError(t("import.errorImportRecipe"));
       setMode("choose");
     }
+    setUrlImportStage(null);
     setLoading(false);
   }
 
@@ -170,6 +219,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
     setError("");
     setLoading(true);
     setMode("importing");
+    setUrlImportStage(null);
 
     try {
       const res = await fetch("/api/recipes/import-text", {
@@ -179,7 +229,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
       });
 
       if (!res.ok) {
-        setError(await readErrorMessage(res, t("import.errorImport")));
+        setError((await readError(res, t("import.errorImport"))).message);
         setLoading(false);
         setMode("choose");
         return;
@@ -206,6 +256,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
     setError("");
     setLoading(true);
     setMode("importing");
+    setUrlImportStage(null);
 
     try {
       const uploadFiles = await normalizePhotosForUpload(files);
@@ -230,7 +281,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
       }
 
       if (!res.ok) {
-        setError(await readErrorMessage(res, t("import.errorImport")));
+        setError((await readError(res, t("import.errorImport"))).message);
         setLoading(false);
         setMode("choose");
         return;
@@ -279,7 +330,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">{t("import.importing")}</p>
+        <p className="text-muted-foreground">{importStageLabel(urlImportStage)}</p>
       </div>
     );
   }

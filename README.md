@@ -98,6 +98,9 @@ Server-side behavior:
 | `OPENROUTER_FALLBACK_MODELS` | No | Optional comma-separated backups (overrides `OPENROUTER_FALLBACK_MODEL`) |
 | `OPENROUTER_BASE_URL` | No | OpenRouter API base URL (default: `https://openrouter.ai/api/v1`) |
 | `OPENROUTER_APP_NAME` | No | App name sent in OpenRouter request headers (default: `Prepped`) |
+| `SCRAPE_DO_TOKEN` | No | scrape.do API token used as fallback when direct website import is blocked |
+| `SCRAPE_DO_BASE_URL` | No | scrape.do base URL (default: `http://api.scrape.do/`) |
+| `SCRAPE_DO_GEO_CODE` | No | scrape.do geo code for requests (default: `NL`) |
 | `INVITE_CODE` | No | If set, new users must enter this code to register. Leave empty for open registration |
 | `MEASUREMENT_SYSTEM` | No | `metric` (default) or `imperial` |
 | `PUBLIC_UI_LOCALE` | No | `en` (default) or `nl` |
