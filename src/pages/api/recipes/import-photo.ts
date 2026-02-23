@@ -11,6 +11,8 @@ import sharp from "sharp";
 import { toAiClientError } from "../../../lib/ai-errors";
 import { t } from "../../../lib/i18n";
 
+const PHOTO_MAX_FILES = 5;
+
 const recipeOutputSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
@@ -110,8 +112,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "At least one photo is required" }), { status: 400 });
   }
 
-  if (photoBuffers.length > 2) {
-    return new Response(JSON.stringify({ error: "You can upload up to 2 photos" }), { status: 400 });
+  if (photoBuffers.length > PHOTO_MAX_FILES) {
+    return new Response(JSON.stringify({ error: `You can upload up to ${PHOTO_MAX_FILES} photos` }), { status: 400 });
   }
 
   try {
@@ -157,7 +159,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
               ...imageContent,
               {
                 type: "text",
-                text: `Extract a structured recipe from ${photoBuffers.length > 1 ? "these photos" : "this photo"} of a cookbook page or recipe. If there are two photos, combine both pages into one complete recipe.
+                text: `Extract a structured recipe from ${photoBuffers.length > 1 ? "these photos" : "this photo"} of a cookbook page or recipe. If there are multiple photos, combine all pages into one complete recipe.
 
 IMPORTANT RULES:
 - Convert ALL measurements to metric (grams, ml, liters, celsius)

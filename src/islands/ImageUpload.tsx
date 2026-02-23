@@ -3,10 +3,48 @@ import { Button } from "@/components/ui/button";
 import { X, Image as ImageIcon } from "lucide-react";
 import { t } from "@/lib/i18n";
 
+const IMAGE_UPLOAD_TIMEOUT_MS = 120_000;
+
 interface Props {
   value?: string;
   onChange: (url: string) => void;
   subdir?: "recipes" | "cook-logs";
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("Failed to read file"));
+    };
+    reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = IMAGE_UPLOAD_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
+async function readErrorMessage(response: Response) {
+  try {
+    const data = await response.json() as { error?: unknown };
+    if (typeof data.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+  } catch {
+    // Ignore parse issues.
+  }
+  return `${t("upload.failed")} (HTTP ${response.status})`;
 }
 
 export default function ImageUpload({ value, onChange, subdir = "recipes" }: Props) {
@@ -24,22 +62,35 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
     formData.append("subdir", subdir);
 
     try {
-      const res = await fetch("/api/images/upload", {
+      let res = await fetchWithTimeout("/api/images/upload", {
         method: "POST",
         body: formData,
       });
 
+      // Some deployment WAF/proxies block multipart uploads with 403; retry as JSON.
+      if (res.status === 403) {
+        const image = await fileToDataUrl(file);
+        res = await fetchWithTimeout("/api/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image, subdir, mimeType: file.type }),
+        });
+      }
+
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || t("upload.failed"));
+        setError(await readErrorMessage(res));
         setUploading(false);
         return;
       }
 
       const { full } = await res.json();
       onChange(full);
-    } catch {
-      setError(t("upload.failed"));
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError(`${t("upload.failed")} (timeout)`);
+      } else {
+        setError(t("upload.failed"));
+      }
     }
     setUploading(false);
   }

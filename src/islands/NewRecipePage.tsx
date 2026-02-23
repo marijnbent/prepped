@@ -7,6 +7,10 @@ import RecipeForm from "./RecipeForm";
 import { t } from "@/lib/i18n";
 
 type Mode = "choose" | "manual" | "importing" | "review";
+const PHOTO_UPLOAD_TIMEOUT_MS = 120_000;
+const PHOTO_MAX_EDGE = 1600;
+const PHOTO_JPEG_QUALITY = 0.82;
+const PHOTO_MAX_FILES = 5;
 
 interface Props {
   tags: { id: number; name: string }[];
@@ -39,6 +43,84 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
     reader.readAsDataURL(file);
   });
+}
+
+function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = PHOTO_UPLOAD_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not decode image"));
+    };
+    img.src = objectUrl;
+  });
+}
+
+function canvasToJpegBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Could not encode image"));
+          return;
+        }
+        resolve(blob);
+      },
+      "image/jpeg",
+      PHOTO_JPEG_QUALITY,
+    );
+  });
+}
+
+function toJpgFileName(fileName: string) {
+  const dot = fileName.lastIndexOf(".");
+  if (dot === -1) return `${fileName}.jpg`;
+  return `${fileName.slice(0, dot)}.jpg`;
+}
+
+async function normalizePhotoForUpload(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  try {
+    const image = await loadImageFromFile(file);
+    const maxEdge = Math.max(image.width, image.height);
+    const scale = maxEdge > PHOTO_MAX_EDGE ? PHOTO_MAX_EDGE / maxEdge : 1;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const jpegBlob = await canvasToJpegBlob(canvas);
+
+    return new File([jpegBlob], toJpgFileName(file.name), {
+      type: "image/jpeg",
+      lastModified: file.lastModified,
+    });
+  } catch {
+    // If client-side conversion fails, fall back to original file.
+    return file;
+  }
+}
+
+async function normalizePhotosForUpload(files: File[]) {
+  return Promise.all(files.map((file) => normalizePhotoForUpload(file)));
 }
 
 export default function NewRecipePage({ tags: initialTags, collections: initialCollections }: Props) {
@@ -116,7 +198,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
 
   async function handleImportPhoto(files: File[]) {
     if (files.length === 0) return;
-    if (files.length > 2) {
+    if (files.length > PHOTO_MAX_FILES) {
       setError(t("import.errorTooManyPhotos"));
       return;
     }
@@ -126,20 +208,21 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
     setMode("importing");
 
     try {
+      const uploadFiles = await normalizePhotosForUpload(files);
       const formData = new FormData();
-      for (const file of files) {
+      for (const file of uploadFiles) {
         formData.append("photo", file);
       }
 
-      let res = await fetch("/api/recipes/import-photo", {
+      let res = await fetchWithTimeout("/api/recipes/import-photo", {
         method: "POST",
         body: formData,
       });
 
       // Some deployment WAF/proxies block multipart uploads with 403; retry as JSON.
       if (res.status === 403) {
-        const photos = await Promise.all(files.map(fileToDataUrl));
-        res = await fetch("/api/recipes/import-photo", {
+        const photos = await Promise.all(uploadFiles.map(fileToDataUrl));
+        res = await fetchWithTimeout("/api/recipes/import-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ photos }),
@@ -157,8 +240,12 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
       await refreshTagsCollections();
       setImported(data);
       setMode("review");
-    } catch {
-      setError(t("import.errorPhoto"));
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError(t("import.errorTimeout"));
+      } else {
+        setError(t("import.errorPhoto"));
+      }
       setMode("choose");
     }
     setLoading(false);
@@ -168,9 +255,9 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
     if (files.length === 0) return;
 
     const merged = [...photoFiles, ...files];
-    if (merged.length > 2) {
+    if (merged.length > PHOTO_MAX_FILES) {
       setError(t("import.errorTooManyPhotos"));
-      setPhotoFiles(merged.slice(0, 2));
+      setPhotoFiles(merged.slice(0, PHOTO_MAX_FILES));
       return;
     }
 
@@ -315,7 +402,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
             <div className="flex-1 h-px bg-border/30" />
             <label className="group/photo inline-flex items-center gap-2 cursor-pointer rounded-full border border-border/40 bg-background/60 pl-3.5 pr-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary hover:shadow-sm hover:shadow-primary/[0.06]">
               <Camera className="h-4 w-4 transition-transform duration-200 group-hover/photo:scale-110" />
-              {photoFiles.length === 1 ? t("import.addSecondPhoto") : t("import.photo")}
+              {photoFiles.length > 0 ? t("import.addSecondPhoto") : t("import.photo")}
               <input
                 type="file"
                 accept="image/*"
@@ -335,7 +422,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
           {photoFiles.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               <span className="text-xs text-muted-foreground">
-                {photoFiles.length}/2 {t("import.photosSelected")}
+                {photoFiles.length}/{PHOTO_MAX_FILES} {t("import.photosSelected")}
               </span>
               <Button
                 onClick={() => handleImportPhoto(photoFiles)}

@@ -7,18 +7,22 @@ const UPLOADS_DIR = join(process.cwd(), "data", "uploads");
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export async function processAndSaveImage(
-  file: File,
-  subdir: "recipes" | "cook-logs"
-): Promise<{ full: string; thumb: string }> {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+function ensureValidImageType(type: string) {
+  if (!ALLOWED_TYPES.includes(type)) {
     throw new Error("Invalid file type. Use JPEG, PNG, or WebP.");
   }
-  if (file.size > MAX_SIZE) {
+}
+
+function ensureValidImageSize(size: number) {
+  if (size > MAX_SIZE) {
     throw new Error("File too large. Max 10MB.");
   }
+}
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+async function saveProcessedBuffers(
+  buffer: Buffer,
+  subdir: "recipes" | "cook-logs"
+): Promise<{ full: string; thumb: string }> {
   const id = randomUUID();
   const dir = join(UPLOADS_DIR, subdir);
   mkdirSync(dir, { recursive: true });
@@ -42,6 +46,26 @@ export async function processAndSaveImage(
   };
 }
 
+export async function processAndSaveImageBuffer(
+  buffer: Buffer,
+  type: string,
+  subdir: "recipes" | "cook-logs"
+): Promise<{ full: string; thumb: string }> {
+  ensureValidImageType(type);
+  ensureValidImageSize(buffer.length);
+  return saveProcessedBuffers(buffer, subdir);
+}
+
+export async function processAndSaveImage(
+  file: File,
+  subdir: "recipes" | "cook-logs"
+): Promise<{ full: string; thumb: string }> {
+  ensureValidImageType(file.type);
+  ensureValidImageSize(file.size);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return saveProcessedBuffers(buffer, subdir);
+}
+
 export async function downloadAndSaveImage(
   url: string,
   subdir: "recipes" | "cook-logs"
@@ -55,31 +79,8 @@ export async function downloadAndSaveImage(
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.length > MAX_SIZE) {
-    throw new Error("Downloaded image too large. Max 10MB.");
-  }
-
-  const id = randomUUID();
-  const dir = join(UPLOADS_DIR, subdir);
-  mkdirSync(dir, { recursive: true });
-
-  const fullPath = join(dir, `${id}-full.webp`);
-  const thumbPath = join(dir, `${id}-thumb.webp`);
-
-  await sharp(buffer)
-    .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toFile(fullPath);
-
-  await sharp(buffer)
-    .resize(400, 400, { fit: "cover" })
-    .webp({ quality: 70 })
-    .toFile(thumbPath);
-
-  return {
-    full: `/${subdir}/${id}-full.webp`,
-    thumb: `/${subdir}/${id}-thumb.webp`,
-  };
+  ensureValidImageSize(buffer.length);
+  return saveProcessedBuffers(buffer, subdir);
 }
 
 export function getUploadPath(relativePath: string): string | null {

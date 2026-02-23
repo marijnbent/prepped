@@ -88,9 +88,9 @@ const strings = {
     "import.submit": "Import",
     "import.loading": "Importing recipe...",
     "import.photo": "Import from photo",
-    "import.addSecondPhoto": "Add second photo",
+    "import.addSecondPhoto": "Add another photo",
     "import.photoDesc": "Take a photo of a cookbook page",
-    "import.photoCountHint": "Upload up to 2 photos (for example, both cookbook pages)",
+    "import.photoCountHint": "Upload up to 5 photos (for example, all cookbook pages)",
     "import.photosSelected": "photos selected",
     "import.importing": "Importing and structuring recipe...",
     "import.reviewMessage": "Recipe imported. Review and edit below before saving.",
@@ -111,7 +111,8 @@ const strings = {
     "import.errorImport": "Import failed",
     "import.errorParse": "Failed to parse recipe",
     "import.errorPhoto": "Failed to extract recipe from photo",
-    "import.errorTooManyPhotos": "Please upload at most 2 photos",
+    "import.errorTimeout": "Import timed out. Please try again with clearer or smaller photos.",
+    "import.errorTooManyPhotos": "Please upload at most 5 photos",
     "import.errorImportRecipe": "Failed to import recipe",
 
     // Collection
@@ -377,9 +378,9 @@ const strings = {
     "import.submit": "Importeren",
     "import.loading": "Recept importeren...",
     "import.photo": "Importeren van foto",
-    "import.addSecondPhoto": "Tweede foto toevoegen",
+    "import.addSecondPhoto": "Nog een foto toevoegen",
     "import.photoDesc": "Maak een foto van een kookboekpagina",
-    "import.photoCountHint": "Upload maximaal 2 foto's (bijvoorbeeld beide pagina's)",
+    "import.photoCountHint": "Upload maximaal 5 foto's (bijvoorbeeld alle kookboekpagina's)",
     "import.photosSelected": "foto's geselecteerd",
     "import.importing": "Recept importeren en structureren...",
     "import.reviewMessage": "Recept geïmporteerd. Bekijk en bewerk hieronder voor het opslaan.",
@@ -400,7 +401,8 @@ const strings = {
     "import.errorImport": "Importeren mislukt",
     "import.errorParse": "Recept verwerken mislukt",
     "import.errorPhoto": "Recept uit foto halen mislukt",
-    "import.errorTooManyPhotos": "Upload maximaal 2 foto's",
+    "import.errorTimeout": "Import duurde te lang. Probeer opnieuw met duidelijkere of kleinere foto's.",
+    "import.errorTooManyPhotos": "Upload maximaal 5 foto's",
     "import.errorImportRecipe": "Recept importeren mislukt",
 
     // Collection

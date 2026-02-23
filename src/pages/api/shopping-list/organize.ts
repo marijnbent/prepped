@@ -60,6 +60,7 @@ CRITICAL RULES:
 - Merge ingredients that are clearly the same item (e.g. "200g onion" + "150g onion" = "350g onion")
 - Round amounts to practical quantities (e.g. 267g butter → 250g butter, 3.5 onions → 4 onions)
 - Common pantry/cupboard staples that most people already have at home (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped into a "Cupboard" category (translated to match the ingredient language, e.g. "Voorraadkast" in Dutch). This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
+- EXCEPTION for pantry staples: if the required amount is significant, do NOT place it in Cupboard; place it in a normal shopping category. Examples: butter > 50g, oil > 100ml, flour/sugar > 100g, or onion/garlic >= 3 pieces.
 - Order categories as: Produce → Dairy & Eggs → Meat & Fish → Bakery → Pantry → Spices → Frozen → Cupboard → Other (translate category names to match the ingredient language). Put Cupboard near the end since those items are lowest priority to buy.
 - Only include categories that have items
 - For items without clear amounts, keep them as-is
