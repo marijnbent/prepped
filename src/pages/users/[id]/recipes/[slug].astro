@@ -5,11 +5,12 @@ import RecipeChat from "../../../../islands/RecipeChat";
 import CookLogForm from "../../../../islands/CookLogForm";
 import FavoriteButton from "../../../../islands/FavoriteButton";
 import AddToShoppingListButton from "../../../../islands/AddToShoppingListButton";
+import SaveRecipeDialog from "../../../../islands/SaveRecipeDialog";
 import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
 import { db } from "../../../../lib/db";
-import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../../../lib/schema";
-import { eq, and, asc } from "drizzle-orm";
-import { t } from "../../../../lib/i18n";
+import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites, cookLogs } from "../../../../lib/schema";
+import { eq, and, asc, count } from "drizzle-orm";
+import { t, formatDate } from "../../../../lib/i18n";
 
 const { id: userId, slug } = Astro.params;
 
@@ -60,14 +61,62 @@ const isFavorited = currentUser
       .get()
   : false;
 
-// Get user's own collections for copy dialog
-const userCollections = currentUser
+// Get user's own collections for copy dialog, sorted by recipe count
+const userCollectionsRaw = currentUser
   ? db
       .select({ id: collections.id, name: collections.name })
       .from(collections)
       .where(eq(collections.createdBy, currentUser.id))
-      .orderBy(asc(collections.sortOrder), asc(collections.id))
       .all()
+  : [];
+
+const collectionCounts = db
+  .select({ collectionId: recipeCollections.collectionId, count: count() })
+  .from(recipeCollections)
+  .groupBy(recipeCollections.collectionId)
+  .all();
+const colCountsMap = new Map(collectionCounts.map((c) => [c.collectionId, c.count]));
+
+userCollectionsRaw.sort((a, b) => (colCountsMap.get(b.id) || 0) - (colCountsMap.get(a.id) || 0));
+const userCollections = userCollectionsRaw.map((c) => ({
+  ...c,
+  recipeCount: colCountsMap.get(c.id) || 0,
+}));
+
+// Get cook logs for this recipe (from all users)
+const logs = db
+  .select({
+    id: cookLogs.id,
+    photoUrl: cookLogs.photoUrl,
+    notes: cookLogs.notes,
+    rating: cookLogs.rating,
+    cookedAt: cookLogs.cookedAt,
+    authorName: users.name,
+  })
+  .from(cookLogs)
+  .leftJoin(users, eq(cookLogs.createdBy, users.id))
+  .where(eq(cookLogs.recipeId, recipe.id))
+  .orderBy(cookLogs.cookedAt)
+  .all();
+
+// Check if current user already forked this recipe
+const alreadyForked = currentUser
+  ? !!db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(and(eq(recipes.copiedFrom, recipe.id), eq(recipes.createdBy, currentUser.id)))
+      .get()
+  : false;
+
+// Check if recipe is already saved to any of user's collections
+const savedCollectionNames = currentUser
+  ? db
+      .select({ name: collections.name })
+      .from(recipeCollections)
+      .innerJoin(collections, eq(recipeCollections.collectionId, collections.id))
+      .where(and(eq(recipeCollections.recipeId, recipe.id), eq(collections.createdBy, currentUser.id)))
+      .all()
+      .map((c) => c.name)
   : [];
 
 const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
@@ -96,7 +145,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Hero image ===== */}
     {recipe.imageUrl && (
-      <div class="-mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-8 animate-fade-in">
+      <div class="no-print -mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-8 animate-fade-in">
         <div class="aspect-[16/9] md:aspect-[2/1]">
           <img
             src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
@@ -157,17 +206,59 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       </div>
 
       {/* Actions for viewers */}
-      {currentUser && (
-        <div class="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
-          <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
-          <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} client:load />
-          <CopyRecipeDialog
-            recipeId={recipe.id}
-            collections={userCollections}
-            client:load
-          />
-        </div>
-      )}
+      <div class="flex flex-wrap items-center gap-2 shrink-0 sm:ml-auto">
+        {/* Already forked / saved indicators */}
+        {alreadyForked && (
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {t("recipe.alreadyForked")}
+          </span>
+        )}
+        {savedCollectionNames.length > 0 && (
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+            </svg>
+            {t("recipe.alreadySavedInCollection")}
+          </span>
+        )}
+        <button
+          id="share-recipe"
+          class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          aria-label={t("recipe.share")}
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" x2="12" y1="2" y2="15" />
+          </svg>
+        </button>
+        <button
+          class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          aria-label={t("recipe.print")}
+          onclick="window.print()"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
+          </svg>
+        </button>
+        {currentUser && (
+          <>
+            <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
+            <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} client:load />
+            <SaveRecipeDialog
+              recipeId={recipe.id}
+              collections={userCollections}
+              client:load
+            />
+            <CopyRecipeDialog
+              recipeId={recipe.id}
+              collections={userCollections}
+              client:load
+            />
+          </>
+        )}
+      </div>
     </div>
 
     {/* Collections + Tags */}
@@ -243,7 +334,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
           </div>
         )}
         {currentUser && (
-          <div class="rounded-2xl bg-card/50 border border-border/30 p-6">
+          <div class="no-print rounded-2xl bg-card/50 border border-border/30 p-6">
             <RecipeChat recipeId={recipe.id} title={t("chat.title")} placeholder={t("chat.placeholder")} client:visible />
           </div>
         )}
@@ -252,7 +343,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== YouTube Video ===== */}
     {youtubeId && (
-      <div class="mt-14">
+      <div class="no-print mt-14">
         <h2 class="font-serif text-xl tracking-tight mb-4">{t("recipe.video")}</h2>
         <div class="aspect-video rounded-2xl overflow-hidden border border-border/30">
           <iframe
@@ -269,7 +360,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Instagram Embed ===== */}
     {instagramEmbedPath && !youtubeId && (
-      <div class="mt-14">
+      <div class="no-print mt-14">
         <h2 class="font-serif text-xl tracking-tight mb-4">{t("recipe.video")}</h2>
         <div class="flex justify-center">
           <iframe
@@ -296,7 +387,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Add Cook Log ===== */}
     {currentUser && (
-      <div class="mt-16 rounded-2xl bg-card/50 border border-border/30 p-6 md:p-8">
+      <div class="no-print mt-16 rounded-2xl bg-card/50 border border-border/30 p-6 md:p-8">
         <h2 class="font-serif text-2xl tracking-tight mb-6">{t("cookLog.addEntry")}</h2>
         <CookLogForm
           recipeId={recipe.id}
@@ -305,5 +396,67 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         />
       </div>
     )}
+
+    {/* ===== Cook Logs ===== */}
+    {logs.length > 0 && (
+      <div class="no-print mt-16">
+        <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
+          {t("cookLog.title")}
+          <span class="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+        </h2>
+        <div class="space-y-4">
+          {logs.map((log) => (
+            <div class="rounded-2xl bg-card/40 border border-border/30 p-5 transition-colors duration-300 hover:bg-card/60">
+              <div class="flex items-center gap-4 mb-3">
+                {log.authorName && (
+                  <span class="text-sm font-medium text-foreground/80">{log.authorName}</span>
+                )}
+                <time class="text-sm text-muted-foreground/50 tabular-nums">
+                  {formatDate(log.cookedAt)}
+                </time>
+                {log.rating && (
+                  <div class="flex items-center gap-1 ml-auto">
+                    {Array.from({ length: 5 }).map((_, si) => (
+                      <span class:list={[
+                        "inline-block w-2 h-2 rounded-full transition-colors",
+                        si < log.rating! ? "bg-primary" : "bg-border/50"
+                      ]} />
+                    ))}
+                  </div>
+                )}
+              </div>
+              {log.photoUrl && (
+                <img
+                  src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
+                  alt={t("cookLog.photoAlt")}
+                  class="rounded-xl max-w-sm mb-3 border border-border/20"
+                  loading="lazy"
+                />
+              )}
+              {log.notes && <p class="text-sm text-foreground/70 leading-relaxed">{log.notes}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
   </article>
+
+  <script is:inline>
+    document.getElementById('share-recipe')?.addEventListener('click', async () => {
+      const url = window.location.href;
+      const title = document.title;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title, url });
+        } else {
+          await navigator.clipboard.writeText(url);
+          const btn = document.getElementById('share-recipe');
+          if (btn) {
+            btn.classList.add('text-primary', 'border-primary/50');
+            setTimeout(() => btn.classList.remove('text-primary', 'border-primary/50'), 1500);
+          }
+        }
+      } catch {}
+    });
+  </script>
 </Layout>
