@@ -197,19 +197,19 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       <div class="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
         <button
           id="share-recipe"
-          class="sm:hidden inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          class="sm:hidden inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
           aria-label={t("recipe.share")}
         >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" x2="12" y1="2" y2="15" />
           </svg>
         </button>
         <button
-          class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
           aria-label={t("recipe.print")}
           onclick="window.print()"
         >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
           </svg>
         </button>
@@ -219,16 +219,16 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         <>
           <a
             href={`/recipes/${recipe.slug}/edit`}
-            class="inline-flex items-center justify-center gap-1.5 h-9 w-9 sm:h-auto sm:w-auto rounded-full sm:rounded-lg border border-border/50 bg-secondary/50 px-0 sm:px-4 py-0 sm:py-2 text-xs font-medium sm:uppercase sm:tracking-wide hover:bg-secondary hover:border-border transition-all duration-200"
+            class="inline-flex items-center justify-center gap-1.5 h-7 rounded-full border border-border/50 bg-secondary/50 px-3 text-xs font-medium hover:bg-secondary hover:border-border transition-all duration-200"
           >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
             </svg>
-            <span class="sr-only sm:not-sr-only">{t("recipe.edit")}</span>
+            {t("recipe.edit")}
           </a>
           <button
             id="delete-recipe"
-            class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
+            class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
             onclick={`if(confirm('${t("recipe.deleteConfirm").replace(/'/g, "\\'")}'))fetch('/api/recipes/${recipe.id}',{method:'POST'}).then(r=>r.ok?location.href='/recipes':r.text().then(t=>alert('Delete failed: '+(t||r.status)))).catch(e=>alert('Delete failed: '+e.message))`}
           >
             <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

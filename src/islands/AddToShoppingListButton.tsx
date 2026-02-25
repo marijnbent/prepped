@@ -63,7 +63,7 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
         e.stopPropagation();
         toggle();
       }}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+      className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-medium border transition-colors ${
         inList
           ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
           : "bg-secondary/60 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground"
@@ -71,7 +71,7 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
       aria-label={inList ? t("shopping.removeFromList") : t("shopping.addToList")}
     >
       <ShoppingBasket className={`w-3 h-3 ${inList ? "fill-current/20" : ""}`} />
-      <span className="sr-only sm:not-sr-only">{inList ? t("shopping.removeFromList") : t("shopping.addToList")}</span>
+      <span className="sr-only">{inList ? t("shopping.removeFromList") : t("shopping.addToList")}</span>
     </button>
   );
 }
