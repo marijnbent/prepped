@@ -292,40 +292,42 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       <div className="space-y-3">
         <Label>{t("form.ingredientsRequired")}</Label>
         {ingredients.map((ing, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Input
-              placeholder={t("form.amount")}
-              value={ing.amount}
-              onChange={(e) => updateIngredient(i, "amount", e.target.value)}
-              className="w-20"
-            />
-            <Input
-              placeholder={t("form.unit")}
-              value={ing.unit}
-              onChange={(e) => updateIngredient(i, "unit", e.target.value)}
-              className="w-20"
-            />
-            <Input
-              placeholder={t("form.ingredientName")}
-              value={ing.name}
-              onChange={(e) => updateIngredient(i, "name", e.target.value)}
-              className="flex-1"
-            />
+          <div key={i} className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
+            <div className="flex items-center gap-2 min-w-0 sm:flex-1">
+              <Input
+                placeholder={t("form.amount")}
+                value={ing.amount}
+                onChange={(e) => updateIngredient(i, "amount", e.target.value)}
+                className="w-20"
+              />
+              <Input
+                placeholder={t("form.unit")}
+                value={ing.unit}
+                onChange={(e) => updateIngredient(i, "unit", e.target.value)}
+                className="w-20"
+              />
+              <Input
+                placeholder={t("form.ingredientName")}
+                value={ing.name}
+                onChange={(e) => updateIngredient(i, "name", e.target.value)}
+                className="flex-1 min-w-0"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeIngredient(i)}
+                disabled={ingredients.length <= 1}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             <Input
               placeholder={t("form.group")}
               value={ing.group || ""}
               onChange={(e) => updateIngredient(i, "group", e.target.value)}
-              className="w-28 hidden sm:block"
+              className="w-full sm:w-28"
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => removeIngredient(i)}
-              disabled={ingredients.length <= 1}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addIngredient}>

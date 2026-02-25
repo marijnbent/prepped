@@ -9,10 +9,11 @@ import { t } from "@/lib/i18n";
 
 interface Props {
   recipeId: number;
-  recipeSlug: string;
+  recipeSlug?: string;
+  redirectTo?: string;
 }
 
-export default function CookLogForm({ recipeId, recipeSlug }: Props) {
+export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props) {
   const [notes, setNotes] = useState("");
   const [rating, setRating] = useState(0);
   const [photoUrl, setPhotoUrl] = useState("");
@@ -45,7 +46,7 @@ export default function CookLogForm({ recipeId, recipeSlug }: Props) {
         return;
       }
 
-      window.location.href = `/recipes/${recipeSlug}`;
+      window.location.href = redirectTo || (recipeSlug ? `/recipes/${recipeSlug}` : "/cook-log");
     } catch {
       setError(t("common.error"));
       setSaving(false);

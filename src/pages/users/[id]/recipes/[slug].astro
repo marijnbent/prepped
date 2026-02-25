@@ -2,13 +2,14 @@
 import Layout from "../../../../layouts/Layout.astro";
 import ServingsScaler from "../../../../islands/ServingsScaler";
 import RecipeChat from "../../../../islands/RecipeChat";
+import CookLogForm from "../../../../islands/CookLogForm";
 import FavoriteButton from "../../../../islands/FavoriteButton";
 import AddToShoppingListButton from "../../../../islands/AddToShoppingListButton";
 import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
 import { db } from "../../../../lib/db";
 import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../../../lib/schema";
-import { eq, and } from "drizzle-orm";
-import { t, formatDate } from "../../../../lib/i18n";
+import { eq, and, asc } from "drizzle-orm";
+import { t } from "../../../../lib/i18n";
 
 const { id: userId, slug } = Astro.params;
 
@@ -65,6 +66,7 @@ const userCollections = currentUser
       .select({ id: collections.id, name: collections.name })
       .from(collections)
       .where(eq(collections.createdBy, currentUser.id))
+      .orderBy(asc(collections.sortOrder), asc(collections.id))
       .all()
   : [];
 
@@ -292,6 +294,16 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       </div>
     )}
 
-    {/* No cook log form for other users' recipes */}
+    {/* ===== Add Cook Log ===== */}
+    {currentUser && (
+      <div class="mt-16 rounded-2xl bg-card/50 border border-border/30 p-6 md:p-8">
+        <h2 class="font-serif text-2xl tracking-tight mb-6">{t("cookLog.addEntry")}</h2>
+        <CookLogForm
+          recipeId={recipe.id}
+          redirectTo={`/users/${userId}/recipes/${recipe.slug}`}
+          client:visible
+        />
+      </div>
+    )}
   </article>
 </Layout>

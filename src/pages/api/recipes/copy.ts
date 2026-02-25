@@ -3,7 +3,7 @@ import { db } from "../../../lib/db";
 import { recipes, recipeTags, recipeCollections, collections } from "../../../lib/schema";
 import { copyRecipeSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
@@ -69,18 +69,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
     db.insert(recipeTags).values({ recipeId: copy.id, tagId }).run();
   }
 
-  // Assign to user's collections if provided
-  if (collectionIds?.length) {
-    for (const collectionId of collectionIds) {
-      // Verify collection belongs to user
-      const col = db
-        .select()
-        .from(collections)
-        .where(and(eq(collections.id, collectionId), eq(collections.createdBy, locals.user.id)))
-        .get();
-      if (col) {
-        db.insert(recipeCollections).values({ recipeId: copy.id, collectionId }).run();
-      }
+  // Assign to user's selected collections, with a fallback to the first collection
+  const collectionIdsToUse = [...(collectionIds || [])];
+  if (collectionIdsToUse.length === 0) {
+    const defaultCollection = db
+      .select({ id: collections.id })
+      .from(collections)
+      .where(eq(collections.createdBy, locals.user.id))
+      .orderBy(asc(collections.sortOrder), asc(collections.id))
+      .get();
+    if (defaultCollection) {
+      collectionIdsToUse.push(defaultCollection.id);
+    }
+  }
+
+  for (const collectionId of collectionIdsToUse) {
+    // Verify collection belongs to user
+    const col = db
+      .select()
+      .from(collections)
+      .where(and(eq(collections.id, collectionId), eq(collections.createdBy, locals.user.id)))
+      .get();
+    if (col) {
+      db.insert(recipeCollections).values({ recipeId: copy.id, collectionId }).run();
     }
   }
 

@@ -1,5 +1,6 @@
 const STORAGE_KEY = "prepped-shopping-list";
 const ORGANIZED_KEY = "prepped-shopping-organized";
+const ORGANIZED_FOR_LIST_KEY = "prepped-shopping-organized-for-list";
 const CHECKED_KEY = "prepped-shopping-checked";
 
 export interface ShoppingListItem {
@@ -77,12 +78,23 @@ export function getOrganized(): OrganizedCategory[] | null {
   }
 }
 
-export function saveOrganized(categories: OrganizedCategory[]) {
+export function saveOrganized(categories: OrganizedCategory[], listSignature?: string) {
   localStorage.setItem(ORGANIZED_KEY, JSON.stringify(categories));
+  if (listSignature) {
+    localStorage.setItem(ORGANIZED_FOR_LIST_KEY, listSignature);
+  } else {
+    localStorage.removeItem(ORGANIZED_FOR_LIST_KEY);
+  }
+}
+
+export function getOrganizedForList(): string | null {
+  if (!isBrowser()) return null;
+  return localStorage.getItem(ORGANIZED_FOR_LIST_KEY);
 }
 
 export function clearOrganized() {
   localStorage.removeItem(ORGANIZED_KEY);
+  localStorage.removeItem(ORGANIZED_FOR_LIST_KEY);
 }
 
 // --- Checked items persistence ---

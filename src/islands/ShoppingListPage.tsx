@@ -21,6 +21,7 @@ import {
   updateServings,
   clearList,
   getOrganized,
+  getOrganizedForList,
   saveOrganized,
   clearOrganized,
   getChecked,
@@ -111,6 +112,13 @@ function mergeIngredients(
   return result;
 }
 
+function listSignature(items: ShoppingListItem[]): string {
+  return [...items]
+    .sort((a, b) => a.recipeId - b.recipeId)
+    .map((item) => `${item.recipeId}:${item.servings}`)
+    .join("|");
+}
+
 function formatListAsText(
   categories: OrganizedCategory[] | null,
   merged: MergedIngredient[]
@@ -191,8 +199,18 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
   // Sync from localStorage on mount
   const initializedRef = useRef(false);
   useEffect(() => {
-    setListItems(getList());
-    setOrganized(getOrganized());
+    const initialList = getList();
+    const initialSignature = listSignature(initialList);
+    const storedOrganized = getOrganized();
+    const storedOrganizedFor = getOrganizedForList();
+
+    setListItems(initialList);
+    if (storedOrganized && storedOrganizedFor === initialSignature) {
+      setOrganized(storedOrganized);
+    } else {
+      setOrganized(null);
+      clearOrganized();
+    }
     setCheckedItems(new Set(getChecked()));
     initializedRef.current = true;
     const handler = () => setListItems(getList());
@@ -213,12 +231,19 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
     [selectedRecipes, listItems]
   );
 
-  // Clear organized view when recipes/servings change (skip initial load)
+  // Clear organized view only when recipes/servings changed from the organized snapshot
   useEffect(() => {
     if (!initializedRef.current) return;
-    setOrganized(null);
-    clearOrganized();
-  }, [listItems]);
+    if (!organized) return;
+    const currentSignature = listSignature(listItems);
+    const organizedFor = getOrganizedForList();
+    if (organizedFor !== currentSignature) {
+      setOrganized(null);
+      clearOrganized();
+      setCheckedItems(new Set());
+      saveChecked([]);
+    }
+  }, [listItems, organized]);
 
   const filteredRecipes = useMemo(() => {
     if (!searchQuery) return allRecipes;
@@ -238,7 +263,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
       if (res.ok) {
         const data = await res.json();
         setOrganized(data.categories);
-        saveOrganized(data.categories);
+        saveOrganized(data.categories, listSignature(listItems));
         setCheckedItems(new Set());
         saveChecked([]);
       }

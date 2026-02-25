@@ -56,6 +56,7 @@ if (user) {
       cookedAt: cookLogs.cookedAt,
       recipeTitle: recipes.title,
       recipeSlug: recipes.slug,
+      recipeOwnerId: recipes.createdBy,
       recipeImageUrl: recipes.imageUrl,
       authorName: users.name,
     })
@@ -206,7 +207,9 @@ const firstName = user?.name?.split(" ")[0] || "";
             <div class="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:overflow-visible">
               {recentLogs.map((log, i) => (
                 <a
-                  href={`/recipes/${log.recipeSlug}`}
+                  href={log.recipeOwnerId === user.id
+                    ? `/recipes/${log.recipeSlug}`
+                    : `/users/${log.recipeOwnerId}/recipes/${log.recipeSlug}`}
                   class="group shrink-0 w-56 sm:w-auto animate-fade-up"
                   style={`animation-delay: ${i * 50}ms;`}
                 >
