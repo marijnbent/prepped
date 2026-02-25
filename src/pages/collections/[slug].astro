@@ -47,27 +47,33 @@ const collectionRecipes = collectionRecipesRaw.map((r) => ({
 
 <Layout title={collection.name}>
   <div class="max-w-6xl mx-auto">
-    <div class="flex items-start justify-between mb-6">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-10 animate-fade-up">
       <div>
-        <h1 class="text-3xl font-bold">{collection.name}</h1>
+        <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1]">{collection.name}</h1>
         {collection.description && (
-          <p class="text-muted-foreground mt-2">{collection.description}</p>
+          <p class="text-lg text-muted-foreground mt-3 max-w-2xl leading-relaxed">{collection.description}</p>
         )}
       </div>
-      <div class="flex gap-2 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <a
           href={`/collections/${collection.slug}/edit`}
-          class="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
+          class="inline-flex items-center justify-center gap-1.5 h-7 rounded-full border border-border/50 bg-secondary/50 px-3 text-xs font-medium hover:bg-secondary hover:border-border transition-all duration-200"
         >
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+          </svg>
           {t("common.edit")}
         </a>
         <button
           id="delete-collection"
           data-id={collection.id}
           data-confirm={t("collection.deleteConfirm")}
-          class="inline-flex items-center justify-center rounded-md border border-destructive text-destructive px-4 py-2 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground transition-colors"
+          class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
         >
-          {t("common.delete")}
+          <svg class="w-3 h-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          </svg>
+          <span class="sr-only">{t("common.delete")}</span>
         </button>
       </div>
     </div>

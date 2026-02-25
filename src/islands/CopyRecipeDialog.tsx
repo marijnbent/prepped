@@ -88,7 +88,7 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
           )}
           <Button
             onClick={handleCopy}
-            disabled={loading || selected.length === 0}
+            disabled={loading}
             className="w-full"
           >
             {loading ? t("recipe.copying") : t("recipe.copyRecipe")}

@@ -18,6 +18,7 @@ export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props)
   const [rating, setRating] = useState(0);
   const [photoUrl, setPhotoUrl] = useState("");
   const [cookedAt, setCookedAt] = useState(new Date().toISOString().split("T")[0]);
+  const [hoverRating, setHoverRating] = useState(0);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -58,23 +59,28 @@ export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props)
       {/* Rating */}
       <div className="space-y-2">
         <Label>{t("cookLog.rating")}</Label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setRating(n === rating ? 0 : n)}
-              className="p-0.5"
-            >
-              <Star
-                className={`h-6 w-6 ${
-                  n <= rating
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-muted-foreground"
-                }`}
-              />
-            </button>
-          ))}
+        <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
+          {[1, 2, 3, 4, 5].map((n) => {
+            const active = n <= (hoverRating || rating);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setRating(n === rating ? 0 : n)}
+                onMouseEnter={() => setHoverRating(n)}
+                className="p-0.5 transition-transform hover:scale-110 active:scale-90"
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+              >
+                <Star
+                  className={`h-6 w-6 transition-colors duration-150 ${
+                    active
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground/40 hover:text-muted-foreground"
+                  }`}
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
 

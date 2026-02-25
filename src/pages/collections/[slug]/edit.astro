@@ -23,8 +23,9 @@ if (!collection) {
 ---
 
 <Layout title={`${t("collection.editPrefix")} - ${collection.name}`}>
-  <div class="max-w-lg mx-auto">
-    <h1 class="text-3xl font-bold mb-6">{t("collection.editPrefix")}: {collection.name}</h1>
+  <div class="max-w-lg mx-auto animate-fade-up">
+    <p class="text-[11px] uppercase tracking-[0.12em] text-primary font-medium mb-2">{t("collection.editPrefix")}</p>
+    <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1] mb-8">{collection.name}</h1>
     <CollectionForm
       initial={{
         id: collection.id,

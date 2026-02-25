@@ -138,7 +138,7 @@ export default function RecipeSearch({
               <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
             </svg>
           </div>
-          <p className="text-muted-foreground text-lg" style={{ fontFamily: 'var(--font-serif)' }}>
+          <p className="font-serif text-muted-foreground text-lg">
             {query ? noResultsText : t("recipe.noRecipesYet")}
           </p>
           {query && (
@@ -186,7 +186,7 @@ export default function RecipeSearch({
                       )}
                       {/* Title over image */}
                       <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                        <h3 className="text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg" style={{ fontFamily: 'var(--font-serif)' }}>
+                        <h3 className="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
                           {recipe.title}
                         </h3>
                       </div>
@@ -213,7 +213,7 @@ export default function RecipeSearch({
                         </span>
                       )}
                       <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                        <h3 className="text-xl leading-tight text-foreground/80 line-clamp-2" style={{ fontFamily: 'var(--font-serif)' }}>
+                        <h3 className="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">
                           {recipe.title}
                         </h3>
                       </div>
@@ -311,7 +311,7 @@ export default function RecipeSearch({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
                         <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                          <h3 className="text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg" style={{ fontFamily: 'var(--font-serif)' }}>
+                          <h3 className="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
                             {recipe.title}
                           </h3>
                         </div>
@@ -324,7 +324,7 @@ export default function RecipeSearch({
                           <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
                         </svg>
                         <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                          <h3 className="text-xl leading-tight text-foreground/80 line-clamp-2" style={{ fontFamily: 'var(--font-serif)' }}>
+                          <h3 className="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">
                             {recipe.title}
                           </h3>
                         </div>

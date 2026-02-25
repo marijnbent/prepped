@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { t } from "@/lib/i18n";
 
 const IMAGE_UPLOAD_TIMEOUT_MS = 120_000;
@@ -213,7 +213,10 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
           }`}
         >
           {uploading ? (
-            <p className="text-sm text-muted-foreground">{t("upload.uploading")}</p>
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">{t("upload.uploading")}</p>
+            </div>
           ) : (
             <>
               <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />

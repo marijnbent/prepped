@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import RecipeGrid from "../../components/RecipeGrid.astro";
 import { db } from "../../lib/db";
 import { tags, recipeTags, recipes } from "../../lib/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { t } from "../../lib/i18n";
 
 if (!Astro.locals.user) {
@@ -26,18 +26,23 @@ const tagRecipes = db
     prepTime: recipes.prepTime,
     cookTime: recipes.cookTime,
     difficulty: recipes.difficulty,
+    createdBy: recipes.createdBy,
   })
   .from(recipeTags)
   .innerJoin(recipes, eq(recipeTags.recipeId, recipes.id))
-  .where(and(eq(recipeTags.tagId, tag.id), eq(recipes.createdBy, Astro.locals.user.id)))
+  .where(and(
+    eq(recipeTags.tagId, tag.id),
+    or(eq(recipes.createdBy, Astro.locals.user.id), eq(recipes.isPublished, true))
+  ))
   .all();
 ---
 
 <Layout title={tag.name}>
   <div class="max-w-6xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">
-      <span class="text-muted-foreground">{t("tag.prefix")}</span> {tag.name}
-    </h1>
+    <div class="mb-10 animate-fade-up">
+      <p class="text-[11px] uppercase tracking-[0.12em] text-primary font-medium mb-2">{t("tag.prefix")}</p>
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1]">{tag.name}</h1>
+    </div>
     <RecipeGrid recipes={tagRecipes} />
   </div>
 </Layout>

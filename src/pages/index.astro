@@ -204,13 +204,13 @@ const firstName = user?.name?.split(" ")[0] || "";
                 </svg>
               </a>
             </div>
-            <div class="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:overflow-visible">
+            <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:overflow-visible">
               {recentLogs.map((log, i) => (
                 <a
                   href={log.recipeOwnerId === user.id
                     ? `/recipes/${log.recipeSlug}`
                     : `/users/${log.recipeOwnerId}/recipes/${log.recipeSlug}`}
-                  class="group shrink-0 w-56 sm:w-auto animate-fade-up"
+                  class="group shrink-0 w-56 sm:w-auto snap-start animate-fade-up"
                   style={`animation-delay: ${i * 50}ms;`}
                 >
                   <div class="relative rounded-2xl bg-card/50 border border-border/30 overflow-hidden transition-all duration-300 hover:border-border/50 hover:bg-card/80 h-full flex flex-col">

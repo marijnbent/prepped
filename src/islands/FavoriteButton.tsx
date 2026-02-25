@@ -43,7 +43,7 @@ export default function FavoriteButton({ recipeId, initialFavorited }: Props) {
         e.stopPropagation();
         toggle();
       }}
-      className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-medium border transition-colors ${
+      className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-medium border transition-all active:scale-90 ${
         favorited
           ? "bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/20"
           : "bg-secondary/60 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground"

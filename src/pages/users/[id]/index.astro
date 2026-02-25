@@ -3,7 +3,7 @@ import Layout from "../../../layouts/Layout.astro";
 import RecipeCard from "../../../components/RecipeCard.astro";
 import { db } from "../../../lib/db";
 import { users, recipes, collections, recipeCollections } from "../../../lib/schema";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import { t } from "../../../lib/i18n";
 
 const { id } = Astro.params;
@@ -12,10 +12,14 @@ if (!profileUser) {
   return Astro.redirect("/users");
 }
 
+const isOwnProfile = Astro.locals.user?.id === profileUser.id;
 const userRecipes = db
   .select()
   .from(recipes)
-  .where(eq(recipes.createdBy, profileUser.id))
+  .where(isOwnProfile
+    ? eq(recipes.createdBy, profileUser.id)
+    : and(eq(recipes.createdBy, profileUser.id), eq(recipes.isPublished, true))
+  )
   .orderBy(desc(recipes.createdAt))
   .all();
 

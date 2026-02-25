@@ -9,8 +9,8 @@ if (!Astro.locals.user) {
 ---
 
 <Layout title={t("collection.new")}>
-  <div class="max-w-lg mx-auto">
-    <h1 class="text-3xl font-bold mb-6">{t("collection.new")}</h1>
+  <div class="max-w-lg mx-auto animate-fade-up">
+    <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1] mb-8">{t("collection.new")}</h1>
     <CollectionForm client:load />
   </div>
 </Layout>
