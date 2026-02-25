@@ -21,14 +21,16 @@ const { recipes } = Astro.props;
 
 {
   recipes.length === 0 ? (
-    <div class="text-center py-28">
-      <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 mb-6 border border-border/30">
-        <svg class="w-9 h-9 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="text-center py-24 animate-fade-up">
+      <div class="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-secondary/80 to-secondary/40 mb-6 border border-border/20">
+        <svg class="w-9 h-9 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
         </svg>
+        {/* Subtle decorative ring */}
+        <div class="absolute inset-0 rounded-3xl ring-1 ring-inset ring-primary/[0.06]" />
       </div>
-      <p class="text-muted-foreground text-lg font-serif">{t("recipe.noRecipes")}</p>
-      <p class="text-muted-foreground/40 text-sm mt-2">{t("recipe.emptyHint")}</p>
+      <p class="text-muted-foreground/60 text-lg font-serif">{t("recipe.noRecipes")}</p>
+      <p class="text-muted-foreground/30 text-sm mt-2 max-w-xs mx-auto leading-relaxed">{t("recipe.emptyHint")}</p>
     </div>
   ) : (
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">

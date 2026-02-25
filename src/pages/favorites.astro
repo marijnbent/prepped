@@ -33,22 +33,24 @@ const favoriteRecipes = db
 
 <Layout title={t("collection.favorites")}>
   <div class="max-w-6xl mx-auto">
-    <div class="mb-12">
+    <div class="mb-10">
       <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("collection.favorites")}</h1>
-      <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
+      <p class="text-muted-foreground/40 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
         {favoriteRecipes.length} {favoriteRecipes.length === 1 ? t("count.recipe") : t("count.recipes")}
       </p>
     </div>
 
+    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 80ms;" />
+
     {favoriteRecipes.length === 0 ? (
-      <div class="text-center py-28">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 mb-6 border border-border/30">
-          <svg class="w-9 h-9 text-rose-300/40" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <div class="text-center py-24 animate-fade-up">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-500/[0.06] to-pink-500/[0.04] border border-rose-400/15 mb-6">
+          <svg class="w-9 h-9 text-rose-300/35" viewBox="0 0 24 24" fill="currentColor" stroke="none">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </div>
-        <p class="text-muted-foreground text-lg font-serif">{t("favorites.noFavorites")}</p>
-        <p class="text-muted-foreground/40 text-sm mt-2">{t("favorites.heartHint")}</p>
+        <p class="text-muted-foreground/60 text-lg font-serif">{t("favorites.noFavorites")}</p>
+        <p class="text-muted-foreground/30 text-sm mt-2 max-w-xs mx-auto leading-relaxed">{t("favorites.heartHint")}</p>
       </div>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
@@ -60,36 +62,42 @@ const favoriteRecipes = db
           return (
             <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
               <a href={href} class="group block">
-                <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
+                <div class="card-shine relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1">
                   {recipe.imageUrl ? (
                     <div class="aspect-[4/3] overflow-hidden relative">
                       <img
                         src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
                         alt={recipe.title}
-                        class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
+                        class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.06]"
                         loading="lazy"
                       />
-                      <div class="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
-                      <div class="absolute bottom-0 inset-x-0 p-4 pb-3">
-                        <h3 class="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
+                      <div class="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent opacity-80 pointer-events-none" />
+                      <div class="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                      <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
+                        <h3 class="font-serif text-xl leading-snug text-foreground line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
                           {recipe.title}
                         </h3>
                       </div>
                     </div>
                   ) : (
-                    <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
-                      <svg class="w-14 h-14 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted/80 to-primary/[0.06] flex items-center justify-center relative overflow-hidden">
+                      <svg class="w-12 h-12 text-muted-foreground/15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                         <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
                       </svg>
-                      <div class="absolute bottom-0 inset-x-0 p-4 pb-3">
-                        <h3 class="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">{recipe.title}</h3>
+                      <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
+                        <h3 class="font-serif text-xl leading-snug text-foreground/80 line-clamp-2">{recipe.title}</h3>
                       </div>
                     </div>
                   )}
                   <div class="px-4 pb-4 pt-2">
-                    <p class="text-xs text-muted-foreground/60">{t("favorites.by")} {recipe.authorName}</p>
+                    <span class="inline-flex items-center gap-1.5">
+                      <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/10 text-[9px] font-semibold text-primary">
+                        {recipe.authorName.charAt(0).toUpperCase()}
+                      </span>
+                      <span class="text-xs text-muted-foreground/50">{recipe.authorName}</span>
+                    </span>
                   </div>
-                  <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+                  <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
                 </div>
               </a>
             </div>

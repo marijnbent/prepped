@@ -30,12 +30,14 @@ const countsMap = new Map(recipeCounts.map((r) => [r.createdBy, r.count]));
 
 <Layout title={t("nav.community")}>
   <div class="max-w-6xl mx-auto">
-    <div class="mb-12">
+    <div class="mb-10">
       <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("nav.community")}</h1>
-      <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
+      <p class="text-muted-foreground/40 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
         {allUsers.length} {allUsers.length === 1 ? t("count.member") : t("count.members")}
       </p>
     </div>
+
+    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 80ms;" />
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
       {allUsers.map((u, i) => {
@@ -52,26 +54,30 @@ const countsMap = new Map(recipeCounts.map((r) => [r.createdBy, r.count]));
             class="group block animate-fade-up"
             style={`animation-delay: ${i * 50}ms;`}
           >
-            <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5 p-6 text-center">
+            <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1 p-6 text-center">
+              {/* Decorative background glow */}
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-20 rounded-full bg-primary/[0.04] blur-[50px] pointer-events-none group-hover:bg-primary/[0.08] transition-colors duration-500" />
               {/* Avatar */}
-              {u.image ? (
-                <img
-                  src={u.image}
-                  alt={u.name}
-                  class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-2 border-border/30"
-                />
-              ) : (
-                <div class="w-20 h-20 rounded-full mx-auto mb-4 bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                  <span class="text-2xl font-serif text-primary">{initials}</span>
-                </div>
-              )}
+              <div class="relative">
+                {u.image ? (
+                  <img
+                    src={u.image}
+                    alt={u.name}
+                    class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-2 border-border/20 transition-all duration-300 group-hover:border-primary/20 group-hover:shadow-lg group-hover:shadow-primary/10"
+                  />
+                ) : (
+                  <div class="w-20 h-20 rounded-full mx-auto mb-4 bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/15 flex items-center justify-center transition-all duration-300 group-hover:border-primary/25 group-hover:shadow-lg group-hover:shadow-primary/10">
+                    <span class="text-2xl font-serif text-primary/80">{initials}</span>
+                  </div>
+                )}
+              </div>
               <h3 class="font-serif text-lg group-hover:text-primary transition-colors duration-300">
                 {u.name}
               </h3>
-              <p class="text-xs text-muted-foreground/50 mt-2 tabular-nums">
+              <p class="text-xs text-muted-foreground/40 mt-2 tabular-nums">
                 {recipeCount} {t("collection.recipes")}
               </p>
-              <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+              <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
             </div>
           </a>
         );

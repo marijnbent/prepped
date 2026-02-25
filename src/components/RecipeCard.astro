@@ -25,7 +25,7 @@ const link = href || `/recipes/${recipe.slug}`;
 
 <a href={link} class="group block">
   <div
-    class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5"
+    class="card-shine relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1"
   >
     {/* Image area */}
     {recipe.imageUrl ? (
@@ -33,14 +33,16 @@ const link = href || `/recipes/${recipe.slug}`;
         <img
           src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
           alt={recipe.title}
-          class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
+          class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.06]"
           loading="lazy"
         />
-        {/* Deep cinematic gradient overlay */}
-        <div class="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
+        {/* Cinematic gradient — darker at bottom for text readability */}
+        <div class="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent opacity-80 pointer-events-none" />
+        {/* Subtle warm color wash on hover */}
+        <div class="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
         {/* Title floated over image bottom */}
-        <div class="absolute bottom-0 inset-x-0 p-4 pb-3">
-          <h3 class="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
+        <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
+          <h3 class="font-serif text-xl leading-snug text-foreground line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
             {recipe.title}
           </h3>
         </div>
@@ -52,16 +54,17 @@ const link = href || `/recipes/${recipe.slug}`;
         )}
       </div>
     ) : (
-      <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
+      <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted/80 to-primary/[0.06] flex items-center justify-center relative overflow-hidden">
         {/* Decorative geometric shapes */}
-        <div class="absolute top-6 right-6 w-24 h-24 rounded-full border border-primary/10 animate-float" />
-        <div class="absolute bottom-8 left-8 w-16 h-16 rounded-full bg-primary/5" style="animation-delay: 2s;" />
-        <svg class="w-14 h-14 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <div class="absolute top-6 right-6 w-24 h-24 rounded-full border border-primary/[0.08] animate-float" />
+        <div class="absolute bottom-8 left-8 w-16 h-16 rounded-full bg-primary/[0.04]" style="animation-delay: 2s;" />
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-primary/[0.03] blur-2xl" />
+        <svg class="w-12 h-12 text-muted-foreground/15 transition-all duration-500 group-hover:text-primary/20 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
         </svg>
         {/* Title inside empty state */}
-        <div class="absolute bottom-0 inset-x-0 p-4 pb-3">
-          <h3 class="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">
+        <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
+          <h3 class="font-serif text-xl leading-snug text-foreground/80 line-clamp-2">
             {recipe.title}
           </h3>
         </div>
@@ -74,29 +77,29 @@ const link = href || `/recipes/${recipe.slug}`;
       </div>
     )}
 
-    {/* Content area — sits below the overlay title */}
+    {/* Content area */}
     <div class="px-4 pb-4 pt-2">
       {recipe.description && (
-        <p class="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+        <p class="text-[13px] text-muted-foreground/70 line-clamp-2 leading-relaxed">
           {recipe.description}
         </p>
       )}
       {(totalTime > 0 || recipe.difficulty) && (
-        <div class="flex items-center gap-4 mt-3 pt-3 border-t border-border/30">
+        <div class="flex items-center gap-4 mt-3 pt-3 border-t border-border/20">
           {totalTime > 0 && (
-            <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
-              <svg class="w-3.5 h-3.5 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60">
+              <svg class="w-3.5 h-3.5 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
               </svg>
               {totalTime} {t("recipe.minutes")}
             </span>
           )}
           {recipe.difficulty && (
-            <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 capitalize">
+            <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 capitalize">
               <span class:list={[
-                "w-1.5 h-1.5 rounded-full",
-                recipe.difficulty === "easy" ? "bg-emerald-400" :
-                recipe.difficulty === "medium" ? "bg-amber-400" : "bg-rose-400"
+                "w-1.5 h-1.5 rounded-full ring-2",
+                recipe.difficulty === "easy" ? "bg-emerald-400 ring-emerald-400/20" :
+                recipe.difficulty === "medium" ? "bg-amber-400 ring-amber-400/20" : "bg-rose-400 ring-rose-400/20"
               ]} />
               {t(`recipe.${recipe.difficulty}` as any)}
             </span>
@@ -105,7 +108,7 @@ const link = href || `/recipes/${recipe.slug}`;
       )}
     </div>
 
-    {/* Ambient glow on hover — barely visible warm edge light */}
-    <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+    {/* Ambient glow on hover -- warm ring */}
+    <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
   </div>
 </a>

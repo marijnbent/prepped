@@ -101,17 +101,17 @@ const communityRecipes = db
 
 <Layout title={t("nav.recipes")}>
   <div class="max-w-6xl mx-auto">
-    {/* Page header — editorial style */}
-    <div class="flex items-end justify-between mb-12">
+    {/* Page header */}
+    <div class="flex items-end justify-between mb-10">
       <div>
         <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("nav.recipes")}</h1>
-        <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
+        <p class="text-muted-foreground/40 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
           {totalCount} {totalCount === 1 ? t("count.recipe") : t("count.recipes")}
         </p>
       </div>
       <a
         href="/recipes/new"
-        class="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 transition-all duration-300 active:scale-[0.97] animate-fade-up"
+        class="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 hover:brightness-110 transition-all duration-300 active:scale-[0.97] animate-fade-up"
         style="animation-delay: 100ms;"
       >
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -120,6 +120,8 @@ const communityRecipes = db
         {t("nav.newRecipe")}
       </a>
     </div>
+
+    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 80ms;" />
 
     <RecipeSearch
       recipes={allRecipes}

@@ -10,7 +10,10 @@ const navLinks = [
 const year = new Date().getFullYear();
 ---
 
-<footer class="mt-auto border-t border-border/30 hidden md:block">
+<footer class="mt-auto hidden md:block">
+  {/* Warm gradient separator instead of plain border */}
+  <div class="separator-warm" />
+
   <div class="container mx-auto px-4 sm:px-6 py-10">
     <div class="flex flex-col gap-6">
       {/* Top row */}
@@ -18,24 +21,24 @@ const year = new Date().getFullYear();
         {/* Brand */}
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2.5">
-            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
+            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/[0.08] text-primary">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
               </svg>
             </span>
-            <span class="font-serif text-foreground/80 tracking-tight">Prepped</span>
+            <span class="font-serif text-foreground/70 tracking-tight">Prepped</span>
           </div>
-          <p class="text-xs text-muted-foreground/50 max-w-xs leading-relaxed">
+          <p class="text-xs text-muted-foreground/35 max-w-xs leading-relaxed">
             {t("site.description")}
           </p>
         </div>
 
         {/* Navigation */}
-        <nav class="flex items-center gap-1">
+        <nav class="flex items-center gap-0.5">
           {navLinks.map((link) => (
             <a
               href={link.href}
-              class="text-xs uppercase tracking-[0.08em] text-muted-foreground/60 hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-secondary/40 transition-all duration-200"
+              class="text-xs uppercase tracking-[0.08em] text-muted-foreground/45 hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-secondary/40 transition-all duration-200"
             >
               {link.label}
             </a>
@@ -43,12 +46,9 @@ const year = new Date().getFullYear();
         </nav>
       </div>
 
-      {/* Divider — subtle gradient */}
-      <div class="h-px bg-gradient-to-r from-transparent via-border/40 to-transparent" />
-
       {/* Bottom row */}
-      <div class="flex items-center justify-center">
-        <p class="text-[11px] text-muted-foreground/30 tracking-wide">
+      <div class="flex items-center justify-center pt-2">
+        <p class="text-[11px] text-muted-foreground/20 tracking-wide">
           &copy; {year} Prepped
         </p>
       </div>

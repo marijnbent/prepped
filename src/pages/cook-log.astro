@@ -33,22 +33,24 @@ const logs = db
 <Layout title={t("cookLog.title")}>
   <div class="max-w-5xl mx-auto">
     {/* Page header */}
-    <div class="mb-12">
+    <div class="mb-10">
       <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("cookLog.title")}</h1>
-      <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
+      <p class="text-muted-foreground/40 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
         {logs.length} {logs.length === 1 ? t("count.entry") : t("count.entries")}
       </p>
     </div>
 
+    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 80ms;" />
+
     {logs.length === 0 ? (
-      <div class="text-center py-28">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 border border-border/30 mb-6">
-          <svg class="w-9 h-9 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <div class="text-center py-24 animate-fade-up">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border/20 mb-6">
+          <svg class="w-9 h-9 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
           </svg>
         </div>
-        <p class="text-muted-foreground text-lg font-serif">{t("cookLog.noLogs")}</p>
-        <p class="text-muted-foreground/40 text-sm mt-2">{t("cookLog.emptyHint")}</p>
+        <p class="text-muted-foreground/60 text-lg font-serif">{t("cookLog.noLogs")}</p>
+        <p class="text-muted-foreground/30 text-sm mt-2 max-w-xs mx-auto leading-relaxed">{t("cookLog.emptyHint")}</p>
       </div>
     ) : (
       <div class="flex flex-col gap-4 md:gap-5 max-w-3xl">
@@ -60,20 +62,20 @@ const logs = db
             class="group block animate-fade-up"
             style={`animation-delay: ${i * 50}ms;`}
           >
-            <div class="relative rounded-2xl bg-card/50 overflow-hidden border border-border/30 transition-all duration-300 hover:border-border/50 hover:bg-card/80">
+            <div class="relative rounded-2xl bg-card/40 overflow-hidden border border-border/25 transition-all duration-300 hover:border-border/45 hover:bg-card/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/[0.03]">
               <div class="p-5 md:p-6">
                 {/* Top row: date, author, rating */}
                 <div class="flex items-center gap-3 mb-3">
-                  <time class="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground/50 tabular-nums">{formatDate(log.cookedAt)}</time>
+                  <time class="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground/40 tabular-nums">{formatDate(log.cookedAt)}</time>
                   {log.authorName && (
                     <>
-                      <span class="text-border/40">&middot;</span>
-                      <span class="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground/50">{log.authorName}</span>
+                      <span class="text-border/30">&middot;</span>
+                      <span class="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground/40">{log.authorName}</span>
                     </>
                   )}
                   {log.rating && (
                     <>
-                      <span class="text-border/40">&middot;</span>
+                      <span class="text-border/30">&middot;</span>
                       <div class="flex items-center gap-1">
                         {Array.from({ length: 5 }).map((_, starIndex) => (
                           <span
@@ -81,7 +83,7 @@ const logs = db
                               "inline-block w-2 h-2 rounded-full transition-colors",
                               starIndex < log.rating!
                                 ? "bg-primary"
-                                : "bg-border/40",
+                                : "bg-border/30",
                             ]}
                           />
                         ))}
@@ -95,28 +97,28 @@ const logs = db
                   "flex gap-5",
                   log.photoUrl ? "items-start" : "",
                 ]}>
-                  {/* Notes area -- the star of the show */}
+                  {/* Notes area */}
                   <div class="flex-1 min-w-0">
                     {log.notes ? (
-                      <p class="text-[15px] md:text-base leading-relaxed text-foreground/85">{log.notes}</p>
+                      <p class="text-[15px] md:text-base leading-relaxed text-foreground/80">{log.notes}</p>
                     ) : (
-                      <p class="text-sm text-muted-foreground/30 italic leading-relaxed">{t("cookLog.emptyHint")}</p>
+                      <p class="text-sm text-muted-foreground/25 italic leading-relaxed">{t("cookLog.emptyHint")}</p>
                     )}
 
                     {/* Recipe link as subtle tag */}
-                    <div class="mt-3 pt-3 border-t border-border/20">
-                      <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 group-hover:text-primary/70 transition-colors duration-200">
+                    <div class="mt-3 pt-3 border-t border-border/15">
+                      <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/40 group-hover:text-primary/60 transition-colors duration-200">
                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
                         </svg>
-                        {t("cookLog.forRecipe")} <span class="font-medium text-muted-foreground/70 group-hover:text-primary transition-colors duration-200">{log.recipeTitle}</span>
+                        {t("cookLog.forRecipe")} <span class="font-medium text-muted-foreground/60 group-hover:text-primary transition-colors duration-200">{log.recipeTitle}</span>
                       </span>
                     </div>
                   </div>
 
-                  {/* Cook's own photo -- medium, rounded, not dominant */}
+                  {/* Cook's own photo */}
                   {log.photoUrl && (
-                    <div class="shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden ring-1 ring-border/20">
+                    <div class="shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden ring-1 ring-border/15">
                       <img
                         src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
                         alt={t("cookLog.photoAlt")}
@@ -129,7 +131,7 @@ const logs = db
               </div>
 
               {/* Hover glow */}
-              <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+              <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
             </div>
           </a>
         ))}

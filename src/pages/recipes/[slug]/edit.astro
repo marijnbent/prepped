@@ -69,10 +69,11 @@ const initial = {
 
 <Layout title={`${t("recipe.edit")} - ${recipe.title}`}>
   <div class="max-w-3xl mx-auto">
-    <div class="mb-10 animate-fade-up">
-      <p class="text-[11px] uppercase tracking-[0.12em] text-primary font-medium mb-2">{t("recipe.edit")}</p>
+    <div class="mb-8 animate-fade-up">
+      <p class="text-[11px] uppercase tracking-[0.12em] text-primary font-medium mb-2.5">{t("recipe.edit")}</p>
       <h1 class="font-serif text-4xl md:text-5xl tracking-tight">{recipe.title}</h1>
     </div>
+    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 60ms;" />
     <div class="animate-fade-up" style="animation-delay: 100ms;">
       <RecipeForm initial={initial} tags={allTags} collections={allCollections} client:load />
     </div>

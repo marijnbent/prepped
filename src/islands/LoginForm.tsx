@@ -102,9 +102,9 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
 
   if (isSimple) {
     return (
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name">{t("auth.name")}</Label>
+          <Label htmlFor="name" className="text-xs font-medium text-muted-foreground/70">{t("auth.name")}</Label>
           <Input
             id="name"
             type="text"
@@ -120,20 +120,31 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
           />
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "..." : t("auth.letsGo")}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </span>
+          ) : t("auth.letsGo")}
         </Button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {isRegister && (
         <div className="space-y-2">
-          <Label htmlFor="name">{t("auth.name")}</Label>
+          <Label htmlFor="name" className="text-xs font-medium text-muted-foreground/70">{t("auth.name")}</Label>
           <Input
             id="name"
             type="text"
@@ -145,7 +156,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">{t("auth.email")}</Label>
+        <Label htmlFor="email" className="text-xs font-medium text-muted-foreground/70">{t("auth.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -157,7 +168,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">{t("auth.password")}</Label>
+        <Label htmlFor="password" className="text-xs font-medium text-muted-foreground/70">{t("auth.password")}</Label>
         <Input
           id="password"
           type="password"
@@ -171,7 +182,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
 
       {isRegister && inviteRequired && (
         <div className="space-y-2">
-          <Label htmlFor="invite">{t("auth.inviteCode")}</Label>
+          <Label htmlFor="invite" className="text-xs font-medium text-muted-foreground/70">{t("auth.inviteCode")}</Label>
           <Input
             id="invite"
             type="text"
@@ -183,13 +194,30 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
         </div>
       )}
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
 
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "..." : isRegister ? t("auth.registerButton") : t("auth.loginButton")}
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </span>
+        ) : isRegister ? t("auth.registerButton") : t("auth.loginButton")}
       </Button>
 
-      <p className="text-sm text-center text-muted-foreground">
+      <div className="relative my-2">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border/20" />
+        </div>
+      </div>
+
+      <p className="text-sm text-center text-muted-foreground/50">
         {isRegister ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
         <button
           type="button"
@@ -197,7 +225,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
             setIsRegister(!isRegister);
             setError("");
           }}
-          className="text-primary hover:underline"
+          className="text-primary font-medium hover:text-primary/80 transition-colors"
         >
           {isRegister ? t("auth.signInLink") : t("auth.registerLink")}
         </button>

@@ -147,7 +147,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Hero image ===== */}
     {recipe.imageUrl && (
-      <div class="no-print -mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-8 animate-fade-in">
+      <div class="no-print -mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-10 animate-fade-in relative">
         <div class="aspect-[16/9] md:aspect-[2/1]">
           <img
             src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
@@ -155,16 +155,18 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             class="w-full h-full object-cover"
           />
         </div>
+        {/* Warm gradient overlay */}
+        <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
       </div>
     )}
 
     {/* ===== Title + description ===== */}
-    <div class="mb-10 animate-fade-up">
-      <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1]">
+    <div class="mb-8 animate-fade-up">
+      <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.08] text-balance">
         {recipe.title}
       </h1>
       {recipe.description && (
-        <p class="text-lg text-muted-foreground mt-3 max-w-2xl leading-relaxed">
+        <p class="text-lg text-muted-foreground/70 mt-4 max-w-2xl leading-relaxed">
           {recipe.description}
         </p>
       )}
@@ -172,12 +174,12 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Meta bar ===== */}
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-x-6 sm:gap-y-3 mb-8 sm:mb-10 animate-fade-up" style="animation-delay: 120ms;">
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-muted-foreground/70 min-w-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground/60 min-w-0">
         <a href={`/users/${userId}`} class="inline-flex items-center gap-1.5 hover:text-primary transition-colors max-w-full">
-          <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 0 0-16 0" />
-          </svg>
-          <span class="truncate">{profileUser.name}</span>
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary shrink-0">
+            {profileUser.name.charAt(0).toUpperCase()}
+          </span>
+          <span class="truncate font-medium text-foreground/70 group-hover:text-primary">{profileUser.name}</span>
         </a>
         {recipe.prepTime && (
           <span class="inline-flex items-center gap-1.5">
@@ -198,9 +200,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         {recipe.difficulty && (
           <span class="inline-flex items-center gap-1.5 capitalize">
             <span class:list={[
-              "w-2 h-2 rounded-full",
-              recipe.difficulty === "easy" ? "bg-emerald-400" :
-              recipe.difficulty === "medium" ? "bg-amber-400" : "bg-rose-400"
+              "w-2 h-2 rounded-full ring-2",
+              recipe.difficulty === "easy" ? "bg-emerald-400 ring-emerald-400/20" :
+              recipe.difficulty === "medium" ? "bg-amber-400 ring-amber-400/20" : "bg-rose-400 ring-rose-400/20"
             ]} />
             {t(`recipe.${recipe.difficulty}` as any)}
           </span>
@@ -212,7 +214,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         {alreadyForked && forkSlug && (
           <a
             href={`/recipes/${forkSlug}`}
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/15 hover:bg-primary/15 transition-colors"
           >
             <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12" />
@@ -262,16 +264,19 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       </div>
     </div>
 
+    {/* Warm separator */}
+    <div class="separator-warm mb-8 sm:mb-10 animate-fade-up" style="animation-delay: 140ms;" />
+
     {/* Collections + Tags */}
     {(recipeCollections_.length > 0 || recipeTags_.length > 0) && (
       <div class="flex flex-wrap gap-2 mb-10 animate-fade-up" style="animation-delay: 160ms;">
         {recipeCollections_.map((col) => (
-          <span class="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/15">
             {col.name}
           </span>
         ))}
         {recipeTags_.map((tag) => (
-          <span class="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border/30">
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border/20">
             {tag.name}
           </span>
         ))}
@@ -283,15 +288,15 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       <div>
         <h2 class="font-serif text-2xl tracking-tight mb-5 flex items-center gap-3">
           {t("recipe.ingredients")}
-          <span class="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+          <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
         </h2>
-        <div class="rounded-2xl bg-card/50 border border-border/30 p-5">
+        <div class="rounded-2xl bg-card/60 border border-border/25 p-5 backdrop-blur-sm">
           <ServingsScaler
             defaultServings={recipe.servings || 4}
             ingredients={ingredients}
             client:visible
           />
-          <div class="mt-4 pt-4 border-t border-border/20">
+          <div class="mt-4 pt-4 border-t border-border/15">
             <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} showLabel client:load />
           </div>
         </div>
@@ -300,18 +305,18 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       <div>
         <h2 class="font-serif text-2xl tracking-tight mb-5 flex items-center gap-3">
           {t("recipe.steps")}
-          <span class="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+          <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
         </h2>
-        <ol class="space-y-6">
+        <ol class="space-y-8">
           {steps.map((step, si) => (
             <li class="flex gap-5 group/step">
-              <span class="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary text-sm font-semibold shrink-0 border border-primary/20 transition-colors duration-300 group-hover/step:bg-primary group-hover/step:text-primary-foreground">
+              <span class="flex items-center justify-center h-9 w-9 rounded-full bg-primary/[0.08] text-primary text-sm font-semibold shrink-0 border border-primary/15 transition-all duration-300 group-hover/step:bg-primary group-hover/step:text-primary-foreground group-hover/step:shadow-lg group-hover/step:shadow-primary/15 group-hover/step:scale-105">
                 {step.order}
               </span>
-              <div class="flex-1 pt-1">
-                <p class="text-[15px] leading-[1.7] text-foreground/90">{step.instruction}</p>
+              <div class="flex-1 pt-1.5">
+                <p class="text-[15px] leading-[1.75] text-foreground/85">{step.instruction}</p>
                 {step.duration && (
-                  <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 mt-2">
+                  <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/45 mt-2.5 px-2.5 py-1 rounded-full bg-secondary/50 border border-border/15">
                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                     </svg>
@@ -327,15 +332,23 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Notes + Chat ===== */}
     {(recipe.notes || currentUser) && (
-      <div class:list={["mt-14 gap-6", recipe.notes && currentUser ? "grid grid-cols-1 md:grid-cols-2" : ""]}>
+      <div class:list={["mt-16 gap-6", recipe.notes && currentUser ? "grid grid-cols-1 md:grid-cols-2" : ""]}>
         {recipe.notes && (
-          <div class="rounded-2xl bg-card/50 border border-border/30 p-6">
-            <h2 class="font-serif text-xl tracking-tight mb-3">{t("recipe.notes")}</h2>
-            <p class="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">{recipe.notes}</p>
+          <div class="rounded-2xl bg-card/60 border border-border/25 p-6 backdrop-blur-sm">
+            <h2 class="font-serif text-xl tracking-tight mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" x2="8" y1="13" y2="13" />
+                <line x1="16" x2="8" y1="17" y2="17" />
+              </svg>
+              {t("recipe.notes")}
+            </h2>
+            <p class="text-sm text-foreground/65 whitespace-pre-wrap leading-relaxed">{recipe.notes}</p>
           </div>
         )}
         {currentUser && (
-          <div class="no-print rounded-2xl bg-card/50 border border-border/30 p-6">
+          <div class="no-print rounded-2xl bg-card/60 border border-border/25 p-6 backdrop-blur-sm">
             <RecipeChat recipeId={recipe.id} title={t("chat.title")} placeholder={t("chat.placeholder")} client:visible />
           </div>
         )}
@@ -344,9 +357,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== YouTube Video ===== */}
     {youtubeId && (
-      <div class="no-print mt-14">
-        <h2 class="font-serif text-xl tracking-tight mb-4">{t("recipe.video")}</h2>
-        <div class="aspect-video rounded-2xl overflow-hidden border border-border/30">
+      <div class="no-print mt-16">
+        <h2 class="font-serif text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
+        <div class="aspect-video rounded-2xl overflow-hidden border border-border/25 shadow-lg shadow-black/[0.04]">
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
             title={`${recipe.title} video`}
@@ -361,13 +374,13 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Instagram Embed ===== */}
     {instagramEmbedPath && !youtubeId && (
-      <div class="no-print mt-14">
-        <h2 class="font-serif text-xl tracking-tight mb-4">{t("recipe.video")}</h2>
+      <div class="no-print mt-16">
+        <h2 class="font-serif text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
         <div class="flex justify-center">
           <iframe
             src={`https://www.instagram.com/${instagramEmbedPath}/embed/`}
             title={`${recipe.title} video`}
-            class="rounded-2xl border border-border/30"
+            class="rounded-2xl border border-border/25 shadow-lg shadow-black/[0.04]"
             width="400"
             height="500"
             frameborder="0"
@@ -381,20 +394,30 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* Source */}
     {recipe.sourceUrl && (
-      <div class="mt-10 text-sm text-muted-foreground/50">
-        {t("recipe.source")} <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-primary/70 hover:text-primary hover:underline transition-colors">{recipe.sourceUrl}</a>
+      <div class="mt-12 flex items-center gap-2 text-sm text-muted-foreground/40">
+        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        {t("recipe.source")} <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-primary/60 hover:text-primary hover:underline transition-colors truncate">{recipe.sourceUrl}</a>
       </div>
     )}
 
     {/* ===== Add Cook Log ===== */}
     {currentUser && (
-      <div class="no-print mt-16 rounded-2xl bg-card/50 border border-border/30 p-6 md:p-8">
-        <h2 class="font-serif text-2xl tracking-tight mb-6">{t("cookLog.addEntry")}</h2>
-        <CookLogForm
-          recipeId={recipe.id}
-          redirectTo={`/users/${userId}/recipes/${recipe.slug}`}
-          client:visible
-        />
+      <div class="no-print mt-20">
+        <div class="separator-warm mb-12" />
+        <div class="rounded-2xl bg-card/60 border border-border/25 p-6 md:p-8 backdrop-blur-sm">
+          <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
+            {t("cookLog.addEntry")}
+            <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
+          </h2>
+          <CookLogForm
+            recipeId={recipe.id}
+            redirectTo={`/users/${userId}/recipes/${recipe.slug}`}
+            client:visible
+          />
+        </div>
       </div>
     )}
 
@@ -403,16 +426,21 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       <div class="no-print mt-16">
         <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
           {t("cookLog.title")}
-          <span class="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+          <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
         </h2>
         <div class="space-y-4">
           {logs.map((log) => (
-            <div class="rounded-2xl bg-card/40 border border-border/30 p-5 transition-colors duration-300 hover:bg-card/60">
+            <div class="rounded-2xl bg-card/50 border border-border/20 p-5 transition-all duration-300 hover:bg-card/70 hover:border-border/35">
               <div class="flex items-center gap-4 mb-3">
                 {log.authorName && (
-                  <span class="text-sm font-medium text-foreground/80">{log.authorName}</span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                      {log.authorName.charAt(0).toUpperCase()}
+                    </span>
+                    <span class="text-sm font-medium text-foreground/75">{log.authorName}</span>
+                  </span>
                 )}
-                <time class="text-sm text-muted-foreground/50 tabular-nums">
+                <time class="text-xs text-muted-foreground/40 tabular-nums">
                   {formatDate(log.cookedAt)}
                 </time>
                 {log.rating && (
@@ -420,7 +448,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
                     {Array.from({ length: 5 }).map((_, si) => (
                       <span class:list={[
                         "inline-block w-2 h-2 rounded-full transition-colors",
-                        si < log.rating! ? "bg-primary" : "bg-border/50"
+                        si < log.rating! ? "bg-primary" : "bg-border/40"
                       ]} />
                     ))}
                   </div>
@@ -430,11 +458,11 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
                 <img
                   src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
                   alt={t("cookLog.photoAlt")}
-                  class="rounded-xl max-w-sm mb-3 border border-border/20"
+                  class="rounded-xl max-w-sm mb-3 border border-border/15"
                   loading="lazy"
                 />
               )}
-              {log.notes && <p class="text-sm text-foreground/70 leading-relaxed">{log.notes}</p>}
+              {log.notes && <p class="text-sm text-foreground/65 leading-relaxed">{log.notes}</p>}
             </div>
           ))}
         </div>
