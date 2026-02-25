@@ -18,7 +18,11 @@
       "Bash(npm run dev:*)",
       "Bash(npx tsx:*)",
       "Bash(git push:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(grep:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

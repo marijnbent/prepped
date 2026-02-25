@@ -11,6 +11,7 @@ interface Props {
 const { user } = Astro.props;
 const pathname = Astro.url.pathname;
 const authMode = import.meta.env.AUTH_MODE || "password";
+const isEditPage = /\/edit$/.test(pathname);
 
 const navLinks = [
   { href: "/recipes", label: t("nav.recipes") },
@@ -67,7 +68,7 @@ const navLinks = [
 
     {/* Right side actions */}
     <div class="flex items-center gap-2">
-      {user && (
+      {user && !isEditPage && (
         <a
           href="/recipes/new"
           class="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 active:scale-[0.97]"

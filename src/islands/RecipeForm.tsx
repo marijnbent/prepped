@@ -3,10 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, GripVertical, Clock } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Ingredient {
   amount: string;
@@ -15,10 +31,21 @@ interface Ingredient {
   group?: string;
 }
 
+type IngredientWithId = Ingredient & { _dndId: string };
+let nextId = 0;
+function withDndId(ing: Ingredient): IngredientWithId {
+  return { ...ing, _dndId: `ing-${++nextId}` };
+}
+
 interface Step {
   order: number;
   instruction: string;
   duration?: number;
+}
+
+type StepWithId = Step & { _dndId: string };
+function withStepDndId(step: Step): StepWithId {
+  return { ...step, _dndId: `step-${++nextId}` };
 }
 
 interface RecipeData {
@@ -48,17 +75,199 @@ interface Props {
 const emptyIngredient: Ingredient = { amount: "", unit: "", name: "" };
 const emptyStep = (order: number): Step => ({ order, instruction: "" });
 
+function SortableIngredientRow({
+  ing,
+  index,
+  onUpdate,
+  onRemove,
+  disableRemove,
+}: {
+  ing: IngredientWithId;
+  index: number;
+  onUpdate: (index: number, field: keyof Ingredient, value: string) => void;
+  onRemove: (index: number) => void;
+  disableRemove: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ing._dndId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
+      <div className="flex items-center gap-2 min-w-0 sm:flex-1">
+        <button
+          type="button"
+          className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <Input
+          placeholder={t("form.amount")}
+          value={ing.amount}
+          onChange={(e) => onUpdate(index, "amount", e.target.value)}
+          className="w-20"
+        />
+        <Input
+          placeholder={t("form.unit")}
+          value={ing.unit}
+          onChange={(e) => onUpdate(index, "unit", e.target.value)}
+          className="w-20"
+        />
+        <Input
+          placeholder={t("form.ingredientName")}
+          value={ing.name}
+          onChange={(e) => onUpdate(index, "name", e.target.value)}
+          className="flex-1 min-w-0"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => onRemove(index)}
+          disabled={disableRemove}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <Input
+        placeholder={t("form.group")}
+        value={ing.group || ""}
+        onChange={(e) => onUpdate(index, "group", e.target.value)}
+        className="w-full sm:w-28"
+      />
+    </div>
+  );
+}
+
+function SortableStepRow({
+  step,
+  index,
+  onUpdate,
+  onRemove,
+  disableRemove,
+  showDuration,
+}: {
+  step: StepWithId;
+  index: number;
+  onUpdate: (index: number, field: keyof Step, value: string | number | undefined) => void;
+  onRemove: (index: number) => void;
+  disableRemove: boolean;
+  showDuration: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step._dndId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-start gap-2">
+      <button
+        type="button"
+        className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 mt-2.5"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <span className="flex items-center justify-center h-9 w-9 rounded-full bg-muted text-sm font-medium shrink-0">
+        {index + 1}
+      </span>
+      <div className="flex-1 space-y-2">
+        <Textarea
+          placeholder={`${t("form.step")} ${index + 1}`}
+          value={step.instruction}
+          onChange={(e) => onUpdate(index, "instruction", e.target.value)}
+          rows={2}
+        />
+        {showDuration && (
+          <Input
+            type="number"
+            min={0}
+            placeholder={t("form.durationMin")}
+            value={step.duration || ""}
+            onChange={(e) => onUpdate(index, "duration", e.target.value ? Number(e.target.value) : undefined)}
+            className="w-36"
+          />
+        )}
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(index)}
+        disabled={disableRemove}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function RecipeForm({ initial, tags: initialTags = [], collections: initialCollections = [] }: Props) {
   const isEdit = !!initial?.id;
 
   const [title, setTitle] = useState(initial?.title || "");
   const [description, setDescription] = useState(initial?.description || "");
-  const [ingredients, setIngredients] = useState<Ingredient[]>(
-    initial?.ingredients?.length ? initial.ingredients : [{ ...emptyIngredient }]
+  const [ingredients, setIngredients] = useState<IngredientWithId[]>(
+    initial?.ingredients?.length ? initial.ingredients.map(withDndId) : [withDndId({ ...emptyIngredient })]
   );
-  const [steps, setSteps] = useState<Step[]>(
-    initial?.steps?.length ? initial.steps : [emptyStep(1)]
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor)
   );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setIngredients((items) => {
+        const oldIndex = items.findIndex((i) => i._dndId === active.id);
+        const newIndex = items.findIndex((i) => i._dndId === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
+  const [steps, setSteps] = useState<StepWithId[]>(
+    initial?.steps?.length ? initial.steps.map(withStepDndId) : [withStepDndId(emptyStep(1))]
+  );
+  const [showStepDurations, setShowStepDurations] = useState(() =>
+    initial?.steps?.some((s) => !!s.duration) ?? false
+  );
+
+  function handleStepDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSteps((items) => {
+        const oldIndex = items.findIndex((s) => s._dndId === active.id);
+        const newIndex = items.findIndex((s) => s._dndId === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
   const [servings, setServings] = useState(initial?.servings || 4);
   const [prepTime, setPrepTime] = useState(initial?.prepTime || 0);
   const [cookTime, setCookTime] = useState(initial?.cookTime || 0);
@@ -128,7 +337,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
   }
 
   function addIngredient() {
-    setIngredients([...ingredients, { ...emptyIngredient }]);
+    setIngredients([...ingredients, withDndId({ ...emptyIngredient })]);
   }
 
   function removeIngredient(index: number) {
@@ -136,14 +345,14 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
     setIngredients(ingredients.filter((_, i) => i !== index));
   }
 
-  function updateStep(index: number, instruction: string) {
+  function updateStep(index: number, field: keyof Step, value: string | number | undefined) {
     const updated = [...steps];
-    updated[index] = { ...updated[index], instruction };
+    updated[index] = { ...updated[index], [field]: value };
     setSteps(updated);
   }
 
   function addStep() {
-    setSteps([...steps, emptyStep(steps.length + 1)]);
+    setSteps([...steps, withStepDndId(emptyStep(steps.length + 1))]);
   }
 
   function removeStep(index: number) {
@@ -157,10 +366,12 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
     setError("");
     setSaving(true);
 
-    const validIngredients = ingredients.filter((i) => i.name.trim());
+    const validIngredients = ingredients
+      .filter((i) => i.name.trim())
+      .map(({ _dndId, ...rest }) => rest);
     const validSteps = steps
       .filter((s) => s.instruction.trim())
-      .map((s, i) => ({ ...s, order: i + 1 }));
+      .map(({ _dndId, ...rest }, i) => ({ ...rest, order: i + 1 }));
 
     if (validIngredients.length === 0) {
       setError(t("form.errorIngredient"));
@@ -291,45 +502,20 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       {/* Ingredients */}
       <div className="space-y-3">
         <Label>{t("form.ingredientsRequired")}</Label>
-        {ingredients.map((ing, i) => (
-          <div key={i} className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
-            <div className="flex items-center gap-2 min-w-0 sm:flex-1">
-              <Input
-                placeholder={t("form.amount")}
-                value={ing.amount}
-                onChange={(e) => updateIngredient(i, "amount", e.target.value)}
-                className="w-20"
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={ingredients.map((i) => i._dndId)} strategy={verticalListSortingStrategy}>
+            {ingredients.map((ing, i) => (
+              <SortableIngredientRow
+                key={ing._dndId}
+                ing={ing}
+                index={i}
+                onUpdate={updateIngredient}
+                onRemove={removeIngredient}
+                disableRemove={ingredients.length <= 1}
               />
-              <Input
-                placeholder={t("form.unit")}
-                value={ing.unit}
-                onChange={(e) => updateIngredient(i, "unit", e.target.value)}
-                className="w-20"
-              />
-              <Input
-                placeholder={t("form.ingredientName")}
-                value={ing.name}
-                onChange={(e) => updateIngredient(i, "name", e.target.value)}
-                className="flex-1 min-w-0"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeIngredient(i)}
-                disabled={ingredients.length <= 1}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-            <Input
-              placeholder={t("form.group")}
-              value={ing.group || ""}
-              onChange={(e) => updateIngredient(i, "group", e.target.value)}
-              className="w-full sm:w-28"
-            />
-          </div>
-        ))}
+            ))}
+          </SortableContext>
+        </DndContext>
         <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
           <Plus className="h-4 w-4 mr-1" />
           {t("recipe.addIngredient")}
@@ -339,33 +525,36 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       {/* Steps */}
       <div className="space-y-3">
         <Label>{t("form.stepsRequired")}</Label>
-        {steps.map((step, i) => (
-          <div key={i} className="flex items-start gap-2">
-            <span className="flex items-center justify-center h-9 w-9 rounded-full bg-muted text-sm font-medium shrink-0">
-              {i + 1}
-            </span>
-            <Textarea
-              placeholder={`${t("form.step")} ${i + 1}`}
-              value={step.instruction}
-              onChange={(e) => updateStep(i, e.target.value)}
-              rows={2}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => removeStep(i)}
-              disabled={steps.length <= 1}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-        <Button type="button" variant="outline" size="sm" onClick={addStep}>
-          <Plus className="h-4 w-4 mr-1" />
-          {t("recipe.addStep")}
-        </Button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleStepDragEnd}>
+          <SortableContext items={steps.map((s) => s._dndId)} strategy={verticalListSortingStrategy}>
+            {steps.map((step, i) => (
+              <SortableStepRow
+                key={step._dndId}
+                step={step}
+                index={i}
+                onUpdate={updateStep}
+                onRemove={removeStep}
+                disableRemove={steps.length <= 1}
+                showDuration={showStepDurations}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={addStep}>
+            <Plus className="h-4 w-4 mr-1" />
+            {t("recipe.addStep")}
+          </Button>
+          <Button
+            type="button"
+            variant={showStepDurations ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowStepDurations((v) => !v)}
+          >
+            <Clock className="h-4 w-4 mr-1" />
+            {t("form.showDurations")}
+          </Button>
+        </div>
       </div>
 
       {/* Image Upload */}

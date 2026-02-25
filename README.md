@@ -1,28 +1,31 @@
 # Prepped
 
-A self-hosted recipe management app for families. Scrape recipes from URLs, refine them with AI, scale servings, track cooking attempts with photos, and chat with AI about any recipe.
+A self-hosted recipe manager for families and small groups. Import recipes from any URL with AI, scale servings, track cooking attempts, and organize everything with collections and tags.
 
 ## Features
 
 - **Import recipes** from any URL — AI extracts ingredients, steps, and metadata
 - **Paste recipe text** — AI structures it for you
+- **Photo import** — snap a cookbook page and get a structured recipe
 - **Metric conversion** — imported recipes are auto-converted to metric
 - **Servings scaler** — adjust servings and all ingredients scale in real time
 - **AI chat** — ask questions about any recipe (substitutions, tips, technique)
 - **Cook log** — track when you made a recipe, with photos, notes, and ratings
+- **Fork recipes** — copy a community recipe to your own collection and customize it
 - **Collections & tags** — organize recipes your way
+- **Shopping list** — combine ingredients from multiple recipes, organize with AI
 - **YouTube videos** — embedded on recipe pages when available
 - **Mobile-friendly** — responsive design, works great on phones
-- **Multi-language** — English and Dutch (via `PUBLIC_UI_LOCALE` env var)
+- **Multi-language** — English and Dutch (`PUBLIC_UI_LOCALE`)
 - **Single-file database** — SQLite, backup = copy one folder
 
 ## Quick Start with Docker
 
 ```sh
-git clone https://github.com/your-username/prepped.git
+git clone <your-repo-url>
 cd prepped
 cp .env.example .env
-# Edit .env with your settings (at minimum set BETTER_AUTH_SECRET and OPENROUTER_API_KEY)
+# Edit .env — at minimum set BETTER_AUTH_SECRET and OPENROUTER_API_KEY
 docker compose up -d
 ```
 
@@ -31,60 +34,24 @@ The app will be available at `http://localhost:4321`.
 ## Quick Start without Docker
 
 ```sh
-git clone https://github.com/your-username/prepped.git
+git clone <your-repo-url>
 cd prepped
 npm install
 cp .env.example .env
 # Edit .env with your settings
-npx drizzle-kit push
-npm run dev
+npx drizzle-kit push    # Create database tables
+npm run dev             # Start dev server at localhost:4321
 ```
 
-## Dev Troubleshooting
+### Seed dev data
 
-### `Uncaught TypeError: jsxDEV is not a function`
-
-This happens when the dev server runs with `NODE_ENV=production`, which makes React's dev JSX runtime invalid.
-
-Use the project scripts (they force dev mode) and clear Vite cache once:
+Populate the database with test users and sample recipes:
 
 ```sh
-npm run dev:clean
+npm run seed
 ```
 
-### `504 (Outdated Optimize Dep)` in the browser console
-
-This error means Vite's pre-bundled dependency cache is stale relative to currently loaded client islands.  
-It can happen during active development when dependencies or import graphs change.
-
-Use the clean dev command to reset cache and force re-optimization:
-
-```sh
-npm run dev:clean
-```
-
-Rule of thumb for this codebase:
-- Keep AI/auth SDK clients server-side (API routes and server libs)
-- Keep client islands dependency-light and call server APIs via `fetch`
-
-### AI auth/config failures (`AI_APICallError`, `401/403`, `429`)
-
-Symptom:
-- AI actions (new recipe import or recipe chat) fail with provider auth errors.
-
-Likely causes:
-- `OPENROUTER_API_KEY` is missing or empty in runtime environment.
-- API key is invalid, expired, or restricted to a different project/service.
-- The configured model is not enabled for your OpenRouter account.
-
-Quick checks:
-- Verify `.env` has a valid `OPENROUTER_API_KEY`.
-- Verify `OPENROUTER_PRIMARY_MODEL` and `OPENROUTER_FALLBACK_MODEL` are valid OpenRouter model IDs.
-- Restart the server after changing env vars.
-- Test with a newly generated key from OpenRouter.
-
-Server-side behavior:
-- AI API routes sanitize provider errors and return JSON error responses (`{ error, code }`) so frontend actions can fail gracefully without raw error pages.
+This creates 3 users (`chef@test.com`, `maria@test.com`, `james@test.com` — all password `test1234`) with ~12 recipes, cook logs, and cross-user forks.
 
 ## Environment Variables
 
@@ -95,20 +62,20 @@ Server-side behavior:
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key for AI features ([get one here](https://openrouter.ai/keys)) |
 | `OPENROUTER_PRIMARY_MODEL` | No | Primary OpenRouter model (default: `google/gemini-3-flash-preview`) |
 | `OPENROUTER_FALLBACK_MODEL` | No | Backup OpenRouter model (default: `openai/gpt-5-mini`) |
-| `OPENROUTER_FALLBACK_MODELS` | No | Optional comma-separated backups (overrides `OPENROUTER_FALLBACK_MODEL`) |
+| `OPENROUTER_FALLBACK_MODELS` | No | Comma-separated fallback chain (overrides `OPENROUTER_FALLBACK_MODEL`) |
 | `OPENROUTER_BASE_URL` | No | OpenRouter API base URL (default: `https://openrouter.ai/api/v1`) |
 | `OPENROUTER_APP_NAME` | No | App name sent in OpenRouter request headers (default: `Prepped`) |
-| `SCRAPE_DO_TOKEN` | No | scrape.do API token used as fallback when direct website import is blocked |
+| `SCRAPE_DO_TOKEN` | No | scrape.do API token for fallback when direct import is blocked |
 | `SCRAPE_DO_BASE_URL` | No | scrape.do base URL (default: `http://api.scrape.do/`) |
-| `SCRAPE_DO_GEO_CODE` | No | scrape.do geo code for requests (default: `NL`) |
-| `INVITE_CODE` | No | If set, new users must enter this code to register. Leave empty for open registration |
+| `SCRAPE_DO_GEO_CODE` | No | scrape.do geo code (default: `NL`) |
+| `INVITE_CODE` | No | If set, new users must enter this code to register |
 | `MEASUREMENT_SYSTEM` | No | `metric` (default) or `imperial` |
 | `PUBLIC_UI_LOCALE` | No | `en` (default) or `nl` |
 
 ## Data & Backups
 
 All data lives in the `data/` directory (or Docker volume):
-- `data/recepten.db` — SQLite database
+- `data/prepped.db` — SQLite database
 - `data/uploads/` — uploaded images
 
 To backup: copy the `data/` directory. To restore: put it back.
@@ -120,7 +87,7 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 1. Set `BETTER_AUTH_URL` to your public URL
 2. Set `BETTER_AUTH_SECRET` to a strong random value
 3. Configure your reverse proxy to forward to port 4321
-4. Optionally set `INVITE_CODE` to restrict registration to your family
+4. Optionally set `INVITE_CODE` to restrict registration
 
 ## Tech Stack
 
@@ -128,18 +95,32 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 - [Shadcn UI](https://ui.shadcn.com) + Tailwind CSS v4
 - [SQLite](https://sqlite.org) (better-sqlite3) + [Drizzle ORM](https://orm.drizzle.team)
 - [Better Auth](https://better-auth.com) (email/password)
-- [AI SDK](https://sdk.vercel.ai) + [OpenRouter](https://openrouter.ai) (`google/gemini-3-flash-preview` with `openai/gpt-5-mini` fallback)
+- [AI SDK](https://sdk.vercel.ai) + [OpenRouter](https://openrouter.ai)
 - [Sharp](https://sharp.pixelplumbing.com) for image processing
 
-## Local Quality Gate
+## Troubleshooting
 
-There is no CI workflow configured in this repository right now.  
-Before opening a PR, run at minimum:
+### `Uncaught TypeError: jsxDEV is not a function`
+
+Happens when the dev server runs with `NODE_ENV=production`. Clear Vite cache:
 
 ```sh
-npm run check:client-boundaries
-npm run build
+npm run dev:clean
 ```
+
+### `504 (Outdated Optimize Dep)`
+
+Vite's pre-bundled dependency cache is stale. Reset with:
+
+```sh
+npm run dev:clean
+```
+
+### AI errors (`AI_APICallError`, `401/403`, `429`)
+
+- Verify `.env` has a valid `OPENROUTER_API_KEY`
+- Check that model IDs (`OPENROUTER_PRIMARY_MODEL`, `OPENROUTER_FALLBACK_MODEL`) are valid
+- Restart the server after changing env vars
 
 ## License
 

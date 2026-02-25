@@ -20,7 +20,7 @@ if (!collection) {
   return Astro.redirect("/collections");
 }
 
-const collectionRecipes = db
+const collectionRecipesRaw = db
   .select({
     id: recipes.id,
     title: recipes.title,
@@ -30,11 +30,19 @@ const collectionRecipes = db
     prepTime: recipes.prepTime,
     cookTime: recipes.cookTime,
     difficulty: recipes.difficulty,
+    createdBy: recipes.createdBy,
   })
   .from(recipeCollections)
   .innerJoin(recipes, eq(recipeCollections.recipeId, recipes.id))
   .where(eq(recipeCollections.collectionId, collection.id))
   .all();
+
+const collectionRecipes = collectionRecipesRaw.map((r) => ({
+  ...r,
+  href: r.createdBy === Astro.locals.user!.id
+    ? `/recipes/${r.slug}`
+    : `/users/${r.createdBy}/recipes/${r.slug}`,
+}));
 ---
 
 <Layout title={collection.name}>
@@ -66,17 +74,23 @@ const collectionRecipes = db
     <RecipeGrid recipes={collectionRecipes} />
   </div>
 
-  <script>
-    const btn = document.getElementById("delete-collection");
-    if (btn) {
-      btn.addEventListener("click", async () => {
-        if (!confirm(btn.getAttribute("data-confirm")!)) return;
-        const id = btn.getAttribute("data-id");
-        const res = await fetch(`/api/collections/${id}`, { method: "DELETE" });
+  <script is:inline>
+    document.addEventListener("click", async (e) => {
+      const btn = e.target.closest("#delete-collection");
+      if (!btn) return;
+      if (!confirm(btn.getAttribute("data-confirm"))) return;
+      const id = btn.getAttribute("data-id");
+      try {
+        const res = await fetch("/api/collections/" + id, { method: "DELETE" });
         if (res.ok) {
           window.location.href = "/collections";
+        } else {
+          const text = await res.text();
+          alert("Delete failed: " + (text || res.status));
         }
-      });
-    }
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+      }
+    });
   </script>
 </Layout>

@@ -12,6 +12,7 @@ interface Props {
     prepTime?: number | null;
     cookTime?: number | null;
     difficulty?: string | null;
+    href?: string;
   }[];
 }
 
@@ -33,7 +34,7 @@ const { recipes } = Astro.props;
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
       {recipes.map((recipe, i) => (
         <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
-          <RecipeCard recipe={recipe} />
+          <RecipeCard recipe={recipe} href={recipe.href} />
         </div>
       ))}
     </div>
