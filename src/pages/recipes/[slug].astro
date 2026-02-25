@@ -197,7 +197,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       <div class="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
         <button
           id="share-recipe"
-          class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          class="sm:hidden inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
           aria-label={t("recipe.share")}
         >
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -228,11 +228,10 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
           </a>
           <button
             id="delete-recipe"
-            data-id={recipe.id}
-            data-confirm={t("recipe.deleteConfirm")}
             class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
+            onclick={`if(confirm('${t("recipe.deleteConfirm").replace(/'/g, "\\'")}'))fetch('/api/recipes/${recipe.id}',{method:'DELETE'}).then(r=>r.ok?location.href='/recipes':r.text().then(t=>alert('Delete failed: '+(t||r.status)))).catch(e=>alert('Delete failed: '+e.message))`}
           >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
             </svg>
             <span class="sr-only">{t("recipe.delete")}</span>
@@ -429,24 +428,6 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
   </article>
 
   <script is:inline>
-    document.addEventListener("click", async (e) => {
-      const btn = e.target.closest("#delete-recipe");
-      if (!btn) return;
-      if (!confirm(btn.getAttribute("data-confirm"))) return;
-      const id = btn.getAttribute("data-id");
-      try {
-        const res = await fetch("/api/recipes/" + id, { method: "DELETE" });
-        if (res.ok) {
-          window.location.href = "/recipes";
-        } else {
-          const text = await res.text();
-          alert("Delete failed: " + (text || res.status));
-        }
-      } catch (err) {
-        alert("Delete failed: " + err.message);
-      }
-    });
-
     document.getElementById('share-recipe')?.addEventListener('click', async () => {
       const url = window.location.href;
       const title = document.title;

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical, Clock } from "lucide-react";
+import { Plus, Trash2, GripVertical, Clock, Layers } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
 import {
@@ -81,12 +81,14 @@ function SortableIngredientRow({
   onUpdate,
   onRemove,
   disableRemove,
+  showGroup,
 }: {
   ing: IngredientWithId;
   index: number;
   onUpdate: (index: number, field: keyof Ingredient, value: string) => void;
   onRemove: (index: number) => void;
   disableRemove: boolean;
+  showGroup: boolean;
 }) {
   const {
     attributes,
@@ -142,12 +144,14 @@ function SortableIngredientRow({
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <Input
-        placeholder={t("form.group")}
-        value={ing.group || ""}
-        onChange={(e) => onUpdate(index, "group", e.target.value)}
-        className="w-full sm:w-28"
-      />
+      {showGroup && (
+        <Input
+          placeholder={t("form.group")}
+          value={ing.group || ""}
+          onChange={(e) => onUpdate(index, "group", e.target.value)}
+          className="w-full sm:w-28"
+        />
+      )}
     </div>
   );
 }
@@ -254,8 +258,9 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
   const [steps, setSteps] = useState<StepWithId[]>(
     initial?.steps?.length ? initial.steps.map(withStepDndId) : [withStepDndId(emptyStep(1))]
   );
-  const [showStepDurations, setShowStepDurations] = useState(() =>
-    initial?.steps?.some((s) => !!s.duration) ?? false
+  const [showStepDurations, setShowStepDurations] = useState(false);
+  const [showGroups, setShowGroups] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth >= 640
   );
 
   function handleStepDragEnd(event: DragEndEvent) {
@@ -512,14 +517,26 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                 onUpdate={updateIngredient}
                 onRemove={removeIngredient}
                 disableRemove={ingredients.length <= 1}
+                showGroup={showGroups}
               />
             ))}
           </SortableContext>
         </DndContext>
-        <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
-          <Plus className="h-4 w-4 mr-1" />
-          {t("recipe.addIngredient")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
+            <Plus className="h-4 w-4 mr-1" />
+            {t("recipe.addIngredient")}
+          </Button>
+          <Button
+            type="button"
+            variant={showGroups ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowGroups((v) => !v)}
+          >
+            <Layers className="h-4 w-4 mr-1" />
+            {t("form.showGroups")}
+          </Button>
+        </div>
       </div>
 
       {/* Steps */}
