@@ -2,6 +2,7 @@
 import "../styles/globals.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import MobileToolbar from "../islands/MobileToolbar";
 import { t, locale } from "../lib/i18n";
 
 interface Props {
@@ -15,16 +16,25 @@ const pageTitle = title ? `${title} - ${t("site.title")}` : t("site.title");
 const pageDescription = description || t("site.description");
 const canonicalUrl = Astro.url.href;
 const user = Astro.locals.user;
+const authMode = import.meta.env.AUTH_MODE || "password";
+const pathname = Astro.url.pathname;
 ---
 
 <!doctype html>
 <html lang={locale}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content={pageDescription} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalUrl} />
+
+    {/* PWA */}
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#c2710c" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
     {/* Google Fonts — DM Serif Display for editorial headings + Inter for crisp body */}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -54,11 +64,14 @@ const user = Astro.locals.user;
   </head>
   <body class="min-h-screen bg-background text-foreground flex flex-col antialiased">
     <Header user={user} />
-    <main class="flex-1 w-full">
+    <main class="flex-1 w-full pb-20 md:pb-0">
       <div class="container mx-auto px-4 sm:px-6 py-6 md:py-10">
         <slot />
       </div>
     </main>
     <Footer />
+    {user && (
+      <MobileToolbar user={user} pathname={pathname} authMode={authMode} client:load />
+    )}
   </body>
 </html>

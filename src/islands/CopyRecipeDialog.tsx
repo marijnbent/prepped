@@ -51,10 +51,11 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/60 text-muted-foreground border border-border/30 hover:bg-secondary hover:text-foreground transition-colors"
           aria-label={t("recipe.copy")}
         >
-          <GitFork className="w-3.5 h-3.5" />
+          <GitFork className="w-3 h-3" />
+          <span className="sr-only sm:not-sr-only">{t("recipe.fork")}</span>
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

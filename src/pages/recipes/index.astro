@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import RecipeSearch from "../../islands/RecipeSearch";
 import { db } from "../../lib/db";
 import { recipes, recipeCollections, collections, users } from "../../lib/schema";
-import { desc, eq, and, ne, sql } from "drizzle-orm";
+import { desc, eq, and, ne, inArray } from "drizzle-orm";
 import { t } from "../../lib/i18n";
 
 if (!Astro.locals.user) {
@@ -42,16 +42,42 @@ const savedRecipes = db
   .orderBy(desc(recipes.createdAt))
   .all();
 
+// Build a map of original recipe ID → fork slug for saved recipes the user has forked
+const savedRecipeIds = savedRecipes.map((r) => r.id);
+const forkMap = new Map<number, string>();
+if (savedRecipeIds.length > 0) {
+  const forks = db
+    .select({ copiedFrom: recipes.copiedFrom, slug: recipes.slug })
+    .from(recipes)
+    .where(and(eq(recipes.createdBy, userId), inArray(recipes.copiedFrom, savedRecipeIds)))
+    .all();
+  for (const f of forks) {
+    if (f.copiedFrom) forkMap.set(f.copiedFrom, f.slug);
+  }
+}
+
 // Combine: own recipes first, then saved with a flag
 const allRecipes = [
-  ...ownRecipes.map((r) => ({ ...r, savedByUser: false, createdByName: undefined as string | undefined })),
-  ...savedRecipes.map((r) => ({ ...r, savedByUser: true })),
+  ...ownRecipes.map((r) => ({
+    ...r,
+    savedByUser: false,
+    createdByName: undefined as string | undefined,
+    forkSlug: undefined as string | undefined,
+  })),
+  ...savedRecipes.map((r) => ({
+    ...r,
+    savedByUser: true,
+    forkSlug: forkMap.get(r.id),
+  })),
 ];
 
 const totalCount = allRecipes.length;
 
 // Community recipes: all published recipes from other users (for search only)
-const savedRecipeIds = new Set(savedRecipes.map((r) => r.id));
+const savedRecipeIdSet = new Set(savedRecipeIds);
+const ownRecipeOriginals = new Set(
+  ownRecipes.filter((r) => r.copiedFrom).map((r) => r.copiedFrom!)
+);
 const communityRecipes = db
   .select({
     id: recipes.id,
@@ -70,7 +96,7 @@ const communityRecipes = db
   .where(and(eq(recipes.isPublished, true), ne(recipes.createdBy, userId)))
   .orderBy(desc(recipes.createdAt))
   .all()
-  .filter((r) => !savedRecipeIds.has(r.id));
+  .filter((r) => !savedRecipeIdSet.has(r.id) && !ownRecipeOriginals.has(r.id));
 ---
 
 <Layout title={t("nav.recipes")}>
@@ -101,7 +127,7 @@ const communityRecipes = db
       searchPlaceholder={t("recipe.search")}
       noResultsText={t("recipe.noRecipes")}
       minutesLabel={t("recipe.minutes")}
-      client:visible
+      client:load
     />
   </div>
 </Layout>

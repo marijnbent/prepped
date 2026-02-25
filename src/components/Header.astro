@@ -1,6 +1,5 @@
 ---
 import { t } from "../lib/i18n";
-import MobileNav from "../islands/MobileNav";
 import UserMenu from "../islands/UserMenu";
 import ThemeToggle from "../islands/ThemeToggle";
 
@@ -13,11 +12,9 @@ const pathname = Astro.url.pathname;
 const authMode = import.meta.env.AUTH_MODE || "password";
 const isEditPage = /\/edit$/.test(pathname);
 
-const navLinks = [
+const primaryNav = [
   { href: "/recipes", label: t("nav.recipes") },
   { href: "/collections", label: t("nav.collections") },
-  { href: "/cook-log", label: t("nav.cookLog") },
-  { href: "/shopping-list", label: t("nav.shoppingList") },
   { href: "/users", label: t("nav.community") },
 ];
 ---
@@ -45,9 +42,9 @@ const navLinks = [
         </span>
       </a>
 
-      {/* Desktop navigation — understated elegance */}
+      {/* Desktop primary navigation */}
       <nav class="hidden md:flex items-center gap-1">
-        {navLinks.map((link) => {
+        {primaryNav.map((link) => {
           const isActive = pathname.startsWith(link.href);
           return (
             <a
@@ -66,12 +63,23 @@ const navLinks = [
       </nav>
     </div>
 
-    {/* Right side actions */}
-    <div class="flex items-center gap-2">
+    {/* Desktop right side actions */}
+    <div class="hidden md:flex items-center gap-2">
+      {/* Search button */}
+      <a
+        href="/recipes?search="
+        class="inline-flex items-center justify-center rounded-lg w-9 h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200"
+        title={t("common.search")}
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      </a>
       {user && !isEditPage && (
         <a
           href="/recipes/new"
-          class="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 active:scale-[0.97]"
+          class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 active:scale-[0.97]"
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -79,16 +87,10 @@ const navLinks = [
           {t("nav.newRecipe")}
         </a>
       )}
-      <div class="hidden md:block">
-        <ThemeToggle client:load />
-      </div>
-      <div class="hidden md:block">
-        <UserMenu user={user} authMode={authMode} client:load />
-      </div>
-      <div class="md:hidden flex items-center gap-1">
-        <ThemeToggle client:load />
-        <MobileNav user={user} navLinks={navLinks} authMode={authMode} client:load />
-      </div>
+      <ThemeToggle client:load />
+      <UserMenu user={user} authMode={authMode} client:load />
     </div>
+
+    {/* Mobile: nothing on right side — toolbar handles navigation */}
   </div>
 </header>

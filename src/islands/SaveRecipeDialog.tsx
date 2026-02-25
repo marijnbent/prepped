@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { t } from "@/lib/i18n";
@@ -14,13 +14,22 @@ import { t } from "@/lib/i18n";
 interface Props {
   recipeId: number;
   collections: { id: number; name: string; recipeCount: number }[];
+  savedCollectionIds?: number[];
 }
 
-export default function SaveRecipeDialog({ recipeId, collections }: Props) {
+export default function SaveRecipeDialog({ recipeId, collections, savedCollectionIds = [] }: Props) {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<number[]>([]);
+  const [selected, setSelected] = useState<number[]>(savedCollectionIds);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const isSaved = savedCollectionIds.length > 0;
+
+  function handleOpen() {
+    setSelected(savedCollectionIds);
+    setSaved(false);
+    setOpen(true);
+  }
 
   function toggleCollection(id: number) {
     setSelected((prev) =>
@@ -29,7 +38,6 @@ export default function SaveRecipeDialog({ recipeId, collections }: Props) {
   }
 
   async function handleSave() {
-    if (selected.length === 0) return;
     setLoading(true);
     try {
       const res = await fetch("/api/recipes/save-to-collection", {
@@ -40,36 +48,44 @@ export default function SaveRecipeDialog({ recipeId, collections }: Props) {
       if (res.ok) {
         setSaved(true);
         setTimeout(() => {
-          setOpen(false);
-          setSaved(false);
-        }, 1200);
+          window.location.reload();
+        }, 600);
       }
     } finally {
       setLoading(false);
     }
   }
 
+  const hasChanges =
+    selected.length !== savedCollectionIds.length ||
+    selected.some((id) => !savedCollectionIds.includes(id)) ||
+    savedCollectionIds.some((id) => !selected.includes(id));
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          className="inline-flex items-center justify-center gap-1.5 h-9 w-9 sm:h-auto sm:w-auto rounded-full sm:rounded-lg border border-primary/30 bg-primary/10 text-primary px-0 sm:px-4 py-0 sm:py-2 text-xs font-medium sm:uppercase sm:tracking-wide hover:bg-primary hover:text-primary-foreground transition-all duration-200"
-          aria-label={t("recipe.saveToCollection")}
-        >
-          <Bookmark className="w-3.5 h-3.5" />
-          <span className="sr-only sm:not-sr-only">{t("recipe.saveToCollection")}</span>
-        </button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-serif text-xl">{t("recipe.saveToCollectionTitle")}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 mt-4">
-          {collections.length > 0 ? (
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                {t("recipe.saveToCollectionDesc")}
-              </p>
+    <>
+      <button
+        type="button"
+        onClick={handleOpen}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+          isSaved
+            ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+            : "bg-secondary/60 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground"
+        }`}
+      >
+        <Bookmark className={`w-3 h-3 ${isSaved ? "fill-current" : ""}`} />
+        {isSaved ? t("recipe.alreadySavedInCollection") : t("recipe.saveToCollection")}
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">{t("recipe.saveToCollectionTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("recipe.saveToCollectionDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {collections.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {collections.map((col) => (
                   <label
@@ -85,19 +101,19 @@ export default function SaveRecipeDialog({ recipeId, collections }: Props) {
                   </label>
                 ))}
               </div>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("collection.noCollections")}</p>
-          )}
-          <Button
-            onClick={handleSave}
-            disabled={loading || saved || selected.length === 0}
-            className="w-full"
-          >
-            {saved ? t("recipe.saved") : loading ? t("recipe.saving") : t("recipe.saveRecipe")}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("collection.noCollections")}</p>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={loading || saved || !hasChanges}
+              className="w-full"
+            >
+              {saved ? t("recipe.saved") : loading ? t("recipe.saving") : t("recipe.saveRecipe")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -43,16 +43,19 @@ export default function FavoriteButton({ recipeId, initialFavorited }: Props) {
         e.stopPropagation();
         toggle();
       }}
-      className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm transition-all duration-200 hover:scale-110 hover:border-rose-300 active:scale-95"
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+        favorited
+          ? "bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/20"
+          : "bg-secondary/60 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground"
+      }`}
       aria-label={favorited ? t("recipe.unfavorite") : t("recipe.favorite")}
     >
       <Heart
-        className={`w-4 h-4 transition-colors duration-200 ${
-          favorited
-            ? "fill-rose-500 text-rose-500"
-            : "fill-none text-muted-foreground hover:text-rose-400"
+        className={`w-3 h-3 transition-colors duration-200 ${
+          favorited ? "fill-current" : ""
         }`}
       />
+      <span className="sr-only sm:not-sr-only">{favorited ? t("recipe.unfavorite") : t("recipe.favorite")}</span>
     </button>
   );
 }

@@ -10,7 +10,7 @@ export default defineConfig({
   integrations: [react()],
   server: {
     host: process.env.HOST || "localhost",
-    port: parseInt(process.env.PORT || "4321"),
+    port: parseInt(process.env.PORT || "4322"),
   },
   vite: {
     plugins: [tailwindcss()],

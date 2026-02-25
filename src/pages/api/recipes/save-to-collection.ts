@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const saveSchema = z.object({
   recipeId: z.number().int().positive(),
-  collectionIds: z.array(z.number().int().positive()).min(1),
+  collectionIds: z.array(z.number().int().positive()),
 });
 
 export const POST: APIRoute = async ({ request, locals }) => {
@@ -28,29 +28,46 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
 
+  // Get all user's collections
+  const userCollections = db
+    .select({ id: collections.id })
+    .from(collections)
+    .where(eq(collections.createdBy, locals.user.id))
+    .all();
+  const userCollectionIds = new Set(userCollections.map((c) => c.id));
+
+  // Get current saved state for this recipe across user's collections
+  const currentSaved = db
+    .select({ collectionId: recipeCollections.collectionId })
+    .from(recipeCollections)
+    .innerJoin(collections, eq(recipeCollections.collectionId, collections.id))
+    .where(and(eq(recipeCollections.recipeId, recipeId), eq(collections.createdBy, locals.user.id)))
+    .all()
+    .map((r) => r.collectionId);
+  const currentSet = new Set(currentSaved);
+  const desiredSet = new Set(collectionIds.filter((id) => userCollectionIds.has(id)));
+
+  // Add new
   let added = 0;
-  for (const collectionId of collectionIds) {
-    // Verify collection belongs to current user
-    const col = db
-      .select()
-      .from(collections)
-      .where(and(eq(collections.id, collectionId), eq(collections.createdBy, locals.user.id)))
-      .get();
-    if (!col) continue;
-
-    // Check if already in collection
-    const existing = db
-      .select()
-      .from(recipeCollections)
-      .where(and(eq(recipeCollections.recipeId, recipeId), eq(recipeCollections.collectionId, collectionId)))
-      .get();
-    if (existing) continue;
-
-    db.insert(recipeCollections).values({ recipeId, collectionId }).run();
-    added++;
+  for (const colId of desiredSet) {
+    if (!currentSet.has(colId)) {
+      db.insert(recipeCollections).values({ recipeId, collectionId: colId }).run();
+      added++;
+    }
   }
 
-  return new Response(JSON.stringify({ added }), {
+  // Remove old
+  let removed = 0;
+  for (const colId of currentSet) {
+    if (!desiredSet.has(colId)) {
+      db.delete(recipeCollections)
+        .where(and(eq(recipeCollections.recipeId, recipeId), eq(recipeCollections.collectionId, colId)))
+        .run();
+      removed++;
+    }
+  }
+
+  return new Response(JSON.stringify({ added, removed }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

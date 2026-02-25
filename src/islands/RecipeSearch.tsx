@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useRef } from "react";
 import { t } from "@/lib/i18n";
 
 interface Recipe {
@@ -14,6 +13,7 @@ interface Recipe {
   savedByUser?: boolean;
   createdBy?: string;
   createdByName?: string | null;
+  forkSlug?: string;
 }
 
 interface CommunityRecipe {
@@ -53,35 +53,29 @@ export default function RecipeSearch({
     if (params.has("search")) {
       const val = params.get("search") || "";
       setQuery(val);
-      // Auto-focus after a brief delay to ensure the input is rendered
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, []);
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return recipes;
-    const q = query.toLowerCase();
-    return recipes.filter(
-      (r) =>
-        r.title.toLowerCase().includes(q) ||
-        r.description?.toLowerCase().includes(q) ||
-        r.createdByName?.toLowerCase().includes(q)
-    );
-  }, [recipes, query]);
+  // Direct computation — no useMemo
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? recipes.filter(
+        (r) =>
+          r.title.toLowerCase().includes(q) ||
+          r.description?.toLowerCase().includes(q) ||
+          r.createdByName?.toLowerCase().includes(q)
+      )
+    : recipes;
 
-  // Community results only shown when searching
-  const filteredCommunity = useMemo(() => {
-    if (!query.trim() || communityRecipes.length === 0) return [];
-    const q = query.toLowerCase();
-    return communityRecipes.filter(
-      (r) =>
-        r.title.toLowerCase().includes(q) ||
-        r.description?.toLowerCase().includes(q) ||
-        r.authorName?.toLowerCase().includes(q)
-    );
-  }, [communityRecipes, query]);
+  const filteredCommunity = q && communityRecipes.length > 0
+    ? communityRecipes.filter(
+        (r) =>
+          r.title.toLowerCase().includes(q) ||
+          r.description?.toLowerCase().includes(q) ||
+          r.authorName?.toLowerCase().includes(q)
+      )
+    : [];
 
   const difficultyLabel = (d: string) => {
     if (d === "easy") return t("recipe.easy");
@@ -91,6 +85,11 @@ export default function RecipeSearch({
   };
 
   const getRecipeHref = (recipe: Recipe) => {
+    // If user has forked this recipe, link to their fork
+    if (recipe.forkSlug) {
+      return `/recipes/${recipe.forkSlug}`;
+    }
+    // Saved recipes from other users link to the original
     if (recipe.savedByUser && recipe.createdBy) {
       return `/users/${recipe.createdBy}/recipes/${recipe.slug}`;
     }
@@ -113,13 +112,13 @@ export default function RecipeSearch({
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
-        <Input
+        <input
           ref={inputRef}
           type="search"
           placeholder={searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-11 h-12 rounded-xl bg-secondary/60 backdrop-blur-sm border-border/30 border shadow-inner shadow-black/10 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all placeholder:text-muted-foreground/60 text-sm"
+          className="w-full pl-11 h-12 rounded-xl bg-secondary/60 backdrop-blur-sm border-border/30 border shadow-inner shadow-black/10 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all placeholder:text-muted-foreground/60 text-sm outline-none"
         />
       </div>
 
@@ -179,10 +178,10 @@ export default function RecipeSearch({
                       />
                       {/* Deep cinematic gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
-                      {/* Saved badge */}
+                      {/* Saved/Forked badge */}
                       {recipe.savedByUser && (
                         <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm">
-                          {t("recipe.savedBadge")}
+                          {recipe.forkSlug ? t("recipe.alreadyForked") : t("recipe.savedBadge")}
                         </span>
                       )}
                       {/* Title over image */}
@@ -207,10 +206,10 @@ export default function RecipeSearch({
                       >
                         <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
                       </svg>
-                      {/* Saved badge */}
+                      {/* Saved/Forked badge */}
                       {recipe.savedByUser && (
                         <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm">
-                          {t("recipe.savedBadge")}
+                          {recipe.forkSlug ? t("recipe.alreadyForked") : t("recipe.savedBadge")}
                         </span>
                       )}
                       <div className="absolute bottom-0 inset-x-0 p-4 pb-3">

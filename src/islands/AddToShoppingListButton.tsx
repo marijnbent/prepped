@@ -63,16 +63,15 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
         e.stopPropagation();
         toggle();
       }}
-      className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm transition-all duration-200 hover:scale-110 hover:border-amber-300 active:scale-95"
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+        inList
+          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+          : "bg-secondary/60 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground"
+      }`}
       aria-label={inList ? t("shopping.removeFromList") : t("shopping.addToList")}
     >
-      <ShoppingBasket
-        className={`w-4 h-4 transition-colors duration-200 ${
-          inList
-            ? "fill-amber-500/20 text-amber-500"
-            : "fill-none text-muted-foreground hover:text-amber-400"
-        }`}
-      />
+      <ShoppingBasket className={`w-3 h-3 ${inList ? "fill-current/20" : ""}`} />
+      <span className="sr-only sm:not-sr-only">{inList ? t("shopping.removeFromList") : t("shopping.addToList")}</span>
     </button>
   );
 }
