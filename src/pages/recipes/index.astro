@@ -2,20 +2,75 @@
 import Layout from "../../layouts/Layout.astro";
 import RecipeSearch from "../../islands/RecipeSearch";
 import { db } from "../../lib/db";
-import { recipes } from "../../lib/schema";
-import { desc, eq, and } from "drizzle-orm";
+import { recipes, recipeCollections, collections, users } from "../../lib/schema";
+import { desc, eq, and, ne, sql } from "drizzle-orm";
 import { t } from "../../lib/i18n";
 
 if (!Astro.locals.user) {
   return Astro.redirect("/login?redirect=/recipes");
 }
 
-const allRecipes = db
+const userId = Astro.locals.user.id;
+
+// Own recipes
+const ownRecipes = db
   .select()
   .from(recipes)
-  .where(and(eq(recipes.isPublished, true), eq(recipes.createdBy, Astro.locals.user.id)))
+  .where(and(eq(recipes.isPublished, true), eq(recipes.createdBy, userId)))
   .orderBy(desc(recipes.createdAt))
   .all();
+
+// Saved recipes: other users' recipes that are in my collections
+const savedRecipes = db
+  .selectDistinct({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    description: recipes.description,
+    imageUrl: recipes.imageUrl,
+    prepTime: recipes.prepTime,
+    cookTime: recipes.cookTime,
+    difficulty: recipes.difficulty,
+    createdBy: recipes.createdBy,
+    createdByName: users.name,
+  })
+  .from(recipes)
+  .innerJoin(recipeCollections, eq(recipes.id, recipeCollections.recipeId))
+  .innerJoin(collections, eq(recipeCollections.collectionId, collections.id))
+  .innerJoin(users, eq(recipes.createdBy, users.id))
+  .where(and(eq(collections.createdBy, userId), ne(recipes.createdBy, userId)))
+  .orderBy(desc(recipes.createdAt))
+  .all();
+
+// Combine: own recipes first, then saved with a flag
+const allRecipes = [
+  ...ownRecipes.map((r) => ({ ...r, savedByUser: false, createdByName: undefined as string | undefined })),
+  ...savedRecipes.map((r) => ({ ...r, savedByUser: true })),
+];
+
+const totalCount = allRecipes.length;
+
+// Community recipes: all published recipes from other users (for search only)
+const savedRecipeIds = new Set(savedRecipes.map((r) => r.id));
+const communityRecipes = db
+  .select({
+    id: recipes.id,
+    title: recipes.title,
+    slug: recipes.slug,
+    description: recipes.description,
+    imageUrl: recipes.imageUrl,
+    prepTime: recipes.prepTime,
+    cookTime: recipes.cookTime,
+    difficulty: recipes.difficulty,
+    createdBy: recipes.createdBy,
+    authorName: users.name,
+  })
+  .from(recipes)
+  .innerJoin(users, eq(recipes.createdBy, users.id))
+  .where(and(eq(recipes.isPublished, true), ne(recipes.createdBy, userId)))
+  .orderBy(desc(recipes.createdAt))
+  .all()
+  .filter((r) => !savedRecipeIds.has(r.id));
 ---
 
 <Layout title={t("nav.recipes")}>
@@ -25,12 +80,12 @@ const allRecipes = db
       <div>
         <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("nav.recipes")}</h1>
         <p class="text-muted-foreground/50 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
-          {allRecipes.length} {allRecipes.length === 1 ? t("count.recipe") : t("count.recipes")}
+          {totalCount} {totalCount === 1 ? t("count.recipe") : t("count.recipes")}
         </p>
       </div>
       <a
         href="/recipes/new"
-        class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 transition-all duration-300 active:scale-[0.97] animate-fade-up"
+        class="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 transition-all duration-300 active:scale-[0.97] animate-fade-up"
         style="animation-delay: 100ms;"
       >
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -42,6 +97,7 @@ const allRecipes = db
 
     <RecipeSearch
       recipes={allRecipes}
+      communityRecipes={communityRecipes}
       searchPlaceholder={t("recipe.search")}
       noResultsText={t("recipe.noRecipes")}
       minutesLabel={t("recipe.minutes")}

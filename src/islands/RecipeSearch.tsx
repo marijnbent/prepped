@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { t } from "@/lib/i18n";
 
@@ -11,10 +11,27 @@ interface Recipe {
   prepTime?: number | null;
   cookTime?: number | null;
   difficulty?: string | null;
+  savedByUser?: boolean;
+  createdBy?: string;
+  createdByName?: string | null;
+}
+
+interface CommunityRecipe {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
+  difficulty?: string | null;
+  createdBy: string;
+  authorName: string;
 }
 
 interface Props {
   recipes: Recipe[];
+  communityRecipes?: CommunityRecipe[];
   searchPlaceholder?: string;
   noResultsText?: string;
   minutesLabel?: string;
@@ -22,11 +39,26 @@ interface Props {
 
 export default function RecipeSearch({
   recipes,
+  communityRecipes = [],
   searchPlaceholder = t("recipe.search"),
   noResultsText = t("recipe.noRecipes"),
   minutesLabel = t("recipe.minutes"),
 }: Props) {
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Read ?search param on mount and auto-focus
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("search")) {
+      const val = params.get("search") || "";
+      setQuery(val);
+      // Auto-focus after a brief delay to ensure the input is rendered
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return recipes;
@@ -34,15 +66,35 @@ export default function RecipeSearch({
     return recipes.filter(
       (r) =>
         r.title.toLowerCase().includes(q) ||
-        r.description?.toLowerCase().includes(q)
+        r.description?.toLowerCase().includes(q) ||
+        r.createdByName?.toLowerCase().includes(q)
     );
   }, [recipes, query]);
+
+  // Community results only shown when searching
+  const filteredCommunity = useMemo(() => {
+    if (!query.trim() || communityRecipes.length === 0) return [];
+    const q = query.toLowerCase();
+    return communityRecipes.filter(
+      (r) =>
+        r.title.toLowerCase().includes(q) ||
+        r.description?.toLowerCase().includes(q) ||
+        r.authorName?.toLowerCase().includes(q)
+    );
+  }, [communityRecipes, query]);
 
   const difficultyLabel = (d: string) => {
     if (d === "easy") return t("recipe.easy");
     if (d === "medium") return t("recipe.medium");
     if (d === "hard") return t("recipe.hard");
     return d;
+  };
+
+  const getRecipeHref = (recipe: Recipe) => {
+    if (recipe.savedByUser && recipe.createdBy) {
+      return `/users/${recipe.createdBy}/recipes/${recipe.slug}`;
+    }
+    return `/recipes/${recipe.slug}`;
   };
 
   return (
@@ -62,6 +114,7 @@ export default function RecipeSearch({
           <path d="m21 21-4.3-4.3" />
         </svg>
         <Input
+          ref={inputRef}
           type="search"
           placeholder={searchPlaceholder}
           value={query}
@@ -70,7 +123,7 @@ export default function RecipeSearch({
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && filteredCommunity.length === 0 ? (
         /* Empty state */
         <div className="text-center py-28">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 border border-border/30 mb-6">
@@ -96,7 +149,9 @@ export default function RecipeSearch({
           )}
         </div>
       ) : (
-        /* Recipe grid — matches RecipeCard.astro visually */
+        <>
+        {/* Recipe grid — matches RecipeCard.astro visually */}
+        {filtered.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
           {filtered.map((recipe, i) => {
             const totalTime =
@@ -104,7 +159,7 @@ export default function RecipeSearch({
             return (
               <a
                 key={recipe.id}
-                href={`/recipes/${recipe.slug}`}
+                href={getRecipeHref(recipe)}
                 className="group block animate-fade-up"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
@@ -124,6 +179,12 @@ export default function RecipeSearch({
                       />
                       {/* Deep cinematic gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
+                      {/* Saved badge */}
+                      {recipe.savedByUser && (
+                        <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm">
+                          {t("recipe.savedBadge")}
+                        </span>
+                      )}
                       {/* Title over image */}
                       <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
                         <h3 className="text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg" style={{ fontFamily: 'var(--font-serif)' }}>
@@ -146,6 +207,12 @@ export default function RecipeSearch({
                       >
                         <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
                       </svg>
+                      {/* Saved badge */}
+                      {recipe.savedByUser && (
+                        <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm">
+                          {t("recipe.savedBadge")}
+                        </span>
+                      )}
                       <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
                         <h3 className="text-xl leading-tight text-foreground/80 line-clamp-2" style={{ fontFamily: 'var(--font-serif)' }}>
                           {recipe.title}
@@ -161,7 +228,7 @@ export default function RecipeSearch({
                         {recipe.description}
                       </p>
                     )}
-                    {(totalTime > 0 || recipe.difficulty) && (
+                    {(totalTime > 0 || recipe.difficulty || recipe.savedByUser) && (
                       <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/30">
                         {totalTime > 0 && (
                           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
@@ -192,6 +259,15 @@ export default function RecipeSearch({
                             {difficultyLabel(recipe.difficulty)}
                           </span>
                         )}
+                        {recipe.savedByUser && recipe.createdByName && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 ml-auto">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            {recipe.createdByName}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -203,6 +279,98 @@ export default function RecipeSearch({
             );
           })}
         </div>
+        )}
+
+      {/* Community search results — only visible when searching */}
+      {filteredCommunity.length > 0 && (
+        <div className="mt-14">
+          <h2 className="text-lg font-serif tracking-tight text-muted-foreground mb-6">
+            {t("recipe.communityResults")}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+            {filteredCommunity.map((recipe, i) => {
+              const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+              return (
+                <a
+                  key={recipe.id}
+                  href={`/users/${recipe.createdBy}/recipes/${recipe.slug}`}
+                  className="group block animate-fade-up"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <div className="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
+                    {recipe.imageUrl ? (
+                      <div className="aspect-[4/3] overflow-hidden relative">
+                        <img
+                          src={
+                            recipe.imageUrl.startsWith("/")
+                              ? `/api/uploads${recipe.imageUrl}`
+                              : recipe.imageUrl
+                          }
+                          alt={recipe.title}
+                          className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
+                        <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
+                          <h3 className="text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg" style={{ fontFamily: 'var(--font-serif)' }}>
+                            {recipe.title}
+                          </h3>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute top-6 right-6 w-24 h-24 rounded-full border border-primary/10" />
+                        <div className="absolute bottom-8 left-8 w-16 h-16 rounded-full bg-primary/5" />
+                        <svg className="w-14 h-14 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
+                        </svg>
+                        <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
+                          <h3 className="text-xl leading-tight text-foreground/80 line-clamp-2" style={{ fontFamily: 'var(--font-serif)' }}>
+                            {recipe.title}
+                          </h3>
+                        </div>
+                      </div>
+                    )}
+                    <div className="px-4 pb-4 pt-2">
+                      {recipe.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                          {recipe.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/30">
+                        {totalTime > 0 && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                            <svg className="w-3.5 h-3.5 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 6v6l4 2" />
+                            </svg>
+                            {totalTime} {minutesLabel}
+                          </span>
+                        )}
+                        {recipe.difficulty && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 capitalize">
+                            <span className={`w-1.5 h-1.5 rounded-full ${recipe.difficulty === "easy" ? "bg-emerald-400" : recipe.difficulty === "medium" ? "bg-amber-400" : "bg-rose-400"}`} />
+                            {difficultyLabel(recipe.difficulty)}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 ml-auto">
+                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          {recipe.authorName}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+        </>
       )}
     </div>
   );

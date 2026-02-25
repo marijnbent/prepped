@@ -87,7 +87,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   });
 };
 
-export const DELETE: APIRoute = async ({ params, locals }) => {
+export const POST: APIRoute = async ({ params, locals }) => {
   if (!locals.user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }

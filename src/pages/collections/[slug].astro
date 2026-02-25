@@ -81,7 +81,7 @@ const collectionRecipes = collectionRecipesRaw.map((r) => ({
       if (!confirm(btn.getAttribute("data-confirm"))) return;
       const id = btn.getAttribute("data-id");
       try {
-        const res = await fetch("/api/collections/" + id, { method: "DELETE" });
+        const res = await fetch("/api/collections/" + id, { method: "POST" });
         if (res.ok) {
           window.location.href = "/collections";
         } else {

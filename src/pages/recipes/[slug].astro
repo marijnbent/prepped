@@ -229,7 +229,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
           <button
             id="delete-recipe"
             class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
-            onclick={`if(confirm('${t("recipe.deleteConfirm").replace(/'/g, "\\'")}'))fetch('/api/recipes/${recipe.id}',{method:'DELETE'}).then(r=>r.ok?location.href='/recipes':r.text().then(t=>alert('Delete failed: '+(t||r.status)))).catch(e=>alert('Delete failed: '+e.message))`}
+            onclick={`if(confirm('${t("recipe.deleteConfirm").replace(/'/g, "\\'")}'))fetch('/api/recipes/${recipe.id}',{method:'POST'}).then(r=>r.ok?location.href='/recipes':r.text().then(t=>alert('Delete failed: '+(t||r.status)))).catch(e=>alert('Delete failed: '+e.message))`}
           >
             <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />

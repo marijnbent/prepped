@@ -16,6 +16,7 @@ const strings = {
     "nav.importRecipe": "Import Recipe",
     "nav.community": "Community",
     "nav.favorites": "Favorites",
+    "nav.more": "More",
 
     // Home page
     "home.welcome": "Welcome back",
@@ -95,6 +96,8 @@ const strings = {
     "recipe.linkCopied": "Link copied!",
     "recipe.alreadyForked": "Already forked",
     "recipe.alreadySavedInCollection": "Saved",
+    "recipe.savedBadge": "Saved",
+    "recipe.communityResults": "Community",
 
     // Import
     "import.title": "Import Recipe",
@@ -326,6 +329,7 @@ const strings = {
     "nav.importRecipe": "Recept importeren",
     "nav.community": "Community",
     "nav.favorites": "Favorieten",
+    "nav.more": "Meer",
 
     // Home page
     "home.welcome": "Welkom terug",
@@ -405,6 +409,8 @@ const strings = {
     "recipe.linkCopied": "Link gekopieerd!",
     "recipe.alreadyForked": "Al geforkt",
     "recipe.alreadySavedInCollection": "Opgeslagen",
+    "recipe.savedBadge": "Opgeslagen",
+    "recipe.communityResults": "Community",
 
     // Import
     "import.title": "Recept importeren",
