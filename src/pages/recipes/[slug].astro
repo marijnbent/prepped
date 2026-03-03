@@ -30,8 +30,9 @@ if (!recipe) {
 const recipeTags_ = db
   .select({ name: tags.name, slug: tags.slug })
   .from(recipeTags)
+  .innerJoin(recipes, eq(recipeTags.recipeId, recipes.id))
   .innerJoin(tags, eq(recipeTags.tagId, tags.id))
-  .where(eq(recipeTags.recipeId, recipe.id))
+  .where(and(eq(recipeTags.recipeId, recipe.id), eq(recipes.createdBy, recipe.createdBy)))
   .all();
 
 // Get collections for this recipe
@@ -39,7 +40,7 @@ const recipeCollections_ = db
   .select({ name: collections.name, slug: collections.slug })
   .from(recipeCollections)
   .innerJoin(collections, eq(recipeCollections.collectionId, collections.id))
-  .where(eq(recipeCollections.recipeId, recipe.id))
+  .where(and(eq(recipeCollections.recipeId, recipe.id), eq(collections.createdBy, recipe.createdBy)))
   .all();
 
 // Get cook logs for this recipe (with author name)
