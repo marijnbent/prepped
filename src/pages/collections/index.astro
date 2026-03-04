@@ -2,7 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import { db } from "../../lib/db";
 import { collections, recipeCollections, recipes } from "../../lib/schema";
-import { eq, count, desc, and } from "drizzle-orm";
+import { eq, count, desc, and, inArray, isNotNull } from "drizzle-orm";
 import { t } from "../../lib/i18n";
 
 if (!Astro.locals.user) {
@@ -15,16 +15,20 @@ const allCollections = db
   .where(eq(collections.createdBy, Astro.locals.user.id))
   .orderBy(collections.sortOrder)
   .all();
+const collectionIds = allCollections.map((col) => col.id);
 
 // Get recipe counts
-const counts = db
-  .select({
-    collectionId: recipeCollections.collectionId,
-    count: count(),
-  })
-  .from(recipeCollections)
-  .groupBy(recipeCollections.collectionId)
-  .all();
+const counts = collectionIds.length === 0
+  ? []
+  : db
+      .select({
+        collectionId: recipeCollections.collectionId,
+        count: count(),
+      })
+      .from(recipeCollections)
+      .where(inArray(recipeCollections.collectionId, collectionIds))
+      .groupBy(recipeCollections.collectionId)
+      .all();
 
 const countsMap = new Map(counts.map((c) => [c.collectionId, c.count]));
 
@@ -33,19 +37,26 @@ allCollections.sort((a, b) => (countsMap.get(b.id) || 0) - (countsMap.get(a.id) 
 
 // Get up to 4 recent recipe images per collection for the thumbnail grid
 const thumbsMap = new Map<number, string[]>();
-for (const col of allCollections) {
-  if (col.imageUrl) continue;
-  const imgs = db
-    .select({ imageUrl: recipes.imageUrl })
+const collectionsNeedingThumbs = allCollections.filter((col) => !col.imageUrl).map((col) => col.id);
+if (collectionsNeedingThumbs.length > 0) {
+  const thumbRows = db
+    .select({
+      collectionId: recipeCollections.collectionId,
+      imageUrl: recipes.imageUrl,
+    })
     .from(recipeCollections)
     .innerJoin(recipes, eq(recipeCollections.recipeId, recipes.id))
-    .where(eq(recipeCollections.collectionId, col.id))
-    .orderBy(desc(recipes.createdAt))
-    .limit(4)
-    .all()
-    .filter((r) => r.imageUrl)
-    .map((r) => r.imageUrl!);
-  if (imgs.length > 0) thumbsMap.set(col.id, imgs);
+    .where(and(inArray(recipeCollections.collectionId, collectionsNeedingThumbs), isNotNull(recipes.imageUrl)))
+    .orderBy(recipeCollections.collectionId, desc(recipes.createdAt))
+    .all();
+
+  for (const row of thumbRows) {
+    if (!row.imageUrl) continue;
+    const existing = thumbsMap.get(row.collectionId) || [];
+    if (existing.length >= 4) continue;
+    existing.push(row.imageUrl);
+    thumbsMap.set(row.collectionId, existing);
+  }
 }
 ---
 

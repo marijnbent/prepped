@@ -35,15 +35,20 @@ export const recipeOutputSchema = z.object({
 
 export function resolveTagIds(tagNames: string[]): number[] {
   const ids: number[] = [];
-  for (const name of tagNames) {
+  const normalizedTagNames = [...new Set(tagNames.map((name) => name.trim()).filter(Boolean))];
+  for (const name of normalizedTagNames) {
     const slug = slugify(name);
     if (!slug) continue;
-    const existing = db.select().from(tags).where(eq(tags.slug, slug)).get();
+    let existing = db.select().from(tags).where(eq(tags.slug, slug)).get();
+    if (!existing) {
+      db.insert(tags)
+        .values({ name: name.toLowerCase(), slug })
+        .onConflictDoNothing()
+        .run();
+      existing = db.select().from(tags).where(eq(tags.slug, slug)).get();
+    }
     if (existing) {
       ids.push(existing.id);
-    } else {
-      const created = db.insert(tags).values({ name: name.trim().toLowerCase(), slug }).returning().get();
-      ids.push(created.id);
     }
   }
   return ids;
@@ -51,23 +56,29 @@ export function resolveTagIds(tagNames: string[]): number[] {
 
 export function resolveCollectionIds(collectionNames: string[], userId: string): number[] {
   const ids: number[] = [];
-  for (const name of collectionNames) {
+  const normalizedCollectionNames = [...new Set(collectionNames.map((name) => name.trim()).filter(Boolean))];
+  for (const name of normalizedCollectionNames) {
     const slug = slugify(name);
     if (!slug) continue;
-    const existing = db
+    let existing = db
       .select()
       .from(collections)
       .where(and(eq(collections.slug, slug), eq(collections.createdBy, userId)))
       .get();
-    if (existing) {
-      ids.push(existing.id);
-    } else {
-      const created = db
+    if (!existing) {
+      db
         .insert(collections)
         .values({ name: name.trim(), slug, createdBy: userId })
-        .returning()
+        .onConflictDoNothing()
+        .run();
+      existing = db
+        .select()
+        .from(collections)
+        .where(and(eq(collections.slug, slug), eq(collections.createdBy, userId)))
         .get();
-      ids.push(created.id);
+    }
+    if (existing) {
+      ids.push(existing.id);
     }
   }
   return ids;

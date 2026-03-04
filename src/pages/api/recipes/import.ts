@@ -4,6 +4,7 @@ import { withChatModelFallback } from "../../../lib/ai";
 import { scrapeUrl, ScrapeError, type ScrapeMode } from "../../../lib/scraper";
 import { downloadAndSaveImage } from "../../../lib/images";
 import { toAiClientError } from "../../../lib/ai-errors";
+import { assertPublicHttpUrl, UnsafeUrlError } from "../../../lib/url-safety";
 import {
   recipeOutputSchema,
   resolveTagIds,
@@ -72,11 +73,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "Invalid mode" }), { status: 400 });
   }
 
+  let normalizedUrl: string;
+  try {
+    normalizedUrl = (await assertPublicHttpUrl(url)).toString();
+  } catch (err) {
+    if (err instanceof UnsafeUrlError) {
+      return new Response(JSON.stringify({ error: err.message, code: err.code }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ error: "Invalid URL" }), { status: 400 });
+  }
+
   const ctx = getImportContext(locals.user.id);
   const rules = buildImportRules(ctx);
 
   try {
-    const { title, content, imageUrl, videoUrl } = await scrapeWithMode(url, mode);
+    const { title, content, imageUrl, videoUrl } = await scrapeWithMode(normalizedUrl, mode);
 
     const { object: recipe } = await withChatModelFallback((model) =>
       generateObject({
@@ -103,8 +117,12 @@ ${content.slice(0, 10000)}${ctx.userInstruction}`,
       try {
         const { full } = await downloadAndSaveImage(imageUrl, "recipes");
         localImageUrl = full;
-      } catch {
+      } catch (err) {
+        if (err instanceof UnsafeUrlError) {
+          localImageUrl = undefined;
+        } else {
         localImageUrl = imageUrl;
+        }
       }
     }
 
@@ -113,13 +131,20 @@ ${content.slice(0, 10000)}${ctx.userInstruction}`,
         ...recipe,
         tagIds,
         collectionIds,
-        sourceUrl: url,
+        sourceUrl: normalizedUrl,
         imageUrl: localImageUrl,
         videoUrl: videoUrl || undefined,
       }),
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
+    if (err instanceof UnsafeUrlError) {
+      return new Response(
+        JSON.stringify({ error: err.message, code: err.code }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     if (err instanceof ScrapeError) {
       console.error("[recipes/import] Scrape failed", { code: err.code, message: err.message });
       const nextMode = nextModeFor(mode);

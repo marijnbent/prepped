@@ -7,6 +7,10 @@ import { recipes, users } from "../../../../lib/schema";
 import { eq } from "drizzle-orm";
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
+
   const id = Number(params.id);
   if (isNaN(id)) {
     return new Response(JSON.stringify({ error: "Invalid ID" }), { status: 400 });
@@ -14,6 +18,9 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
   const recipe = db.select().from(recipes).where(eq(recipes.id, id)).get();
   if (!recipe) {
+    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
+  if (recipe.createdBy !== locals.user.id && !recipe.isPublished) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
 
@@ -28,11 +35,9 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   const measurementSystem = import.meta.env.MEASUREMENT_SYSTEM || process.env.MEASUREMENT_SYSTEM || "metric";
 
   let userChatInstruction = "";
-  if (locals.user) {
-    const userRow = db.select({ chatPrompt: users.chatPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
-    if (userRow?.chatPrompt) {
-      userChatInstruction = `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.chatPrompt}\n`;
-    }
+  const userRow = db.select({ chatPrompt: users.chatPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
+  if (userRow?.chatPrompt) {
+    userChatInstruction = `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.chatPrompt}\n`;
   }
 
   const systemPrompt = `You are a helpful cooking assistant.${userChatInstruction} You have full knowledge of the following recipe and can answer questions about it - substitutions, technique tips, serving suggestions, dietary adaptations, etc. Be concise and practical.

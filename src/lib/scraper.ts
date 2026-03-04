@@ -1,5 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
+import { assertPublicHttpUrl } from "./url-safety";
 
 export class ScrapeError extends Error {
   code: "SCRAPE_BLOCKED" | "SCRAPE_FAILED" | "SCRAPE_PARSE_FAILED" | "SCRAPE_CONFIG_MISSING";
@@ -24,6 +25,50 @@ const DEFAULT_SCRAPE_DO_BASE_URL = "http://api.scrape.do/";
 const DEFAULT_SCRAPE_DO_GEO_CODE = "NL";
 const DEFAULT_BROWSER_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const SCRAPE_FETCH_TIMEOUT_MS = 20_000;
+const MAX_HTML_BYTES = 2 * 1024 * 1024;
+
+function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = SCRAPE_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    clearTimeout(timeout);
+  });
+}
+
+async function readResponseTextWithLimit(response: Response, maxBytes: number): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const fallback = await response.text();
+    if (Buffer.byteLength(fallback, "utf8") > maxBytes) {
+      throw new ScrapeError("Response body too large", "SCRAPE_FAILED");
+    }
+    return fallback;
+  }
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      throw new ScrapeError("Response body too large", "SCRAPE_FAILED");
+    }
+    chunks.push(value);
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return new TextDecoder().decode(combined);
+}
 
 async function scrapeInstagram(url: string): Promise<ScrapeResult> {
   const oembedUrl = `https://i.instagram.com/api/v1/oembed/?url=${encodeURIComponent(url)}`;
@@ -252,11 +297,19 @@ function parseHtml(url: string, html: string): ScrapeResult {
 }
 
 async function fetchDirectHtml(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": DEFAULT_BROWSER_UA,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(url, {
+      headers: {
+        "User-Agent": DEFAULT_BROWSER_UA,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ScrapeError("Timed out while fetching URL", "SCRAPE_FAILED");
+    }
+    throw new ScrapeError("Failed to fetch URL", "SCRAPE_FAILED");
+  }
 
   if (response.status === 403 || response.status === 503) {
     throw new ScrapeError(`Website blocked the request (${response.status})`, "SCRAPE_BLOCKED");
@@ -266,7 +319,7 @@ async function fetchDirectHtml(url: string): Promise<string> {
     throw new ScrapeError(`Failed to fetch URL: ${response.status}`, "SCRAPE_FAILED");
   }
 
-  return response.text();
+  return readResponseTextWithLimit(response, MAX_HTML_BYTES);
 }
 
 async function fetchScrapeDoHtml(url: string, mode: "scrape" | "scrape-super"): Promise<string> {
@@ -294,17 +347,25 @@ async function fetchScrapeDoHtml(url: string, mode: "scrape" | "scrape-super"): 
     apiUrl.searchParams.set("waitUntil", "networkidle0");
   }
 
-  const response = await fetch(apiUrl.toString(), {
-    headers: {
-      "User-Agent": DEFAULT_BROWSER_UA,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(apiUrl.toString(), {
+      headers: {
+        "User-Agent": DEFAULT_BROWSER_UA,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ScrapeError("Timed out while fetching with scrape fallback", "SCRAPE_FAILED");
+    }
+    throw new ScrapeError("Scrape.do request failed", "SCRAPE_FAILED");
+  }
 
   if (!response.ok) {
     throw new ScrapeError(`Scrape.do request failed: ${response.status}`, "SCRAPE_FAILED");
   }
 
-  return response.text();
+  return readResponseTextWithLimit(response, MAX_HTML_BYTES);
 }
 
 async function fetchHtml(url: string, mode: ScrapeMode): Promise<string> {
@@ -315,9 +376,11 @@ async function fetchHtml(url: string, mode: ScrapeMode): Promise<string> {
 }
 
 export async function scrapeUrl(url: string, mode: ScrapeMode = "direct"): Promise<ScrapeResult> {
-  if (isInstagramUrl(url)) {
-    return scrapeInstagram(url);
+  const safeUrl = (await assertPublicHttpUrl(url)).toString();
+
+  if (isInstagramUrl(safeUrl)) {
+    return scrapeInstagram(safeUrl);
   }
-  const html = await fetchHtml(url, mode);
-  return parseHtml(url, html);
+  const html = await fetchHtml(safeUrl, mode);
+  return parseHtml(safeUrl, html);
 }

@@ -43,44 +43,49 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     slug = `${slug}-${Date.now()}`;
   }
 
-  const updated = db
-    .update(recipes)
-    .set({
-      title: data.title,
-      slug,
-      description: data.description || null,
-      ingredients: data.ingredients,
-      steps: data.steps,
-      servings: data.servings || null,
-      prepTime: data.prepTime || null,
-      cookTime: data.cookTime || null,
-      difficulty: data.difficulty || null,
-      imageUrl: data.imageUrl || null,
-      sourceUrl: data.sourceUrl || null,
-      videoUrl: data.videoUrl || null,
-      notes: data.notes || null,
-      isPublished: data.isPublished ?? true,
-      updatedAt: new Date(),
-    })
-    .where(eq(recipes.id, id))
-    .returning()
-    .get();
+  const tagIds = [...new Set(data.tagIds || [])];
+  const collectionIds = [...new Set(data.collectionIds || [])];
 
-  // Update tags
-  db.delete(recipeTags).where(eq(recipeTags.recipeId, id)).run();
-  if (data.tagIds?.length) {
-    for (const tagId of data.tagIds) {
-      db.insert(recipeTags).values({ recipeId: id, tagId }).run();
-    }
-  }
+  const updated = db.transaction((tx) => {
+    const updatedRecipe = tx
+      .update(recipes)
+      .set({
+        title: data.title,
+        slug,
+        description: data.description || null,
+        ingredients: data.ingredients,
+        steps: data.steps,
+        servings: data.servings || null,
+        prepTime: data.prepTime || null,
+        cookTime: data.cookTime || null,
+        difficulty: data.difficulty || null,
+        imageUrl: data.imageUrl || null,
+        sourceUrl: data.sourceUrl || null,
+        videoUrl: data.videoUrl || null,
+        notes: data.notes || null,
+        isPublished: data.isPublished ?? true,
+        updatedAt: new Date(),
+      })
+      .where(eq(recipes.id, id))
+      .returning()
+      .get();
 
-  // Update collections
-  db.delete(recipeCollections).where(eq(recipeCollections.recipeId, id)).run();
-  if (data.collectionIds?.length) {
-    for (const collectionId of data.collectionIds) {
-      db.insert(recipeCollections).values({ recipeId: id, collectionId }).run();
+    tx.delete(recipeTags).where(eq(recipeTags.recipeId, id)).run();
+    if (tagIds.length > 0) {
+      tx.insert(recipeTags)
+        .values(tagIds.map((tagId) => ({ recipeId: id, tagId })))
+        .run();
     }
-  }
+
+    tx.delete(recipeCollections).where(eq(recipeCollections.recipeId, id)).run();
+    if (collectionIds.length > 0) {
+      tx.insert(recipeCollections)
+        .values(collectionIds.map((collectionId) => ({ recipeId: id, collectionId })))
+        .run();
+    }
+
+    return updatedRecipe;
+  });
 
   return new Response(JSON.stringify(updated), {
     headers: { "Content-Type": "application/json" },

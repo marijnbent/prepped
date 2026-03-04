@@ -2,10 +2,21 @@ import sharp from "sharp";
 import { join } from "path";
 import { mkdirSync, existsSync } from "fs";
 import { randomUUID } from "crypto";
+import { assertPublicHttpUrl } from "./url-safety";
 
 const UPLOADS_DIR = join(process.cwd(), "data", "uploads");
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 20_000;
+
+function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = IMAGE_DOWNLOAD_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    clearTimeout(timeout);
+  });
+}
 
 function ensureValidImageType(type: string) {
   if (!ALLOWED_TYPES.includes(type)) {
@@ -70,7 +81,8 @@ export async function downloadAndSaveImage(
   url: string,
   subdir: "recipes" | "cook-logs"
 ): Promise<{ full: string; thumb: string }> {
-  const response = await fetch(url, {
+  const safeUrl = (await assertPublicHttpUrl(url)).toString();
+  const response = await fetchWithTimeout(safeUrl, {
     headers: { "User-Agent": "Mozilla/5.0" },
   });
 

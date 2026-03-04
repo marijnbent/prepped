@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 
 // ---- Auth tables (managed by Better Auth) ----
 
@@ -83,6 +83,9 @@ export const recipes = sqliteTable("recipes", {
     .$defaultFn(() => new Date()),
 }, (table) => [
   uniqueIndex("recipes_slug_created_by_unique").on(table.slug, table.createdBy),
+  index("recipes_created_by_idx").on(table.createdBy),
+  index("recipes_is_published_idx").on(table.isPublished),
+  index("recipes_created_by_published_idx").on(table.createdBy, table.isPublished),
 ]);
 
 export const collections = sqliteTable("collections", {
@@ -101,6 +104,8 @@ export const collections = sqliteTable("collections", {
     .$defaultFn(() => new Date()),
 }, (table) => [
   uniqueIndex("collections_slug_created_by_unique").on(table.slug, table.createdBy),
+  index("collections_created_by_idx").on(table.createdBy),
+  index("collections_created_by_sort_order_idx").on(table.createdBy, table.sortOrder),
 ]);
 
 export const recipeCollections = sqliteTable("recipe_collections", {
@@ -110,7 +115,11 @@ export const recipeCollections = sqliteTable("recipe_collections", {
   collectionId: integer("collection_id")
     .notNull()
     .references(() => collections.id, { onDelete: "cascade" }),
-});
+}, (table) => [
+  uniqueIndex("recipe_collections_recipe_collection_unique").on(table.recipeId, table.collectionId),
+  index("recipe_collections_recipe_id_idx").on(table.recipeId),
+  index("recipe_collections_collection_id_idx").on(table.collectionId),
+]);
 
 export const tags = sqliteTable("tags", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -125,7 +134,11 @@ export const recipeTags = sqliteTable("recipe_tags", {
   tagId: integer("tag_id")
     .notNull()
     .references(() => tags.id, { onDelete: "cascade" }),
-});
+}, (table) => [
+  uniqueIndex("recipe_tags_recipe_tag_unique").on(table.recipeId, table.tagId),
+  index("recipe_tags_recipe_id_idx").on(table.recipeId),
+  index("recipe_tags_tag_id_idx").on(table.tagId),
+]);
 
 export const cookLogs = sqliteTable("cook_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -142,7 +155,11 @@ export const cookLogs = sqliteTable("cook_logs", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
-});
+}, (table) => [
+  index("cook_logs_recipe_id_idx").on(table.recipeId),
+  index("cook_logs_created_by_idx").on(table.createdBy),
+  index("cook_logs_created_by_cooked_at_idx").on(table.createdBy, table.cookedAt),
+]);
 
 export const favorites = sqliteTable("favorites", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -152,6 +169,7 @@ export const favorites = sqliteTable("favorites", {
     .$defaultFn(() => new Date()),
 }, (table) => [
   uniqueIndex("favorites_user_recipe_unique").on(table.userId, table.recipeId),
+  index("favorites_user_created_at_idx").on(table.userId, table.createdAt),
 ]);
 
 // ---- Types ----

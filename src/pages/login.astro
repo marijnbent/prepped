@@ -3,7 +3,10 @@ import Layout from "../layouts/Layout.astro";
 import LoginForm from "../islands/LoginForm";
 import { t } from "../lib/i18n";
 
-const redirect = Astro.url.searchParams.get("redirect") || "/";
+const rawRedirect = Astro.url.searchParams.get("redirect") || "/";
+const redirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+  ? rawRedirect
+  : "/";
 const inviteRequired = !!import.meta.env.INVITE_CODE;
 const authMode = import.meta.env.AUTH_MODE || "password";
 const isSimple = authMode === "simple";

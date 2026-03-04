@@ -27,6 +27,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!recipe) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
+  if (recipe.createdBy !== locals.user.id && !recipe.isPublished) {
+    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
 
   // Get all user's collections
   const userCollections = db
@@ -45,27 +48,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
     .all()
     .map((r) => r.collectionId);
   const currentSet = new Set(currentSaved);
-  const desiredSet = new Set(collectionIds.filter((id) => userCollectionIds.has(id)));
+  const desiredSet = new Set([...new Set(collectionIds)].filter((id) => userCollectionIds.has(id)));
 
-  // Add new
-  let added = 0;
-  for (const colId of desiredSet) {
-    if (!currentSet.has(colId)) {
-      db.insert(recipeCollections).values({ recipeId, collectionId: colId }).run();
-      added++;
+  const { added, removed } = db.transaction((tx) => {
+    let addedCount = 0;
+    for (const colId of desiredSet) {
+      if (!currentSet.has(colId)) {
+        tx.insert(recipeCollections).values({ recipeId, collectionId: colId }).run();
+        addedCount++;
+      }
     }
-  }
 
-  // Remove old
-  let removed = 0;
-  for (const colId of currentSet) {
-    if (!desiredSet.has(colId)) {
-      db.delete(recipeCollections)
-        .where(and(eq(recipeCollections.recipeId, recipeId), eq(recipeCollections.collectionId, colId)))
-        .run();
-      removed++;
+    let removedCount = 0;
+    for (const colId of currentSet) {
+      if (!desiredSet.has(colId)) {
+        tx.delete(recipeCollections)
+          .where(and(eq(recipeCollections.recipeId, recipeId), eq(recipeCollections.collectionId, colId)))
+          .run();
+        removedCount++;
+      }
     }
-  }
+
+    return { added: addedCount, removed: removedCount };
+  });
 
   return new Response(JSON.stringify({ added, removed }), {
     status: 200,

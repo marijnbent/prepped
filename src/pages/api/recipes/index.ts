@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { db } from "../../../lib/db";
-import { recipes, recipeTags, recipeCollections, tags } from "../../../lib/schema";
+import { recipes, recipeTags, recipeCollections } from "../../../lib/schema";
 import { recipeSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
 import { eq, and } from "drizzle-orm";
@@ -29,41 +29,46 @@ export const POST: APIRoute = async ({ request, locals }) => {
     slug = `${slug}-${Date.now()}`;
   }
 
-  const recipe = db
-    .insert(recipes)
-    .values({
-      title: data.title,
-      slug,
-      description: data.description || null,
-      ingredients: data.ingredients,
-      steps: data.steps,
-      servings: data.servings || null,
-      prepTime: data.prepTime || null,
-      cookTime: data.cookTime || null,
-      difficulty: data.difficulty || null,
-      imageUrl: data.imageUrl || null,
-      sourceUrl: data.sourceUrl || null,
-      videoUrl: data.videoUrl || null,
-      notes: data.notes || null,
-      isPublished: data.isPublished ?? true,
-      createdBy: locals.user.id,
-    })
-    .returning()
-    .get();
+  const tagIds = [...new Set(data.tagIds || [])];
+  const collectionIds = [...new Set(data.collectionIds || [])];
 
-  // Handle tags
-  if (data.tagIds?.length) {
-    for (const tagId of data.tagIds) {
-      db.insert(recipeTags).values({ recipeId: recipe.id, tagId }).run();
-    }
-  }
+  const recipe = db.transaction((tx) => {
+    const createdRecipe = tx
+      .insert(recipes)
+      .values({
+        title: data.title,
+        slug,
+        description: data.description || null,
+        ingredients: data.ingredients,
+        steps: data.steps,
+        servings: data.servings || null,
+        prepTime: data.prepTime || null,
+        cookTime: data.cookTime || null,
+        difficulty: data.difficulty || null,
+        imageUrl: data.imageUrl || null,
+        sourceUrl: data.sourceUrl || null,
+        videoUrl: data.videoUrl || null,
+        notes: data.notes || null,
+        isPublished: data.isPublished ?? true,
+        createdBy: locals.user.id,
+      })
+      .returning()
+      .get();
 
-  // Handle collections
-  if (data.collectionIds?.length) {
-    for (const collectionId of data.collectionIds) {
-      db.insert(recipeCollections).values({ recipeId: recipe.id, collectionId }).run();
+    if (tagIds.length > 0) {
+      tx.insert(recipeTags)
+        .values(tagIds.map((tagId) => ({ recipeId: createdRecipe.id, tagId })))
+        .run();
     }
-  }
+
+    if (collectionIds.length > 0) {
+      tx.insert(recipeCollections)
+        .values(collectionIds.map((collectionId) => ({ recipeId: createdRecipe.id, collectionId })))
+        .run();
+    }
+
+    return createdRecipe;
+  });
 
   return new Response(JSON.stringify(recipe), {
     status: 201,

@@ -3,7 +3,7 @@ import { db } from "../../../lib/db";
 import { recipes, recipeTags, recipeCollections, collections } from "../../../lib/schema";
 import { copyRecipeSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
@@ -23,6 +23,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!source) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
+  if (source.createdBy !== locals.user.id && !source.isPublished) {
+    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
 
   // Generate slug scoped to user
   let slug = slugify(source.title);
@@ -35,42 +38,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
     slug = `${slug}-${Date.now()}`;
   }
 
-  // Create the copy
-  const copy = db
-    .insert(recipes)
-    .values({
-      title: source.title,
-      slug,
-      description: source.description,
-      ingredients: source.ingredients,
-      steps: source.steps,
-      servings: source.servings,
-      prepTime: source.prepTime,
-      cookTime: source.cookTime,
-      difficulty: source.difficulty,
-      imageUrl: source.imageUrl, // reference same image files
-      sourceUrl: source.sourceUrl,
-      videoUrl: source.videoUrl,
-      notes: source.notes,
-      isPublished: true,
-      copiedFrom: source.id,
-      createdBy: locals.user.id,
-    })
-    .returning()
-    .get();
-
   // Copy tags (tags are global)
-  const sourceTags = db
+  const sourceTagIds = db
     .select({ tagId: recipeTags.tagId })
     .from(recipeTags)
     .where(eq(recipeTags.recipeId, recipeId))
-    .all();
-  for (const { tagId } of sourceTags) {
-    db.insert(recipeTags).values({ recipeId: copy.id, tagId }).run();
-  }
+    .all()
+    .map((row) => row.tagId);
 
   // Assign to user's selected collections, with a fallback to the first collection
-  const collectionIdsToUse = [...(collectionIds || [])];
+  const collectionIdsToUse = [...new Set(collectionIds || [])];
   if (collectionIdsToUse.length === 0) {
     const defaultCollection = db
       .select({ id: collections.id })
@@ -83,17 +60,53 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
   }
 
-  for (const collectionId of collectionIdsToUse) {
-    // Verify collection belongs to user
-    const col = db
-      .select()
-      .from(collections)
-      .where(and(eq(collections.id, collectionId), eq(collections.createdBy, locals.user.id)))
+  const copy = db.transaction((tx) => {
+    const created = tx
+      .insert(recipes)
+      .values({
+        title: source.title,
+        slug,
+        description: source.description,
+        ingredients: source.ingredients,
+        steps: source.steps,
+        servings: source.servings,
+        prepTime: source.prepTime,
+        cookTime: source.cookTime,
+        difficulty: source.difficulty,
+        imageUrl: source.imageUrl, // reference same image files
+        sourceUrl: source.sourceUrl,
+        videoUrl: source.videoUrl,
+        notes: source.notes,
+        isPublished: true,
+        copiedFrom: source.id,
+        createdBy: locals.user.id,
+      })
+      .returning()
       .get();
-    if (col) {
-      db.insert(recipeCollections).values({ recipeId: copy.id, collectionId }).run();
+
+    if (sourceTagIds.length > 0) {
+      tx.insert(recipeTags)
+        .values(sourceTagIds.map((tagId) => ({ recipeId: created.id, tagId })))
+        .run();
     }
-  }
+
+    if (collectionIdsToUse.length > 0) {
+      const allowedCollections = tx
+        .select({ id: collections.id })
+        .from(collections)
+        .where(and(eq(collections.createdBy, locals.user.id), inArray(collections.id, collectionIdsToUse)))
+        .all()
+        .map((col) => col.id);
+
+      if (allowedCollections.length > 0) {
+        tx.insert(recipeCollections)
+          .values(allowedCollections.map((collectionId) => ({ recipeId: created.id, collectionId })))
+          .run();
+      }
+    }
+
+    return created;
+  });
 
   return new Response(JSON.stringify({ slug: copy.slug }), {
     status: 201,

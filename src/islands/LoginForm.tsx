@@ -10,7 +10,13 @@ interface Props {
   authMode?: string;
 }
 
+function normalizeRedirectPath(value?: string): string {
+  if (!value) return "/";
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
+
 export default function LoginForm({ redirect, inviteRequired, authMode }: Props) {
+  const safeRedirect = normalizeRedirectPath(redirect);
   const isSimple = authMode === "simple";
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
@@ -93,7 +99,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
         }
       }
 
-      window.location.href = redirect || "/";
+      window.location.href = safeRedirect;
     } catch {
       setError(t("common.error"));
       setLoading(false);

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { db } from "../../../lib/db";
-import { favorites } from "../../../lib/schema";
+import { favorites, recipes } from "../../../lib/schema";
 import { favoriteToggleSchema } from "../../../lib/validation";
 import { eq, and } from "drizzle-orm";
 
@@ -16,6 +16,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const { recipeId } = result.data;
+  const recipe = db.select().from(recipes).where(eq(recipes.id, recipeId)).get();
+  if (!recipe) {
+    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
+  if (recipe.createdBy !== locals.user.id && !recipe.isPublished) {
+    return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
+
   const existing = db
     .select()
     .from(favorites)

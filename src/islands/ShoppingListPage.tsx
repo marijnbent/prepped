@@ -58,16 +58,16 @@ interface MergedIngredient {
 
 function mergeIngredients(
   recipes: Recipe[],
-  listItems: ShoppingListItem[]
+  servingsByRecipeId: Map<number, number>
 ): MergedIngredient[] {
   const merged = new Map<string, { amount: number; hasNumeric: boolean; nonNumeric: string[]; unit: string; name: string }>();
 
   for (const recipe of recipes) {
-    const listItem = listItems.find((item) => item.recipeId === recipe.id);
-    if (!listItem) continue;
+    const servings = servingsByRecipeId.get(recipe.id);
+    if (!servings) continue;
 
     const defaultServings = recipe.servings || 4;
-    const factor = listItem.servings / defaultServings;
+    const factor = servings / defaultServings;
 
     for (const ing of recipe.ingredients) {
       const key = `${ing.name.toLowerCase()}|${ing.unit.toLowerCase()}`;
@@ -218,17 +218,32 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
     return () => window.removeEventListener("shopping-list-change", handler);
   }, []);
 
+  const recipeById = useMemo(
+    () => new Map(allRecipes.map((recipe) => [recipe.id, recipe])),
+    [allRecipes]
+  );
+
   const selectedRecipes = useMemo(
     () =>
       listItems
-        .map((item) => allRecipes.find((r) => r.id === item.recipeId))
+        .map((item) => recipeById.get(item.recipeId))
         .filter((r): r is Recipe => !!r),
-    [listItems, allRecipes]
+    [listItems, recipeById]
+  );
+
+  const listItemMap = useMemo(
+    () => new Map(listItems.map((item) => [item.recipeId, item.servings])),
+    [listItems]
+  );
+
+  const inListSet = useMemo(
+    () => new Set(listItems.map((item) => item.recipeId)),
+    [listItems]
   );
 
   const merged = useMemo(
-    () => mergeIngredients(selectedRecipes, listItems),
-    [selectedRecipes, listItems]
+    () => mergeIngredients(selectedRecipes, listItemMap),
+    [selectedRecipes, listItemMap]
   );
 
   // Clear organized view only when recipes/servings changed from the organized snapshot
@@ -347,8 +362,8 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
               style={{ scrollbarWidth: "none" }}
             >
             {selectedRecipes.map((recipe) => {
-              const listItem = listItems.find((i) => i.recipeId === recipe.id);
-              if (!listItem) return null;
+              const servings = listItemMap.get(recipe.id);
+              if (!servings) return null;
               return (
                 <div
                   key={recipe.id}
@@ -383,20 +398,20 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
                         onClick={() =>
                           updateServings(
                             recipe.id,
-                            Math.max(1, listItem.servings - 1)
+                            Math.max(1, servings - 1)
                           )
                         }
                         className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground/60 hover:bg-secondary hover:text-muted-foreground transition-colors"
-                        disabled={listItem.servings <= 1}
+                        disabled={servings <= 1}
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-xs tabular-nums w-4 text-center text-muted-foreground">
-                        {listItem.servings}
+                        {servings}
                       </span>
                       <button
                         onClick={() =>
-                          updateServings(recipe.id, listItem.servings + 1)
+                          updateServings(recipe.id, servings + 1)
                         }
                         className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground/60 hover:bg-secondary hover:text-muted-foreground transition-colors"
                       >
@@ -475,9 +490,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
             {/* Recipe list */}
             <div className="max-h-64 overflow-y-auto p-1">
               {filteredRecipes.map((recipe) => {
-                const inList = listItems.some(
-                  (item) => item.recipeId === recipe.id
-                );
+                const inList = inListSet.has(recipe.id);
                 return (
                   <button
                     key={recipe.id}

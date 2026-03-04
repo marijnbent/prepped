@@ -9,10 +9,11 @@ import SaveRecipeDialog from "../../../../islands/SaveRecipeDialog";
 import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
 import { db } from "../../../../lib/db";
 import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites, cookLogs } from "../../../../lib/schema";
-import { eq, and, asc, count } from "drizzle-orm";
+import { eq, and, asc, count, inArray } from "drizzle-orm";
 import { t, formatDate } from "../../../../lib/i18n";
 
 const { id: userId, slug } = Astro.params;
+const isOwnProfileView = Astro.locals.user?.id === userId;
 
 // Verify user exists
 const profileUser = db.select().from(users).where(eq(users.id, userId!)).get();
@@ -31,17 +32,19 @@ if (!recipe) {
 }
 
 // If this is the user's own recipe, redirect to the owner view
-if (Astro.locals.user?.id === userId) {
+if (isOwnProfileView) {
   return Astro.redirect(`/recipes/${slug}`);
+}
+if (!recipe.isPublished) {
+  return Astro.redirect(`/users/${userId}`);
 }
 
 // Get tags for this recipe
 const recipeTags_ = db
   .select({ name: tags.name, slug: tags.slug })
   .from(recipeTags)
-  .innerJoin(recipes, eq(recipeTags.recipeId, recipes.id))
   .innerJoin(tags, eq(recipeTags.tagId, tags.id))
-  .where(and(eq(recipeTags.recipeId, recipe.id), eq(recipes.createdBy, recipe.createdBy)))
+  .where(eq(recipeTags.recipeId, recipe.id))
   .all();
 
 // Get collections for this recipe
@@ -71,11 +74,15 @@ const userCollectionsRaw = currentUser
       .all()
   : [];
 
-const collectionCounts = db
-  .select({ collectionId: recipeCollections.collectionId, count: count() })
-  .from(recipeCollections)
-  .groupBy(recipeCollections.collectionId)
-  .all();
+const userCollectionIdsForCounts = userCollectionsRaw.map((col) => col.id);
+const collectionCounts = userCollectionIdsForCounts.length === 0
+  ? []
+  : db
+      .select({ collectionId: recipeCollections.collectionId, count: count() })
+      .from(recipeCollections)
+      .where(inArray(recipeCollections.collectionId, userCollectionIdsForCounts))
+      .groupBy(recipeCollections.collectionId)
+      .all();
 const colCountsMap = new Map(collectionCounts.map((c) => [c.collectionId, c.count]));
 
 userCollectionsRaw.sort((a, b) => (colCountsMap.get(b.id) || 0) - (colCountsMap.get(a.id) || 0));
