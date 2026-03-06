@@ -1,12 +1,6 @@
 # Prepped
 
-![Vibe Engineered](https://img.shields.io/badge/vibe_engineered-%E2%9C%A8-ff6ac1?style=flat-square&labelColor=0d0d1a)
-![Astro](https://img.shields.io/badge/Astro-5-BC52EE?style=flat-square&logo=astro&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)
-![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)
 
 A self-hosted recipe manager for families and small groups. Import recipes from any URL with AI, scale servings, track cooking attempts, and organize everything with collections and tags.
 
