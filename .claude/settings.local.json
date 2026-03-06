@@ -22,7 +22,9 @@
       "Bash(grep:*)",
       "Bash(npm ls:*)",
       "Bash(npm view:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)"
     ]
   }
 }
