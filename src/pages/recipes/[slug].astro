@@ -7,6 +7,7 @@ import FavoriteButton from "../../islands/FavoriteButton";
 import AddToShoppingListButton from "../../islands/AddToShoppingListButton";
 import { db } from "../../lib/db";
 import { recipes, cookLogs, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../lib/schema";
+import { buildRecipePlainText, formatRecipeIngredientLine, formatRecipeStepLine, groupRecipeIngredients } from "../../lib/recipe-export";
 import { eq, and } from "drizzle-orm";
 import { t, formatDate } from "../../lib/i18n";
 
@@ -88,6 +89,20 @@ const isFavorited = !!db
 const isOwner = true; // This route is for own recipes only
 const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
 const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
+const ingredientGroups = groupRecipeIngredients(ingredients);
+const recipePlainText = buildRecipePlainText({
+  title: recipe.title,
+  ingredients,
+  steps,
+  notes: recipe.notes,
+  labels: {
+    ingredients: t("recipe.ingredients"),
+    steps: t("recipe.steps"),
+    notes: t("recipe.notes"),
+    minutes: t("recipe.minutes"),
+    toTaste: t("recipe.toTaste"),
+  },
+});
 
 // Extract YouTube video ID
 function getYouTubeId(url: string): string | null {
@@ -109,6 +124,43 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
 <Layout title={recipe.title} description={recipe.description || undefined}>
   <article class="max-w-4xl mx-auto">
+    <div class="print-only print-recipe-summary">
+      <h1>{recipe.title}</h1>
+
+      <section>
+        <h2>{t("recipe.ingredients")}</h2>
+        {ingredientGroups.map(({ group, items }) => (
+          <>
+            {group && <h3>{group}</h3>}
+            <ul>
+              {items.map((ingredient) => (
+                <li>
+                  {formatRecipeIngredientLine(ingredient, t("recipe.toTaste"))}
+                </li>
+              ))}
+            </ul>
+          </>
+        ))}
+      </section>
+
+      <section>
+        <h2>{t("recipe.steps")}</h2>
+        <ol>
+          {steps.map((step) => (
+            <li>
+              {formatRecipeStepLine(step, t("recipe.minutes")).replace(/^\d+\.\s/, "")}
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {recipe.notes && (
+        <section>
+          <h2>{t("recipe.notes")}</h2>
+          <p>{recipe.notes}</p>
+        </section>
+      )}
+    </div>
 
     {/* ===== Hero image ===== */}
     {recipe.imageUrl && (
@@ -214,6 +266,18 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         >
           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
+          </svg>
+        </button>
+        <button
+          id="copy-recipe-text"
+          class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
+          aria-label={t("recipe.copyText")}
+          title={t("recipe.copyText")}
+          type="button"
+        >
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
         </button>
         <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
@@ -456,6 +520,8 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
   </article>
 
   <script is:inline>
+    const recipePlainText = {JSON.stringify(recipePlainText)};
+
     document.getElementById('share-recipe')?.addEventListener('click', async () => {
       const url = window.location.href;
       const title = document.title;
@@ -470,6 +536,23 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             setTimeout(() => btn.classList.remove('text-primary', 'border-primary/50'), 1500);
           }
         }
+      } catch {}
+    });
+
+    document.getElementById('copy-recipe-text')?.addEventListener('click', async () => {
+      const btn = document.getElementById('copy-recipe-text');
+      if (!btn) return;
+
+      try {
+        await navigator.clipboard.writeText(recipePlainText);
+        btn.classList.add('text-primary', 'border-primary/50');
+        btn.setAttribute('aria-label', {JSON.stringify(t("recipe.textCopied"))});
+        btn.setAttribute('title', {JSON.stringify(t("recipe.textCopied"))});
+        setTimeout(() => {
+          btn.classList.remove('text-primary', 'border-primary/50');
+          btn.setAttribute('aria-label', {JSON.stringify(t("recipe.copyText"))});
+          btn.setAttribute('title', {JSON.stringify(t("recipe.copyText"))});
+        }, 1500);
       } catch {}
     });
   </script>
