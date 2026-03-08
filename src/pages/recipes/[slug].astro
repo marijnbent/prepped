@@ -273,6 +273,9 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
           class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
           aria-label={t("recipe.copyText")}
           title={t("recipe.copyText")}
+          data-copy-label={t("recipe.copyText")}
+          data-copied-label={t("recipe.textCopied")}
+          data-copy-text={recipePlainText}
           type="button"
         >
           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -280,6 +283,13 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
         </button>
+        <span
+          id="copy-recipe-feedback"
+          class="hidden text-xs font-medium text-primary"
+          aria-live="polite"
+        >
+          {t("recipe.textCopied")}
+        </span>
         <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
         <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} client:load />
       {isOwner && (
@@ -520,7 +530,46 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
   </article>
 
   <script is:inline>
-    const recipePlainText = {JSON.stringify(recipePlainText)};
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      const copied = document.execCommand('copy');
+      document.body.removeChild(textarea);
+
+      if (!copied) {
+        throw new Error('Copy failed');
+      }
+    }
+
+    function showCopiedState(button) {
+      const defaultLabel = button.dataset.copyLabel || button.getAttribute('aria-label') || 'Copy';
+      const copiedLabel = button.dataset.copiedLabel || defaultLabel;
+      const feedback = document.getElementById('copy-recipe-feedback');
+
+      button.classList.add('text-primary', 'border-primary/50');
+      button.setAttribute('aria-label', copiedLabel);
+      button.setAttribute('title', copiedLabel);
+      feedback?.classList.remove('hidden');
+
+      window.setTimeout(() => {
+        button.classList.remove('text-primary', 'border-primary/50');
+        button.setAttribute('aria-label', defaultLabel);
+        button.setAttribute('title', defaultLabel);
+        feedback?.classList.add('hidden');
+      }, 1500);
+    }
 
     document.getElementById('share-recipe')?.addEventListener('click', async () => {
       const url = window.location.href;
@@ -529,7 +578,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         if (navigator.share) {
           await navigator.share({ title, url });
         } else {
-          await navigator.clipboard.writeText(url);
+          await copyText(url);
           const btn = document.getElementById('share-recipe');
           if (btn) {
             btn.classList.add('text-primary', 'border-primary/50');
@@ -544,15 +593,8 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       if (!btn) return;
 
       try {
-        await navigator.clipboard.writeText(recipePlainText);
-        btn.classList.add('text-primary', 'border-primary/50');
-        btn.setAttribute('aria-label', {JSON.stringify(t("recipe.textCopied"))});
-        btn.setAttribute('title', {JSON.stringify(t("recipe.textCopied"))});
-        setTimeout(() => {
-          btn.classList.remove('text-primary', 'border-primary/50');
-          btn.setAttribute('aria-label', {JSON.stringify(t("recipe.copyText"))});
-          btn.setAttribute('title', {JSON.stringify(t("recipe.copyText"))});
-        }, 1500);
+        await copyText(btn.dataset.copyText || '');
+        showCopiedState(btn);
       } catch {}
     });
   </script>
