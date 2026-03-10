@@ -11,6 +11,7 @@ import {
   resolveCollectionIds,
   getImportContext,
   buildImportRules,
+  normalizeImportedIngredients,
 } from "../../../lib/import-shared";
 
 type ImportMode = ScrapeMode | "auto";
@@ -112,6 +113,8 @@ ${content.slice(0, 10000)}${ctx.userInstruction}`,
       ? resolveCollectionIds(recipe.collections, locals.user.id)
       : [];
 
+    const normalizedIngredients = normalizeImportedIngredients(recipe.ingredients);
+
     let localImageUrl: string | undefined;
     if (imageUrl) {
       try {
@@ -129,6 +132,7 @@ ${content.slice(0, 10000)}${ctx.userInstruction}`,
     return new Response(
       JSON.stringify({
         ...recipe,
+        ingredients: normalizedIngredients,
         tagIds,
         collectionIds,
         sourceUrl: normalizedUrl,

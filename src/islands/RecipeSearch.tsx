@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { t } from "@/lib/i18n";
+import { formatStepDuration } from "@/lib/recipe-export";
 
 interface Recipe {
   id: number;
@@ -35,6 +36,7 @@ interface Props {
   searchPlaceholder?: string;
   noResultsText?: string;
   minutesLabel?: string;
+  hoursLabel?: string;
 }
 
 export default function RecipeSearch({
@@ -43,6 +45,7 @@ export default function RecipeSearch({
   searchPlaceholder = t("recipe.search"),
   noResultsText = t("recipe.noRecipes"),
   minutesLabel = t("recipe.minutes"),
+  hoursLabel = t("recipe.hours"),
 }: Props) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -241,7 +244,7 @@ export default function RecipeSearch({
                               <circle cx="12" cy="12" r="10" />
                               <path d="M12 6v6l4 2" />
                             </svg>
-                            {totalTime} {minutesLabel}
+                            {formatStepDuration(totalTime, minutesLabel, hoursLabel)}
                           </span>
                         )}
                         {recipe.difficulty && (
@@ -343,7 +346,7 @@ export default function RecipeSearch({
                               <circle cx="12" cy="12" r="10" />
                               <path d="M12 6v6l4 2" />
                             </svg>
-                            {totalTime} {minutesLabel}
+                            {formatStepDuration(totalTime, minutesLabel, hoursLabel)}
                           </span>
                         )}
                         {recipe.difficulty && (

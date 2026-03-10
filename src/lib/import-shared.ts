@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { slugify } from "./slugify";
 import { getDefaultCollections, defaultTags } from "./defaults";
 import { t } from "./i18n";
+import { sortIngredientsCupboardLast } from "./ingredient-groups";
 
 export const recipeOutputSchema = z.object({
   title: z.string(),
@@ -121,10 +122,18 @@ export function buildImportRules(ctx: ReturnType<typeof getImportContext>) {
 - If amounts are given as fractions (like 1/2), convert to decimal (0.5)
 - Extract all preparation steps in order with clear instructions
 - Include any tips, notes, or serving suggestions from the recipe in the "notes" field
-- For "to taste" / unquantified ingredients (salt, pepper, oil, herbs used as garnish, etc.): always list each ingredient separately (never combine like "salt and pepper"), leave amount empty, and keep the name clean (just the ingredient, no "to taste" or "naar smaak" suffix).
+- For "to taste" / unquantified ingredients: if you include them, always list each ingredient separately (never combine like "salt and pepper"), leave amount empty, and keep the name clean (just the ingredient, no "to taste" or "naar smaak" suffix).
 - Translate all ingredient names and group names to ${t("site.language")}. Keep the recipe title as-is, but ingredient names should be in the local language.
-- For ingredient grouping: common pantry/cupboard staples (salt, pepper, oil, butter, garlic, onion, basic dried herbs and spices, flour, sugar, vinegar, soy sauce, etc.) should be grouped under "${t("recipe.cupboard")}" if the recipe doesn't already organize them into a specific group. This keeps the shopping-relevant ingredients separate from what's already in the kitchen.
-- EXCEPTION for pantry staples: if the amount is significant, do NOT place it in "${t("recipe.cupboard")}"; treat it as a normal/main ingredient in its appropriate group. Example: butter > 50g should not be in "${t("recipe.cupboard")}".
+- Only use the "group" field when the source recipe clearly has separate ingredient sections or components (for example: cake, frosting, sauce, dip, topping). If there is no clear grouping in the source, leave "group" empty. Never invent generic groups like "Main", "Ingredients", or similar.
+- If you use the "${t("recipe.cupboard")}" group, put every "${t("recipe.cupboard")}" ingredient at the end of the ingredients array so those items appear at the bottom.
+- Omit routine pantry staples that people normally already have when they are used in ordinary background quantities. This especially includes salt, pepper, olive oil, neutral oil, and similar basics used for normal seasoning, frying, greasing, or drizzling.
+- Include those pantry staples only when the amount is clearly substantial or the ingredient is structurally important to the recipe. In that case, treat it as a real ingredient. If it is still a pantry staple rather than a main shopping item, you may group it under "${t("recipe.cupboard")}".
 - For tags: always lowercase (e.g., "cookies", "pasta", "vegetarian"). Prefer existing: [${ctx.existingTagNames.join(", ")}]. Add new ones if needed. Defaults for reference: [${defaultTags.join(", ")}].
 - For collections: use Title Case with an emoji prefix. Prefer existing: [${ctx.existingCollectionNames.join(", ")}]. Only create new if nothing fits. Defaults for reference: [${ctx.defaultCollectionNames.join(", ")}].`;
+}
+
+export function normalizeImportedIngredients<
+  T extends { amount: string; unit: string; name: string; group?: string }
+>(ingredients: T[]) {
+  return sortIngredientsCupboardLast(ingredients);
 }

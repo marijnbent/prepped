@@ -9,6 +9,7 @@ import {
   resolveCollectionIds,
   getImportContext,
   buildImportRules,
+  normalizeImportedIngredients,
 } from "../../../lib/import-shared";
 
 const PHOTO_MAX_FILES = 5;
@@ -98,6 +99,7 @@ ${rules}${ctx.userInstruction}`,
     return new Response(
       JSON.stringify({
         ...recipe,
+        ingredients: normalizeImportedIngredients(recipe.ingredients),
         tagIds,
         collectionIds,
       }),

@@ -1,3 +1,6 @@
+import { groupIngredientsCupboardLast } from "./ingredient-groups";
+import { locale } from "./i18n";
+
 interface RecipeIngredient {
   amount: string;
   unit: string;
@@ -16,6 +19,7 @@ interface RecipeExportLabels {
   steps: string;
   notes: string;
   minutes: string;
+  hours: string;
   toTaste: string;
 }
 
@@ -28,23 +32,7 @@ interface BuildRecipePlainTextOptions {
 }
 
 export function groupRecipeIngredients(ingredients: RecipeIngredient[]) {
-  const groups: { group: string; items: RecipeIngredient[] }[] = [];
-  const indexByGroup = new Map<string, number>();
-
-  for (const ingredient of ingredients) {
-    const group = ingredient.group || "";
-    const existingIndex = indexByGroup.get(group);
-
-    if (existingIndex === undefined) {
-      indexByGroup.set(group, groups.length);
-      groups.push({ group, items: [ingredient] });
-      continue;
-    }
-
-    groups[existingIndex].items.push(ingredient);
-  }
-
-  return groups;
+  return groupIngredientsCupboardLast(ingredients);
 }
 
 export function formatRecipeIngredientLine(ingredient: RecipeIngredient, toTasteLabel: string) {
@@ -57,12 +45,25 @@ export function formatRecipeIngredientLine(ingredient: RecipeIngredient, toTaste
   return `${amountPart} ${ingredient.name}`.trim();
 }
 
-export function formatRecipeStepLine(step: RecipeStep, minutesLabel: string) {
+export function formatStepDuration(duration: number, minutesLabel: string, hoursLabel: string) {
+  if (duration <= 60) {
+    return `${duration} ${minutesLabel}`;
+  }
+
+  const hours = duration / 60;
+  const formattedHours = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 1,
+  }).format(hours);
+
+  return `${formattedHours} ${hoursLabel}`;
+}
+
+export function formatRecipeStepLine(step: RecipeStep, minutesLabel: string, hoursLabel: string) {
   if (!step.duration) {
     return `${step.order}. ${step.instruction}`;
   }
 
-  return `${step.order}. ${step.instruction} (${step.duration} ${minutesLabel})`;
+  return `${step.order}. ${step.instruction} (${formatStepDuration(step.duration, minutesLabel, hoursLabel)})`;
 }
 
 export function buildRecipePlainText({
@@ -95,7 +96,7 @@ export function buildRecipePlainText({
   lines.push("", labels.steps);
 
   for (const step of steps) {
-    lines.push(formatRecipeStepLine(step, labels.minutes));
+    lines.push(formatRecipeStepLine(step, labels.minutes, labels.hours));
   }
 
   if (notes?.trim()) {

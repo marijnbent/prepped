@@ -9,7 +9,7 @@ import SaveRecipeDialog from "../../../../islands/SaveRecipeDialog";
 import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
 import { db } from "../../../../lib/db";
 import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites, cookLogs } from "../../../../lib/schema";
-import { buildRecipePlainText, formatRecipeIngredientLine, formatRecipeStepLine, groupRecipeIngredients } from "../../../../lib/recipe-export";
+import { buildRecipePlainText, formatRecipeIngredientLine, formatRecipeStepLine, formatStepDuration, groupRecipeIngredients } from "../../../../lib/recipe-export";
 import { eq, and, asc, count, inArray } from "drizzle-orm";
 import { t, formatDate } from "../../../../lib/i18n";
 
@@ -143,6 +143,7 @@ const recipePlainText = buildRecipePlainText({
     steps: t("recipe.steps"),
     notes: t("recipe.notes"),
     minutes: t("recipe.minutes"),
+    hours: t("recipe.hours"),
     toTaste: t("recipe.toTaste"),
   },
 });
@@ -191,7 +192,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
         <ol>
           {steps.map((step) => (
             <li>
-              {formatRecipeStepLine(step, t("recipe.minutes")).replace(/^\d+\.\s/, "")}
+              {formatRecipeStepLine(step, t("recipe.minutes"), t("recipe.hours")).replace(/^\d+\.\s/, "")}
             </li>
           ))}
         </ol>
@@ -246,7 +247,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             <svg class="w-3.5 h-3.5 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
             </svg>
-            {t("recipe.prepTime")} {recipe.prepTime}{t("recipe.minutes")}
+            {t("recipe.prepTime")} {formatStepDuration(recipe.prepTime, t("recipe.minutes"), t("recipe.hours"))}
           </span>
         )}
         {recipe.cookTime && (
@@ -254,7 +255,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
             <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
             </svg>
-            {t("recipe.cookTime")} {recipe.cookTime}{t("recipe.minutes")}
+            {t("recipe.cookTime")} {formatStepDuration(recipe.cookTime, t("recipe.minutes"), t("recipe.hours"))}
           </span>
         )}
         {recipe.difficulty && (
@@ -402,7 +403,7 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                     </svg>
-                    ~{step.duration} {t("recipe.minutes")}
+                    ~{formatStepDuration(step.duration, t("recipe.minutes"), t("recipe.hours"))}
                   </span>
                 )}
               </div>

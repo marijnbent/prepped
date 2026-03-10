@@ -8,6 +8,7 @@ import {
   resolveCollectionIds,
   getImportContext,
   buildImportRules,
+  normalizeImportedIngredients,
 } from "../../../lib/import-shared";
 
 export const POST: APIRoute = async ({ request, locals }) => {
@@ -45,6 +46,7 @@ ${text.slice(0, 10000)}${ctx.userInstruction}`,
     return new Response(
       JSON.stringify({
         ...recipe,
+        ingredients: normalizeImportedIngredients(recipe.ingredients),
         tagIds,
         collectionIds,
       }),

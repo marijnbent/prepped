@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { scaleAmount } from "@/lib/scale-amount";
+import { groupIngredientsCupboardLast } from "@/lib/ingredient-groups";
 
 interface Ingredient {
   amount: string;
@@ -32,13 +33,7 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
 
   // Group ingredients
   const groups = useMemo(() => {
-    const grouped = new Map<string, typeof scaledIngredients>();
-    for (const ing of scaledIngredients) {
-      const group = ing.group || "";
-      if (!grouped.has(group)) grouped.set(group, []);
-      grouped.get(group)!.push(ing);
-    }
-    return grouped;
+    return groupIngredientsCupboardLast(scaledIngredients);
   }, [scaledIngredients]);
 
   return (
@@ -80,7 +75,7 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
 
       {/* Ingredients list */}
       <ul className="space-y-1">
-        {Array.from(groups.entries()).map(([group, ings]) => (
+        {groups.map(({ group, items: ings }) => (
           <li key={group}>
             {group && (
               <h4 className="text-[11px] uppercase tracking-[0.1em] font-medium text-primary/50 mt-5 mb-2.5">{group}</h4>
