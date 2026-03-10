@@ -72,8 +72,18 @@ interface Props {
   collections?: { id: number; name: string }[];
 }
 
+type NumericInputValue = number | "";
+
 const emptyIngredient: Ingredient = { amount: "", unit: "", name: "" };
 const emptyStep = (order: number): Step => ({ order, instruction: "" });
+
+function parseNumericInput(value: string): NumericInputValue {
+  return value === "" ? "" : Number(value);
+}
+
+function toOptionalPositiveNumber(value: NumericInputValue) {
+  return typeof value === "number" && value > 0 ? value : undefined;
+}
 
 function SortableIngredientRow({
   ing,
@@ -211,8 +221,8 @@ function SortableStepRow({
             type="number"
             min={0}
             placeholder={t("form.durationMin")}
-            value={step.duration || ""}
-            onChange={(e) => onUpdate(index, "duration", e.target.value ? Number(e.target.value) : undefined)}
+            value={step.duration ?? ""}
+            onChange={(e) => onUpdate(index, "duration", e.target.value === "" ? undefined : Number(e.target.value))}
             className="w-36"
           />
         )}
@@ -273,9 +283,9 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       });
     }
   }
-  const [servings, setServings] = useState(initial?.servings || 4);
-  const [prepTime, setPrepTime] = useState(initial?.prepTime || 0);
-  const [cookTime, setCookTime] = useState(initial?.cookTime || 0);
+  const [servings, setServings] = useState<NumericInputValue>(initial?.servings ?? 4);
+  const [prepTime, setPrepTime] = useState<NumericInputValue>(initial?.prepTime ?? "");
+  const [cookTime, setCookTime] = useState<NumericInputValue>(initial?.cookTime ?? "");
   const [difficulty, setDifficulty] = useState(initial?.difficulty || "medium");
   const [sourceUrl, setSourceUrl] = useState(initial?.sourceUrl || "");
   const [videoUrl, setVideoUrl] = useState(initial?.videoUrl || "");
@@ -394,9 +404,9 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       description: description || undefined,
       ingredients: validIngredients,
       steps: validSteps,
-      servings: servings || undefined,
-      prepTime: prepTime || undefined,
-      cookTime: cookTime || undefined,
+      servings: toOptionalPositiveNumber(servings),
+      prepTime: toOptionalPositiveNumber(prepTime),
+      cookTime: toOptionalPositiveNumber(cookTime),
       difficulty,
       imageUrl: imageUrl || undefined,
       sourceUrl: sourceUrl || undefined,
@@ -466,7 +476,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             type="number"
             min={1}
             value={servings}
-            onChange={(e) => setServings(Number(e.target.value))}
+            onChange={(e) => setServings(parseNumericInput(e.target.value))}
           />
         </div>
         <div className="space-y-2">
@@ -476,7 +486,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             type="number"
             min={0}
             value={prepTime}
-            onChange={(e) => setPrepTime(Number(e.target.value))}
+            onChange={(e) => setPrepTime(parseNumericInput(e.target.value))}
           />
         </div>
         <div className="space-y-2">
@@ -486,7 +496,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             type="number"
             min={0}
             value={cookTime}
-            onChange={(e) => setCookTime(Number(e.target.value))}
+            onChange={(e) => setCookTime(parseNumericInput(e.target.value))}
           />
         </div>
         <div className="space-y-2">
