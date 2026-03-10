@@ -61,6 +61,7 @@ This creates 3 users (`chef@test.com`, `maria@test.com`, `james@test.com` — al
 |---|---|---|
 | `BETTER_AUTH_SECRET` | Yes | Session secret. Generate with `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | Yes | Public URL (e.g., `https://prepped.example.com`) |
+| `UNSPLASH_ACCESS_KEY` | No | Unsplash Access Key for recipe cover photo search ([create an app here](https://unsplash.com/documentation)) |
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key for AI features ([get one here](https://openrouter.ai/keys)) |
 | `OPENROUTER_PRIMARY_MODEL` | No | Primary OpenRouter model (default: `google/gemini-3-flash-preview`) |
 | `OPENROUTER_FALLBACK_MODEL` | No | Backup OpenRouter model (default: `openai/gpt-5-mini`) |

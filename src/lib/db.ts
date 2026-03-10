@@ -11,6 +11,27 @@ const sqlite = new Database(join(dataDir, "prepped.db"));
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
+type TableInfoRow = { name: string };
+
+function ensureRecipesColumns() {
+  const columns = sqlite.prepare("PRAGMA table_info(recipes)").all() as TableInfoRow[];
+  if (columns.length === 0) return;
+
+  const existing = new Set(columns.map((column) => column.name));
+  const missingColumns = [
+    ["image_provider", "TEXT"],
+    ["image_author_name", "TEXT"],
+    ["image_author_url", "TEXT"],
+    ["image_source_url", "TEXT"],
+  ].filter(([name]) => !existing.has(name));
+
+  for (const [name, type] of missingColumns) {
+    sqlite.exec(`ALTER TABLE recipes ADD COLUMN ${name} ${type}`);
+  }
+}
+
+ensureRecipesColumns();
+
 export const db = drizzle(sqlite, { schema });
 
 // Seed default tags on first run (collections are seeded per-user on signup)

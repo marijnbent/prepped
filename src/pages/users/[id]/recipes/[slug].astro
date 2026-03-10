@@ -164,6 +164,11 @@ const instagramUrl = recipe.videoUrl || recipe.sourceUrl || "";
 const instagramEmbedPath = getInstagramEmbedPath(instagramUrl);
 
 const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+const hasUnsplashAttribution =
+  recipe.imageProvider === "unsplash" &&
+  recipe.imageAuthorName &&
+  recipe.imageAuthorUrl &&
+  recipe.imageSourceUrl;
 ---
 
 <Layout title={recipe.title} description={recipe.description || undefined}>
@@ -208,16 +213,30 @@ const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     {/* ===== Hero image ===== */}
     {recipe.imageUrl && (
-      <div class="no-print -mx-4 sm:-mx-6 md:mx-0 md:rounded-2xl overflow-hidden mb-10 animate-fade-in relative">
-        <div class="aspect-[16/9] md:aspect-[2/1]">
-          <img
-            src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
-            alt={recipe.title}
-            class="w-full h-full object-cover"
-          />
+      <div class="no-print -mx-4 sm:-mx-6 md:mx-0 mb-10 animate-fade-in relative">
+        <div class="overflow-hidden md:rounded-2xl">
+          <div class="aspect-[16/9] md:aspect-[2/1]">
+            <img
+              src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
+              alt={recipe.title}
+              class="w-full h-full object-cover"
+            />
+          </div>
+          {/* Warm gradient overlay */}
+          <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
         </div>
-        {/* Warm gradient overlay */}
-        <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
+        {hasUnsplashAttribution && (
+          <p class="mt-2 text-xs text-muted-foreground md:px-1">
+            {t("recipe.coverPhotoBy")}{" "}
+            <a href={recipe.imageAuthorUrl!} target="_blank" rel="noreferrer" class="text-primary hover:underline">
+              {recipe.imageAuthorName}
+            </a>{" "}
+            {t("recipe.onUnsplash")}{" "}
+            <a href={recipe.imageSourceUrl!} target="_blank" rel="noreferrer" class="text-primary hover:underline">
+              Unsplash
+            </a>
+          </p>
+        )}
       </div>
     )}
 

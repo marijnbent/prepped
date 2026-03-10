@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string;
+  readonly UNSPLASH_ACCESS_KEY?: string;
   readonly OPENROUTER_API_KEY?: string;
   readonly OPENROUTER_PRIMARY_MODEL?: string;
   readonly OPENROUTER_FALLBACK_MODEL?: string;

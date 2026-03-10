@@ -74,6 +74,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
         cookTime: source.cookTime,
         difficulty: source.difficulty,
         imageUrl: source.imageUrl, // reference same image files
+        imageProvider: source.imageProvider,
+        imageAuthorName: source.imageAuthorName,
+        imageAuthorUrl: source.imageAuthorUrl,
+        imageSourceUrl: source.imageSourceUrl,
         sourceUrl: source.sourceUrl,
         videoUrl: source.videoUrl,
         notes: source.notes,
