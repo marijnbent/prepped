@@ -218,9 +218,6 @@ export default function ProfileForm({
               <Label htmlFor="cookingSuppliesExpandedByDefault" className="cursor-pointer text-base font-semibold">
                 {t("profile.cookingSuppliesExpandedByDefault")}
               </Label>
-              <p className="text-sm text-muted-foreground/60">
-                {t("profile.cookingSuppliesExpandedByDefaultDesc")}
-              </p>
             </div>
           </div>
         </div>
