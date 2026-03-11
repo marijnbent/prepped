@@ -1,5 +1,31 @@
 import { z } from "zod";
 
+function normalizePositiveStepDuration(value: unknown) {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(",", ".");
+    if (!normalized) {
+      return undefined;
+    }
+
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Math.ceil(parsed);
+    }
+
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.ceil(value);
+  }
+
+  return value;
+}
+
 export const ingredientSchema = z.object({
   amount: z.string(),
   unit: z.string(),
@@ -10,7 +36,7 @@ export const ingredientSchema = z.object({
 export const stepSchema = z.object({
   order: z.number().int().positive(),
   instruction: z.string().min(1),
-  duration: z.number().int().positive().optional(),
+  duration: z.preprocess(normalizePositiveStepDuration, z.number().int().positive().optional()),
 });
 
 export const recipeSchema = z.object({

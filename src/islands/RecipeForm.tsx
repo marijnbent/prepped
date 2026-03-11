@@ -105,7 +105,7 @@ function toOptionalPositiveNumber(value: NumericInputValue) {
 }
 
 function toOptionalPositiveStepDuration(value: number | undefined) {
-  return typeof value === "number" && value > 0 ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.ceil(value) : undefined;
 }
 
 function IngredientRowFields({
@@ -290,9 +290,11 @@ function StepRowFields({
           <Input
             type="number"
             min={1}
+            step="any"
             placeholder={t("form.durationMin")}
             value={step.duration ?? ""}
             onChange={(e) => onUpdate(index, "duration", e.target.value === "" ? undefined : Number(e.target.value))}
+            onBlur={() => onUpdate(index, "duration", toOptionalPositiveStepDuration(step.duration))}
             className="w-36"
           />
         )}
