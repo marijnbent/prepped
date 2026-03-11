@@ -119,8 +119,10 @@ npm run backup:s3
 ```
 
 This uploads:
-- `data/prepped.db` as a consistent snapshot to `s3://bentbackup/recepten.bentjes.nl/YYYY-MM-DD/db/...`
-- `data/uploads/` to `s3://bentbackup/recepten.bentjes.nl/YYYY-MM-DD/images/...`
+- `data/prepped.db` as a consistent snapshot to `s3://bentbackup/recepten.bentjes.nl/YYYY-MM-DD/prepped-...db`
+- `data/uploads/` to one shared folder at `s3://bentbackup/recepten.bentjes.nl/images/...`
+
+Image backups are deduplicated by path: if an image already exists in the shared S3 `images/` folder, it is skipped on later runs.
 
 Required environment variables:
 - `SCW_ACCESS_KEY`

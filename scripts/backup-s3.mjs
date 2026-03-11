@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import Database from "better-sqlite3";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { basename, extname, join, relative, resolve } from "node:path";
@@ -87,6 +87,27 @@ async function uploadFile(client, localPath, key) {
   }));
 }
 
+async function objectExists(client, key) {
+  try {
+    await client.send(new HeadObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }));
+    return true;
+  } catch (error) {
+    const statusCode =
+      error && typeof error === "object" && "$metadata" in error && error.$metadata && typeof error.$metadata === "object"
+        ? error.$metadata.httpStatusCode
+        : undefined;
+
+    if (statusCode === 404) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
 async function createDatabaseSnapshot(tempDir) {
   const filename = `${basename(sourcePath, ".db")}-${timestamp()}.db`;
   const backupPath = join(tempDir, filename);
@@ -100,7 +121,7 @@ async function createDatabaseSnapshot(tempDir) {
   }
 }
 
-async function uploadImages(client, datePath) {
+async function uploadImages(client) {
   const files = await collectFiles(uploadsDir).catch((error) => {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
       return [];
@@ -109,13 +130,23 @@ async function uploadImages(client, datePath) {
     throw error;
   });
 
+  let uploadedCount = 0;
+  let skippedCount = 0;
+
   for (const file of files) {
     const relativePath = toPosixPath(relative(uploadsDir, file));
-    const key = `${backupPrefix}/${datePath}/images/${relativePath}`;
+    const key = `${backupPrefix}/images/${relativePath}`;
+
+    if (await objectExists(client, key)) {
+      skippedCount += 1;
+      continue;
+    }
+
     await uploadFile(client, file, key);
+    uploadedCount += 1;
   }
 
-  return { count: files.length, datePath };
+  return { totalCount: files.length, uploadedCount, skippedCount };
 }
 
 async function main() {
@@ -133,14 +164,14 @@ async function main() {
   try {
     const datePath = currentDatePath();
     const { backupPath, filename } = await createDatabaseSnapshot(tempDir);
-    const databaseKey = `${backupPrefix}/${datePath}/db/${filename}`;
+    const databaseKey = `${backupPrefix}/${datePath}/${filename}`;
 
     await uploadFile(client, backupPath, databaseKey);
-    const uploadedImages = await uploadImages(client, datePath);
+    const uploadedImages = await uploadImages(client);
 
     console.log(`Uploaded database backup to s3://${bucket}/${databaseKey}`);
     console.log(
-      `Uploaded ${uploadedImages.count} image file${uploadedImages.count === 1 ? "" : "s"} to s3://${bucket}/${backupPrefix}/${uploadedImages.datePath}/images/`,
+      `Images synced to s3://${bucket}/${backupPrefix}/images/ (${uploadedImages.uploadedCount} uploaded, ${uploadedImages.skippedCount} skipped, ${uploadedImages.totalCount} total)`,
     );
   } finally {
     await rm(tempDir, { recursive: true, force: true });
