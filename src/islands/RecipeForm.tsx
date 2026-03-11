@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical, Clock, Layers, Loader2, Search, Check } from "lucide-react";
+import { Plus, Trash2, GripVertical, Clock, Layers, Loader2, Search, Check, ChevronDown, ChefHat } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -55,6 +55,7 @@ interface RecipeData {
   title: string;
   description?: string;
   ingredients: Ingredient[];
+  cookingSupplies?: string[];
   steps: Step[];
   servings?: number;
   prepTime?: number;
@@ -93,12 +94,17 @@ type NumericInputValue = number | "";
 
 const emptyIngredient: Ingredient = { amount: "", unit: "", name: "" };
 const emptyStep = (order: number): Step => ({ order, instruction: "" });
+const emptyCookingSupply = "";
 
 function parseNumericInput(value: string): NumericInputValue {
   return value === "" ? "" : Number(value);
 }
 
 function toOptionalPositiveNumber(value: NumericInputValue) {
+  return typeof value === "number" && value > 0 ? value : undefined;
+}
+
+function toOptionalPositiveStepDuration(value: number | undefined) {
   return typeof value === "number" && value > 0 ? value : undefined;
 }
 
@@ -283,7 +289,7 @@ function StepRowFields({
         {showDuration && (
           <Input
             type="number"
-            min={0}
+            min={1}
             placeholder={t("form.durationMin")}
             value={step.duration ?? ""}
             onChange={(e) => onUpdate(index, "duration", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -387,6 +393,8 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
   const [ingredients, setIngredients] = useState<IngredientWithId[]>(
     initial?.ingredients?.length ? initial.ingredients.map(withDndId) : [withDndId({ ...emptyIngredient })]
   );
+  const [cookingSupplies, setCookingSupplies] = useState<string[]>(initial?.cookingSupplies || []);
+  const [showCookingSupplies, setShowCookingSupplies] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -606,6 +614,21 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
     setIngredients(ingredients.filter((_, i) => i !== index));
   }
 
+  function updateCookingSupply(index: number, value: string) {
+    const updated = [...cookingSupplies];
+    updated[index] = value;
+    setCookingSupplies(updated);
+  }
+
+  function addCookingSupply() {
+    setCookingSupplies([...cookingSupplies, emptyCookingSupply]);
+    setShowCookingSupplies(true);
+  }
+
+  function removeCookingSupply(index: number) {
+    setCookingSupplies(cookingSupplies.filter((_, i) => i !== index));
+  }
+
   function updateStep(index: number, field: keyof Step, value: string | number | undefined) {
     const updated = [...steps];
     updated[index] = { ...updated[index], [field]: value };
@@ -630,9 +653,16 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
     const validIngredients = ingredients
       .filter((i) => i.name.trim())
       .map(({ _dndId, ...rest }) => rest);
+    const validCookingSupplies = cookingSupplies
+      .map((item) => item.trim())
+      .filter(Boolean);
     const validSteps = steps
       .filter((s) => s.instruction.trim())
-      .map(({ _dndId, ...rest }, i) => ({ ...rest, order: i + 1 }));
+      .map(({ _dndId, ...rest }, i) => ({
+        ...rest,
+        duration: toOptionalPositiveStepDuration(rest.duration),
+        order: i + 1,
+      }));
 
     if (validIngredients.length === 0) {
       setError(t("form.errorIngredient"));
@@ -649,6 +679,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       title,
       description: description || undefined,
       ingredients: validIngredients,
+      cookingSupplies: validCookingSupplies.length ? validCookingSupplies : undefined,
       steps: validSteps,
       servings: toOptionalPositiveNumber(servings),
       prepTime: toOptionalPositiveNumber(prepTime),
@@ -678,7 +709,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
 
       if (!res.ok) {
         const data = await res.json();
-        setError(getApiErrorMessage(data.error, t("form.errorSave")));
+        setError(getApiErrorMessage(data, t("form.errorSave")));
         setSaving(false);
         return;
       }
@@ -690,6 +721,8 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       setSaving(false);
     }
   }
+
+  const cookingSuppliesCount = cookingSupplies.filter((item) => item.trim()).length;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
@@ -813,6 +846,70 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             {t("form.showGroups")}
           </Button>
         </div>
+      </div>
+
+      {/* Cooking Supplies */}
+      <div className="space-y-3 rounded-2xl border border-border/35 bg-card/40 p-4 sm:p-5">
+        <button
+          type="button"
+          onClick={() => setShowCookingSupplies((value) => !value)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+          aria-expanded={showCookingSupplies}
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <ChefHat className="h-4 w-4 shrink-0 text-primary/70" />
+              <span>{t("recipe.cookingSupplies")}</span>
+              {cookingSuppliesCount > 0 && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  {t("recipe.cookingSuppliesCount").replace("{count}", String(cookingSuppliesCount))}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground/70">
+              {t("form.cookingSuppliesHint")}
+            </p>
+          </div>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+              showCookingSupplies ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {showCookingSupplies && (
+          <div className="space-y-3 border-t border-border/25 pt-4">
+            {cookingSupplies.length > 0 ? (
+              <div className="space-y-2">
+                {cookingSupplies.map((supply, index) => (
+                  <div key={`cooking-supply-${index}`} className="flex items-center gap-2">
+                    <Input
+                      value={supply}
+                      onChange={(e) => updateCookingSupply(index, e.target.value)}
+                      placeholder={t("form.cookingSupplyPlaceholder")}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeCookingSupply(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground/70">{t("form.cookingSuppliesEmpty")}</p>
+            )}
+
+            <Button type="button" variant="outline" size="sm" onClick={addCookingSupply}>
+              <Plus className="h-4 w-4 mr-1" />
+              {t("recipe.addCookingSupply")}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Steps */}

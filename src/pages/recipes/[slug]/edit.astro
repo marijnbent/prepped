@@ -54,6 +54,7 @@ const initial = {
   title: recipe.title,
   description: recipe.description || "",
   ingredients: recipe.ingredients as any[],
+  cookingSupplies: (recipe.cookingSupplies as string[] | null) || [],
   steps: recipe.steps as any[],
   servings: recipe.servings || undefined,
   prepTime: recipe.prepTime || undefined,

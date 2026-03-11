@@ -43,7 +43,7 @@ export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props)
 
       if (!res.ok) {
         const data = await res.json();
-        setError(getApiErrorMessage(data.error, t("form.errorSaveGeneral")));
+        setError(getApiErrorMessage(data, t("form.errorSaveGeneral")));
         setSaving(false);
         return;
       }

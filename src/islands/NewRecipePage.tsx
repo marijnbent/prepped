@@ -360,6 +360,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
             title: imported.title || "",
             description: imported.description || "",
             ingredients: imported.ingredients || [],
+            cookingSupplies: imported.cookingSupplies || [],
             steps: imported.steps || [],
             servings: imported.servings,
             prepTime: imported.prepTime,

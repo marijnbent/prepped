@@ -17,6 +17,7 @@ export const recipeSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   ingredients: z.array(ingredientSchema).min(1),
+  cookingSupplies: z.array(z.string().min(1).max(200)).optional(),
   steps: z.array(stepSchema).min(1),
   servings: z.number().int().positive().optional(),
   prepTime: z.number().int().positive().optional(),

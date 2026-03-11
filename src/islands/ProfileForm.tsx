@@ -34,7 +34,7 @@ export default function ProfileForm({ importPrompt: initialImport, chatPrompt: i
 
       if (!res.ok) {
         const data = await res.json();
-        setError(getApiErrorMessage(data.error, t("common.error")));
+        setError(getApiErrorMessage(data, t("common.error")));
         setSaving(false);
         return;
       }

@@ -13,7 +13,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const body = await request.json();
   const result = recipeSchema.safeParse(body);
   if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error.flatten() }), { status: 400 });
+    return new Response(JSON.stringify({ error: result.error.flatten(), issues: result.error.issues }), { status: 400 });
   }
 
   const data = result.data;
@@ -40,6 +40,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         slug,
         description: data.description || null,
         ingredients: data.ingredients,
+        cookingSupplies: data.cookingSupplies || null,
         steps: data.steps,
         servings: data.servings || null,
         prepTime: data.prepTime || null,

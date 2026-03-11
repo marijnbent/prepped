@@ -68,6 +68,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         slug,
         description: source.description,
         ingredients: source.ingredients,
+        cookingSupplies: source.cookingSupplies,
         steps: source.steps,
         servings: source.servings,
         prepTime: source.prepTime,

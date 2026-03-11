@@ -23,6 +23,7 @@ function ensureRecipesColumns() {
     ["image_author_name", "TEXT"],
     ["image_author_url", "TEXT"],
     ["image_source_url", "TEXT"],
+    ["cooking_supplies", "TEXT"],
   ].filter(([name]) => !existing.has(name));
 
   for (const [name, type] of missingColumns) {

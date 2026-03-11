@@ -63,6 +63,7 @@ export const recipes = sqliteTable("recipes", {
   slug: text("slug").notNull(),
   description: text("description"),
   ingredients: text("ingredients", { mode: "json" }).notNull().$type<Ingredient[]>(),
+  cookingSupplies: text("cooking_supplies", { mode: "json" }).$type<string[]>(),
   steps: text("steps", { mode: "json" }).notNull().$type<Step[]>(),
   servings: integer("servings"),
   prepTime: integer("prep_time"),

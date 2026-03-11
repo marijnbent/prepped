@@ -131,6 +131,7 @@ const savedCollectionIds = currentUser
   : [];
 
 const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
+const cookingSupplies = (recipe.cookingSupplies as string[] | null) || [];
 const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
 const ingredientGroups = groupRecipeIngredients(ingredients);
 const recipePlainText = buildRecipePlainText({
@@ -402,6 +403,32 @@ const hasUnsplashAttribution =
             <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} showLabel client:load />
           </div>
         </div>
+        {cookingSupplies.length > 0 && (
+          <details class="mt-4 rounded-2xl border border-border/25 bg-card/40 p-5 backdrop-blur-sm group">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-foreground/85 [&::-webkit-details-marker]:hidden">
+              <span class="inline-flex items-center gap-2">
+                <svg class="w-4 h-4 text-primary/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 4a3 3 0 0 0-2.83 2 4 4 0 0 0-5.17 3.83A3 3 0 0 0 7 13h10a3 3 0 0 0 .82-5.89A4 4 0 0 0 14 4z" />
+                  <path d="M8 13v5a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-5" />
+                  <path d="M10 20v-3" />
+                  <path d="M14 20v-3" />
+                </svg>
+                {t("recipe.cookingSupplies")}
+              </span>
+              <svg class="w-4 h-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <ul class="mt-4 space-y-2 border-t border-border/15 pt-4 text-sm text-foreground/75">
+              {cookingSupplies.map((supply) => (
+                <li class="flex items-start gap-2">
+                  <span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary/45" />
+                  <span>{supply}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
 
       <div>
