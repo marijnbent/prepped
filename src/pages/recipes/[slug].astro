@@ -537,7 +537,7 @@ const hasUnsplashAttribution =
                 <img
                   src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
                   alt={t("cookLog.photoAlt")}
-                  class="rounded-xl max-w-sm mb-3 border border-border/15"
+                  class="block w-full max-w-full rounded-xl mb-3 border border-border/15 sm:max-w-sm"
                   loading="lazy"
                 />
               )}
