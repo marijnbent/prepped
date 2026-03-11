@@ -17,6 +17,27 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=4321
+      - TZ=${TZ:-Europe/Amsterdam}
+    restart: unless-stopped
+
+  prepped-backup:
+    build:
+      context: .
+      args:
+        AUTH_MODE: ${AUTH_MODE:-password}
+        PUBLIC_UI_LOCALE: ${PUBLIC_UI_LOCALE:-en}
+        INVITE_CODE: ${INVITE_CODE:-}
+        MEASUREMENT_SYSTEM: ${MEASUREMENT_SYSTEM:-metric}
+        PUBLIC_DATE_LOCALE: ${PUBLIC_DATE_LOCALE:-}
+    volumes:
+      - prepped-data:/app/data
+    env_file:
+      - .env
+    environment:
+      - TZ=${TZ:-Europe/Amsterdam}
+      - BACKUP_TIME=${BACKUP_TIME:-03:00}
+      - BACKUP_RUN_ON_START=${BACKUP_RUN_ON_START:-false}
+    command: ["node", "scripts/backup-s3-scheduler.mjs"]
     restart: unless-stopped
 
 volumes:
