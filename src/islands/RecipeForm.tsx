@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, GripVertical, Clock, Layers, Loader2, Search, Check } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import {
   DndContext,
   closestCenter,
@@ -674,7 +675,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || t("form.errorSave"));
+        setError(getApiErrorMessage(data.error, t("form.errorSave")));
         setSaving(false);
         return;
       }

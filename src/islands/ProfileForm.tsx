@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Globe, MessageCircle, ShoppingBasket, Check } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface Props {
   importPrompt: string;
@@ -33,7 +34,7 @@ export default function ProfileForm({ importPrompt: initialImport, chatPrompt: i
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || t("common.error"));
+        setError(getApiErrorMessage(data.error, t("common.error")));
         setSaving(false);
         return;
       }

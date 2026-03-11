@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface Props {
   initial?: {
@@ -47,7 +48,7 @@ export default function CollectionForm({ initial }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || t("form.errorSaveGeneral"));
+        setError(getApiErrorMessage(data.error, t("form.errorSaveGeneral")));
         setSaving(false);
         return;
       }

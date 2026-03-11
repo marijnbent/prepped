@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Star } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface Props {
   recipeId: number;
@@ -42,7 +43,7 @@ export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props)
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error?.toString() || t("form.errorSaveGeneral"));
+        setError(getApiErrorMessage(data.error, t("form.errorSaveGeneral")));
         setSaving(false);
         return;
       }
