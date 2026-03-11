@@ -27,12 +27,8 @@ function timestamp() {
   return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
-function currentDatePath() {
-  const now = new Date();
-  const year = String(now.getFullYear());
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function currentBackupPath() {
+  return new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "");
 }
 
 function toPosixPath(path) {
@@ -162,9 +158,9 @@ async function main() {
   const tempDir = await mkdtemp(join(tmpdir(), "prepped-s3-backup-"));
 
   try {
-    const datePath = currentDatePath();
+    const backupRunPath = currentBackupPath();
     const { backupPath, filename } = await createDatabaseSnapshot(tempDir);
-    const databaseKey = `${backupPrefix}/${datePath}/${filename}`;
+    const databaseKey = `${backupPrefix}/${backupRunPath}/${filename}`;
 
     await uploadFile(client, backupPath, databaseKey);
     const uploadedImages = await uploadImages(client);
