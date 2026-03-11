@@ -40,12 +40,9 @@ WORKDIR /app
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./
+COPY --from=base /app/scripts ./scripts
 
-# Drizzle needs config + schema to run push
-COPY --from=base /app/drizzle.config.ts ./
-COPY --from=base /app/src/lib/schema.ts ./src/lib/schema.ts
-
-# Entrypoint runs drizzle-kit push then starts the server
+# Entrypoint runs DB preflight, then starts the server.
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 

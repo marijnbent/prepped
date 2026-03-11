@@ -91,6 +91,28 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 2. Set `BETTER_AUTH_SECRET` to a strong random value
 3. Configure your reverse proxy to forward to port 4321
 4. Optionally set `INVITE_CODE` to restrict registration
+5. Do not rely on schema auto-sync on boot for production SQLite data
+
+Recommended production migration flow:
+
+```sh
+cp data/prepped.db data/prepped-$(date +%F-%H%M%S).db
+npm run db:generate
+# review the SQL files in drizzle/
+npm run db:migrate
+```
+
+The container no longer runs `drizzle-kit push --force` automatically. On startup it now runs a DB preflight check and refuses to boot if the database looks like recipe rows were wiped while related recipe uploads or dependent rows still exist.
+
+Avoid `drizzle-kit push --force` against production SQLite databases. Table rebuilds can be destructive.
+
+If you already had a running database before `drizzle/` was added to the repo, run this once before your first `db:migrate`:
+
+```sh
+npm run db:baseline
+```
+
+That stamps the current migration history into `__drizzle_migrations` without changing your existing tables or rows.
 
 ## Tech Stack
 

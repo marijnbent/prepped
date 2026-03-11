@@ -1,8 +1,7 @@
 #!/bin/sh
-set -e
+set -eu
 
-echo "Running drizzle-kit push..."
-npx drizzle-kit push --force
+node ./scripts/check-db-safety.mjs
 
 echo "Starting server..."
 exec node ./dist/server/entry.mjs
