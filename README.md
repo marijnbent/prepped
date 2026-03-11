@@ -102,7 +102,7 @@ npm run db:generate
 npm run db:migrate
 ```
 
-The container no longer runs `drizzle-kit push --force` automatically. On startup it now runs a DB preflight check and refuses to boot if the database looks like recipe rows were wiped while related recipe uploads or dependent rows still exist.
+The container no longer runs `drizzle-kit push --force` automatically. Startup now just launches the app; schema changes should be applied explicitly with reviewed Drizzle migrations.
 
 Avoid `drizzle-kit push --force` against production SQLite databases. Table rebuilds can be destructive.
 
