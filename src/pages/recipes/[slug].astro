@@ -65,6 +65,12 @@ const recipeAuthor = recipe.createdBy
   ? db.select({ name: users.name }).from(users).where(eq(users.id, recipe.createdBy)).get()
   : null;
 
+const viewerPreferences = db
+  .select({ cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault })
+  .from(users)
+  .where(eq(users.id, Astro.locals.user.id))
+  .get();
+
 // If copied, get the original recipe and its author
 const copiedFromSource = recipe.copiedFrom
   ? db
@@ -91,6 +97,7 @@ const ingredients = recipe.ingredients as { amount: string; unit: string; name: 
 const cookingSupplies = (recipe.cookingSupplies as string[] | null) || [];
 const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
 const ingredientGroups = groupRecipeIngredients(ingredients);
+const cookingSuppliesExpandedByDefault = viewerPreferences?.cookingSuppliesExpandedByDefault ?? false;
 const recipePlainText = buildRecipePlainText({
   title: recipe.title,
   ingredients,
@@ -383,7 +390,10 @@ const hasUnsplashAttribution =
           </div>
         </div>
         {cookingSupplies.length > 0 && (
-          <details class="mt-4 rounded-2xl border border-border/25 bg-card/40 p-5 backdrop-blur-sm group">
+          <details
+            class="mt-4 rounded-2xl border border-border/25 bg-card/40 p-5 backdrop-blur-sm group"
+            open={cookingSuppliesExpandedByDefault}
+          >
             <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-foreground/85 [&::-webkit-details-marker]:hidden">
               <span class="inline-flex items-center gap-2">
                 <svg class="w-4 h-4 text-primary/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

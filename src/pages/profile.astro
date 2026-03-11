@@ -10,7 +10,12 @@ if (!Astro.locals.user) {
   return Astro.redirect("/login?redirect=/profile");
 }
 
-const user = db.select({ importPrompt: users.importPrompt, chatPrompt: users.chatPrompt, shoppingPrompt: users.shoppingPrompt })
+const user = db.select({
+  importPrompt: users.importPrompt,
+  chatPrompt: users.chatPrompt,
+  shoppingPrompt: users.shoppingPrompt,
+  cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault,
+})
   .from(users)
   .where(eq(users.id, Astro.locals.user.id))
   .get();
@@ -30,6 +35,7 @@ const user = db.select({ importPrompt: users.importPrompt, chatPrompt: users.cha
         importPrompt={user?.importPrompt || ""}
         chatPrompt={user?.chatPrompt || ""}
         shoppingPrompt={user?.shoppingPrompt || ""}
+        cookingSuppliesExpandedByDefault={user?.cookingSuppliesExpandedByDefault ?? false}
       />
     </div>
   </div>

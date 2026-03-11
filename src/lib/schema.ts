@@ -11,6 +11,7 @@ export const users = sqliteTable("users", {
   importPrompt: text("import_prompt"),
   chatPrompt: text("chat_prompt"),
   shoppingPrompt: text("shopping_prompt"),
+  cookingSuppliesExpandedByDefault: integer("cooking_supplies_expanded_by_default", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Globe, MessageCircle, ShoppingBasket, Check } from "lucide-react";
 import { t } from "@/lib/i18n";
@@ -9,12 +11,19 @@ interface Props {
   importPrompt: string;
   chatPrompt: string;
   shoppingPrompt: string;
+  cookingSuppliesExpandedByDefault: boolean;
 }
 
-export default function ProfileForm({ importPrompt: initialImport, chatPrompt: initialChat, shoppingPrompt: initialShopping }: Props) {
+export default function ProfileForm({
+  importPrompt: initialImport,
+  chatPrompt: initialChat,
+  shoppingPrompt: initialShopping,
+  cookingSuppliesExpandedByDefault: initialCookingSuppliesExpandedByDefault,
+}: Props) {
   const [importPrompt, setImportPrompt] = useState(initialImport);
   const [chatPrompt, setChatPrompt] = useState(initialChat);
   const [shoppingPrompt, setShoppingPrompt] = useState(initialShopping);
+  const [cookingSuppliesExpandedByDefault, setCookingSuppliesExpandedByDefault] = useState(initialCookingSuppliesExpandedByDefault);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +38,7 @@ export default function ProfileForm({ importPrompt: initialImport, chatPrompt: i
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt }),
+        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt, cookingSuppliesExpandedByDefault }),
       });
 
       if (!res.ok) {
@@ -114,6 +123,25 @@ export default function ProfileForm({ importPrompt: initialImport, chatPrompt: i
           maxLength={500}
           className="resize-none"
         />
+      </div>
+
+      <div className="bg-card/50 border border-border/30 rounded-2xl p-6 transition-colors duration-200 hover:border-border/50">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="cookingSuppliesExpandedByDefault"
+            checked={cookingSuppliesExpandedByDefault}
+            onCheckedChange={(checked) => setCookingSuppliesExpandedByDefault(checked === true)}
+            className="mt-1"
+          />
+          <div className="space-y-1.5">
+            <Label htmlFor="cookingSuppliesExpandedByDefault" className="cursor-pointer text-base font-semibold">
+              {t("profile.cookingSuppliesExpandedByDefault")}
+            </Label>
+            <p className="text-sm text-muted-foreground/60">
+              {t("profile.cookingSuppliesExpandedByDefaultDesc")}
+            </p>
+          </div>
+        </div>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

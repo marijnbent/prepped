@@ -12,12 +12,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const importPrompt = typeof body.importPrompt === "string" ? body.importPrompt.slice(0, 500) : null;
   const chatPrompt = typeof body.chatPrompt === "string" ? body.chatPrompt.slice(0, 500) : null;
   const shoppingPrompt = typeof body.shoppingPrompt === "string" ? body.shoppingPrompt.slice(0, 500) : null;
+  const cookingSuppliesExpandedByDefault = body.cookingSuppliesExpandedByDefault === true;
 
   db.update(users)
     .set({
       importPrompt: importPrompt || null,
       chatPrompt: chatPrompt || null,
       shoppingPrompt: shoppingPrompt || null,
+      cookingSuppliesExpandedByDefault,
     })
     .where(eq(users.id, locals.user.id))
     .run();

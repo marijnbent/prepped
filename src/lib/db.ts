@@ -31,7 +31,22 @@ function ensureRecipesColumns() {
   }
 }
 
+function ensureUsersColumns() {
+  const columns = sqlite.prepare("PRAGMA table_info(users)").all() as TableInfoRow[];
+  if (columns.length === 0) return;
+
+  const existing = new Set(columns.map((column) => column.name));
+  const missingColumns = [
+    ["cooking_supplies_expanded_by_default", "INTEGER NOT NULL DEFAULT 0"],
+  ].filter(([name]) => !existing.has(name));
+
+  for (const [name, type] of missingColumns) {
+    sqlite.exec(`ALTER TABLE users ADD COLUMN ${name} ${type}`);
+  }
+}
+
 ensureRecipesColumns();
+ensureUsersColumns();
 
 export const db = drizzle(sqlite, { schema });
 
