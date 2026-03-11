@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Link, FileText, PenLine, Camera } from "lucide-react";
 import RecipeForm from "./RecipeForm";
 import { t } from "@/lib/i18n";
+import { normalizeImageProvider } from "@/lib/image-provider";
 
 type Mode = "choose" | "manual" | "importing" | "review";
 type UrlImportMode = "direct" | "scrape" | "scrape-super";
@@ -367,7 +368,7 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
             sourceUrl: imported.sourceUrl || url || "",
             videoUrl: imported.videoUrl || "",
             imageUrl: imported.imageUrl || "",
-            imageProvider: imported.imageProvider,
+            imageProvider: normalizeImageProvider(imported.imageProvider),
             imageAuthorName: imported.imageAuthorName || "",
             imageAuthorUrl: imported.imageAuthorUrl || "",
             imageSourceUrl: imported.imageSourceUrl || "",

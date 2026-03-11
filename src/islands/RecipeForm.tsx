@@ -7,6 +7,7 @@ import { Plus, Trash2, GripVertical, Clock, Layers, Loader2, Search, Check } fro
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { normalizeImageProvider } from "@/lib/image-provider";
 import {
   DndContext,
   closestCenter,
@@ -427,7 +428,9 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
   const [videoUrl, setVideoUrl] = useState(initial?.videoUrl || "");
   const [notes, setNotes] = useState(initial?.notes || "");
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl || "");
-  const [imageProvider, setImageProvider] = useState<RecipeData["imageProvider"]>(initial?.imageProvider);
+  const [imageProvider, setImageProvider] = useState<RecipeData["imageProvider"]>(
+    normalizeImageProvider(initial?.imageProvider)
+  );
   const [imageAuthorName, setImageAuthorName] = useState(initial?.imageAuthorName || "");
   const [imageAuthorUrl, setImageAuthorUrl] = useState(initial?.imageAuthorUrl || "");
   const [imageSourceUrl, setImageSourceUrl] = useState(initial?.imageSourceUrl || "");
@@ -652,7 +655,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       cookTime: toOptionalPositiveNumber(cookTime),
       difficulty,
       imageUrl: imageUrl || undefined,
-      imageProvider: imageUrl ? imageProvider : undefined,
+      imageProvider: imageUrl ? normalizeImageProvider(imageProvider) : undefined,
       imageAuthorName: imageUrl ? imageAuthorName || undefined : undefined,
       imageAuthorUrl: imageUrl ? imageAuthorUrl || undefined : undefined,
       imageSourceUrl: imageUrl ? imageSourceUrl || undefined : undefined,

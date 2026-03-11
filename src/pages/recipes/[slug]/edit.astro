@@ -11,6 +11,7 @@ import {
 } from "../../../lib/schema";
 import { eq, and } from "drizzle-orm";
 import { t } from "../../../lib/i18n";
+import { normalizeImageProvider } from "../../../lib/image-provider";
 
 const { slug } = Astro.params;
 
@@ -59,7 +60,7 @@ const initial = {
   cookTime: recipe.cookTime || undefined,
   difficulty: recipe.difficulty as "easy" | "medium" | "hard" | undefined,
   imageUrl: recipe.imageUrl || "",
-  imageProvider: recipe.imageProvider as "upload" | "unsplash" | undefined,
+  imageProvider: normalizeImageProvider(recipe.imageProvider),
   imageAuthorName: recipe.imageAuthorName || "",
   imageAuthorUrl: recipe.imageAuthorUrl || "",
   imageSourceUrl: recipe.imageSourceUrl || "",
