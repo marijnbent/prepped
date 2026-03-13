@@ -15,6 +15,7 @@ const user = db.select({
   chatPrompt: users.chatPrompt,
   shoppingPrompt: users.shoppingPrompt,
   cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault,
+  dirkSecretModeEnabled: users.dirkSecretModeEnabled,
 })
   .from(users)
   .where(eq(users.id, Astro.locals.user.id))
@@ -36,6 +37,7 @@ const user = db.select({
         chatPrompt={user?.chatPrompt || ""}
         shoppingPrompt={user?.shoppingPrompt || ""}
         cookingSuppliesExpandedByDefault={user?.cookingSuppliesExpandedByDefault ?? false}
+        dirkSecretModeEnabled={user?.dirkSecretModeEnabled ?? false}
       />
     </div>
   </div>

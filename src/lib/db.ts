@@ -38,6 +38,7 @@ function ensureUsersColumns() {
   const existing = new Set(columns.map((column) => column.name));
   const missingColumns = [
     ["cooking_supplies_expanded_by_default", "INTEGER NOT NULL DEFAULT 0"],
+    ["dirk_secret_mode_enabled", "INTEGER NOT NULL DEFAULT 0"],
   ].filter(([name]) => !existing.has(name));
 
   for (const [name, type] of missingColumns) {

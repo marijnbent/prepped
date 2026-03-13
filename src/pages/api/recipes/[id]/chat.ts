@@ -4,6 +4,7 @@ import { withChatModelFallback } from "../../../../lib/ai";
 import { toAiClientError } from "../../../../lib/ai-errors";
 import { db } from "../../../../lib/db";
 import { recipes, users } from "../../../../lib/schema";
+import { applyDirkSecretIngredients, applyDirkSecretSteps } from "../../../../lib/recipe-secrets";
 import { eq } from "drizzle-orm";
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
@@ -24,21 +25,29 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
 
-  const ingredients = (recipe.ingredients as any[])
-    .map((i: any) => `${i.amount} ${i.unit} ${i.name}`.trim())
-    .join("\n");
-
-  const steps = (recipe.steps as any[])
-    .map((s: any) => `${s.order}. ${s.instruction}`)
-    .join("\n");
-
   const measurementSystem = import.meta.env.MEASUREMENT_SYSTEM || process.env.MEASUREMENT_SYSTEM || "metric";
 
   let userChatInstruction = "";
-  const userRow = db.select({ chatPrompt: users.chatPrompt }).from(users).where(eq(users.id, locals.user.id)).get();
+  const userRow = db
+    .select({
+      chatPrompt: users.chatPrompt,
+      dirkSecretModeEnabled: users.dirkSecretModeEnabled,
+    })
+    .from(users)
+    .where(eq(users.id, locals.user.id))
+    .get();
   if (userRow?.chatPrompt) {
     userChatInstruction = `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.chatPrompt}\n`;
   }
+
+  const dirkSecretModeEnabled = userRow?.dirkSecretModeEnabled ?? false;
+  const ingredients = applyDirkSecretIngredients(recipe.ingredients as any[], dirkSecretModeEnabled)
+    .map((i: any) => `${i.amount} ${i.unit} ${i.name}`.trim())
+    .join("\n");
+
+  const steps = applyDirkSecretSteps(recipe.steps as any[], dirkSecretModeEnabled)
+    .map((s: any) => `${s.order}. ${s.instruction}`)
+    .join("\n");
 
   const systemPrompt = `You are a helpful cooking assistant.${userChatInstruction} You have full knowledge of the following recipe and can answer questions about it - substitutions, technique tips, serving suggestions, dietary adaptations, etc. Be concise and practical.
 

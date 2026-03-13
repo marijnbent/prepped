@@ -12,6 +12,7 @@ interface Props {
   chatPrompt: string;
   shoppingPrompt: string;
   cookingSuppliesExpandedByDefault: boolean;
+  dirkSecretModeEnabled: boolean;
 }
 
 export default function ProfileForm({
@@ -19,12 +20,15 @@ export default function ProfileForm({
   chatPrompt: initialChat,
   shoppingPrompt: initialShopping,
   cookingSuppliesExpandedByDefault: initialCookingSuppliesExpandedByDefault,
+  dirkSecretModeEnabled: initialDirkSecretModeEnabled,
 }: Props) {
   const cookingSuppliesToggleRef = useRef<HTMLButtonElement | null>(null);
+  const dirkSecretToggleRef = useRef<HTMLButtonElement | null>(null);
   const [importPrompt, setImportPrompt] = useState(initialImport);
   const [chatPrompt, setChatPrompt] = useState(initialChat);
   const [shoppingPrompt, setShoppingPrompt] = useState(initialShopping);
   const [cookingSuppliesExpandedByDefault, setCookingSuppliesExpandedByDefault] = useState(initialCookingSuppliesExpandedByDefault);
+  const [dirkSecretModeEnabled, setDirkSecretModeEnabled] = useState(initialDirkSecretModeEnabled);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +43,7 @@ export default function ProfileForm({
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt, cookingSuppliesExpandedByDefault }),
+        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt, cookingSuppliesExpandedByDefault, dirkSecretModeEnabled }),
       });
 
       if (!res.ok) {
@@ -113,12 +117,76 @@ export default function ProfileForm({
     }
   }
 
+  function launchYellowConfetti() {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const origin = dirkSecretToggleRef.current?.getBoundingClientRect();
+    if (!origin) return;
+
+    const centerX = origin.left + origin.width / 2;
+    const centerY = origin.top + origin.height / 2;
+    const colors = ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a", "#fef3c7"];
+    const pieces = ["✦", "★", "✶", "✹"];
+    const bursts = [
+      { count: 28, minDistance: 55, maxDistance: 105, minDuration: 1400, maxDuration: 1900, spread: 220, rise: 55 },
+      { count: 24, minDistance: 80, maxDistance: 150, minDuration: 1800, maxDuration: 2500, spread: 260, rise: 80 },
+    ];
+
+    for (const burst of bursts) {
+      for (let i = 0; i < burst.count; i += 1) {
+        const piece = document.createElement("span");
+        const angle = (-burst.spread / 2 + Math.random() * burst.spread) * (Math.PI / 180);
+        const distance = burst.minDistance + Math.random() * (burst.maxDistance - burst.minDistance);
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance - (burst.rise + Math.random() * 55);
+        const size = 12 + Math.random() * 12;
+        const rotation = Math.random() * 720 - 360;
+
+        piece.setAttribute("aria-hidden", "true");
+        piece.textContent = pieces[i % pieces.length];
+        piece.style.position = "fixed";
+        piece.style.left = `${centerX}px`;
+        piece.style.top = `${centerY}px`;
+        piece.style.fontSize = `${size}px`;
+        piece.style.lineHeight = "1";
+        piece.style.color = colors[i % colors.length];
+        piece.style.pointerEvents = "none";
+        piece.style.userSelect = "none";
+        piece.style.zIndex = "9999";
+        piece.style.boxShadow = "0 0 14px rgba(251, 191, 36, 0.4)";
+        document.body.appendChild(piece);
+
+        piece.animate(
+          [
+            { transform: "translate(-50%, -50%) translate3d(0, 0, 0) rotate(0deg)", opacity: 1 },
+            { transform: `translate(-50%, -50%) translate3d(${dx * 0.72}px, ${dy * 0.72}px, 0) rotate(${rotation * 0.65}deg)`, opacity: 1, offset: 0.68 },
+            { transform: `translate(-50%, -50%) translate3d(${dx}px, ${dy}px, 0) rotate(${rotation}deg)`, opacity: 0, offset: 1 },
+          ],
+          {
+            duration: burst.minDuration + Math.random() * (burst.maxDuration - burst.minDuration),
+            easing: "cubic-bezier(0.2, 0.8, 0.25, 1)",
+            fill: "forwards",
+          }
+        ).finished.finally(() => piece.remove());
+      }
+    }
+  }
+
   function handleCookingSuppliesToggle(checked: boolean | "indeterminate") {
     const nextValue = checked === true;
     setCookingSuppliesExpandedByDefault(nextValue);
 
     if (nextValue && !cookingSuppliesExpandedByDefault) {
       launchPurpleConfetti();
+    }
+  }
+
+  function handleDirkSecretToggle(checked: boolean | "indeterminate") {
+    const nextValue = checked === true;
+    setDirkSecretModeEnabled(nextValue);
+
+    if (nextValue && !dirkSecretModeEnabled) {
+      launchYellowConfetti();
     }
   }
 
@@ -217,6 +285,23 @@ export default function ProfileForm({
             <div className="space-y-1.5">
               <Label htmlFor="cookingSuppliesExpandedByDefault" className="cursor-pointer text-base font-semibold">
                 {t("profile.cookingSuppliesExpandedByDefault")}
+              </Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 transition-colors duration-200 hover:border-border/50">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="dirkSecretModeEnabled"
+              ref={dirkSecretToggleRef}
+              checked={dirkSecretModeEnabled}
+              onCheckedChange={handleDirkSecretToggle}
+              className="mt-1 border-rose-300/80 focus-visible:border-rose-500 focus-visible:ring-rose-300/40 data-[state=checked]:border-rose-600 data-[state=checked]:bg-rose-600 data-[state=checked]:text-white dark:border-rose-400/40 dark:data-[state=checked]:border-rose-400 dark:data-[state=checked]:bg-rose-400 dark:data-[state=checked]:text-rose-950"
+            />
+            <div className="space-y-1.5">
+              <Label htmlFor="dirkSecretModeEnabled" className="cursor-pointer text-base font-semibold">
+                {t("profile.dirkSecretModeEnabled")}
               </Label>
             </div>
           </div>

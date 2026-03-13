@@ -10,6 +10,7 @@ import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
 import { db } from "../../../../lib/db";
 import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites, cookLogs } from "../../../../lib/schema";
 import { buildRecipePlainText, formatRecipeIngredientLine, formatRecipeStepLine, formatStepDuration, groupRecipeIngredients } from "../../../../lib/recipe-export";
+import { applyDirkSecretRecipeMode } from "../../../../lib/recipe-secrets";
 import { eq, and, asc, count, inArray } from "drizzle-orm";
 import { t, formatDate } from "../../../../lib/i18n";
 
@@ -132,15 +133,24 @@ const savedCollectionIds = currentUser
 
 const viewerPreferences = currentUser
   ? db
-      .select({ cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault })
+      .select({
+        cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault,
+        dirkSecretModeEnabled: users.dirkSecretModeEnabled,
+      })
       .from(users)
       .where(eq(users.id, currentUser.id))
       .get()
   : null;
 
-const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
+const baseIngredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
 const cookingSupplies = (recipe.cookingSupplies as string[] | null) || [];
-const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
+const baseSteps = recipe.steps as { order: number; instruction: string; duration?: number }[];
+const dirkSecretModeEnabled = viewerPreferences?.dirkSecretModeEnabled ?? false;
+const { ingredients, steps } = applyDirkSecretRecipeMode({
+  ingredients: baseIngredients,
+  steps: baseSteps,
+  enabled: dirkSecretModeEnabled,
+});
 const ingredientGroups = groupRecipeIngredients(ingredients);
 const cookingSuppliesExpandedByDefault = viewerPreferences?.cookingSuppliesExpandedByDefault ?? false;
 const recipePlainText = buildRecipePlainText({

@@ -13,6 +13,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const chatPrompt = typeof body.chatPrompt === "string" ? body.chatPrompt.slice(0, 500) : null;
   const shoppingPrompt = typeof body.shoppingPrompt === "string" ? body.shoppingPrompt.slice(0, 500) : null;
   const cookingSuppliesExpandedByDefault = body.cookingSuppliesExpandedByDefault === true;
+  const dirkSecretModeEnabled = body.dirkSecretModeEnabled === true;
 
   db.update(users)
     .set({
@@ -20,6 +21,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       chatPrompt: chatPrompt || null,
       shoppingPrompt: shoppingPrompt || null,
       cookingSuppliesExpandedByDefault,
+      dirkSecretModeEnabled,
     })
     .where(eq(users.id, locals.user.id))
     .run();

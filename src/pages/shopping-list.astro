@@ -2,7 +2,8 @@
 import Layout from "../layouts/Layout.astro";
 import ShoppingListPage from "../islands/ShoppingListPage";
 import { db } from "../lib/db";
-import { recipes, favorites } from "../lib/schema";
+import { recipes, favorites, users } from "../lib/schema";
+import { applyDirkSecretIngredients } from "../lib/recipe-secrets";
 import { eq, and } from "drizzle-orm";
 import { t } from "../lib/i18n";
 
@@ -11,6 +12,12 @@ if (!Astro.locals.user) {
 }
 
 const userId = Astro.locals.user.id;
+const viewerPreferences = db
+  .select({ dirkSecretModeEnabled: users.dirkSecretModeEnabled })
+  .from(users)
+  .where(eq(users.id, userId))
+  .get();
+const dirkSecretModeEnabled = viewerPreferences?.dirkSecretModeEnabled ?? false;
 
 // Get user's own recipes
 const ownRecipes = db
@@ -53,6 +60,10 @@ for (const r of favRecipes) {
 
 const recipesData = allRecipes.map((r) => ({
   ...r,
+  ingredients: applyDirkSecretIngredients(
+    r.ingredients as { amount: string; unit: string; name: string; group?: string }[],
+    dirkSecretModeEnabled
+  ),
   imageUrl: r.imageUrl || null,
 }));
 ---

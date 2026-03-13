@@ -8,6 +8,7 @@ import AddToShoppingListButton from "../../islands/AddToShoppingListButton";
 import { db } from "../../lib/db";
 import { recipes, cookLogs, recipeTags, tags, recipeCollections, collections, users, favorites } from "../../lib/schema";
 import { buildRecipePlainText, formatRecipeIngredientLine, formatRecipeStepLine, formatStepDuration, groupRecipeIngredients } from "../../lib/recipe-export";
+import { applyDirkSecretRecipeMode } from "../../lib/recipe-secrets";
 import { eq, and } from "drizzle-orm";
 import { t, formatDate } from "../../lib/i18n";
 
@@ -66,7 +67,10 @@ const recipeAuthor = recipe.createdBy
   : null;
 
 const viewerPreferences = db
-  .select({ cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault })
+  .select({
+    cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault,
+    dirkSecretModeEnabled: users.dirkSecretModeEnabled,
+  })
   .from(users)
   .where(eq(users.id, Astro.locals.user.id))
   .get();
@@ -93,9 +97,15 @@ const isFavorited = !!db
   .get();
 
 const isOwner = true; // This route is for own recipes only
-const ingredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
+const baseIngredients = recipe.ingredients as { amount: string; unit: string; name: string; group?: string }[];
 const cookingSupplies = (recipe.cookingSupplies as string[] | null) || [];
-const steps = recipe.steps as { order: number; instruction: string; duration?: number }[];
+const baseSteps = recipe.steps as { order: number; instruction: string; duration?: number }[];
+const dirkSecretModeEnabled = viewerPreferences?.dirkSecretModeEnabled ?? false;
+const { ingredients, steps } = applyDirkSecretRecipeMode({
+  ingredients: baseIngredients,
+  steps: baseSteps,
+  enabled: dirkSecretModeEnabled,
+});
 const ingredientGroups = groupRecipeIngredients(ingredients);
 const cookingSuppliesExpandedByDefault = viewerPreferences?.cookingSuppliesExpandedByDefault ?? false;
 const recipePlainText = buildRecipePlainText({

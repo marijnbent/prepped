@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `dirk_secret_mode_enabled` integer DEFAULT false NOT NULL;
