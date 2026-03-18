@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Globe, MessageCircle, ShoppingBasket, Check } from "lucide-react";
+import { Globe, MessageCircle, ShoppingBasket, Check, KeyRound, Copy, Trash2, ExternalLink } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -13,6 +14,9 @@ interface Props {
   shoppingPrompt: string;
   cookingSuppliesExpandedByDefault: boolean;
   dirkSecretModeEnabled: boolean;
+  apiTokenPreview: string;
+  apiTokenCreatedAt: string;
+  apiTokenLastUsedAt: string;
 }
 
 export default function ProfileForm({
@@ -21,6 +25,9 @@ export default function ProfileForm({
   shoppingPrompt: initialShopping,
   cookingSuppliesExpandedByDefault: initialCookingSuppliesExpandedByDefault,
   dirkSecretModeEnabled: initialDirkSecretModeEnabled,
+  apiTokenPreview: initialApiTokenPreview,
+  apiTokenCreatedAt: initialApiTokenCreatedAt,
+  apiTokenLastUsedAt: initialApiTokenLastUsedAt,
 }: Props) {
   const cookingSuppliesToggleRef = useRef<HTMLButtonElement | null>(null);
   const dirkSecretToggleRef = useRef<HTMLButtonElement | null>(null);
@@ -29,6 +36,13 @@ export default function ProfileForm({
   const [shoppingPrompt, setShoppingPrompt] = useState(initialShopping);
   const [cookingSuppliesExpandedByDefault, setCookingSuppliesExpandedByDefault] = useState(initialCookingSuppliesExpandedByDefault);
   const [dirkSecretModeEnabled, setDirkSecretModeEnabled] = useState(initialDirkSecretModeEnabled);
+  const [apiTokenPreview, setApiTokenPreview] = useState(initialApiTokenPreview);
+  const [apiTokenCreatedAt, setApiTokenCreatedAt] = useState(initialApiTokenCreatedAt);
+  const [apiTokenLastUsedAt, setApiTokenLastUsedAt] = useState(initialApiTokenLastUsedAt);
+  const [rawApiToken, setRawApiToken] = useState("");
+  const [apiTokenBusy, setApiTokenBusy] = useState(false);
+  const [apiTokenError, setApiTokenError] = useState("");
+  const [apiTokenCopied, setApiTokenCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -190,6 +204,90 @@ export default function ProfileForm({
     }
   }
 
+  function formatDateTime(value: string) {
+    if (!value) return "";
+
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(value));
+    } catch {
+      return value;
+    }
+  }
+
+  async function handleGenerateApiToken() {
+    setApiTokenBusy(true);
+    setApiTokenError("");
+    setApiTokenCopied(false);
+
+    try {
+      const res = await fetch("/api/profile/api-token", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setApiTokenError(getApiErrorMessage(data, t("common.error")));
+        setApiTokenBusy(false);
+        return;
+      }
+
+      setRawApiToken(data.token || "");
+      setApiTokenPreview(data.preview || "");
+      setApiTokenCreatedAt(data.createdAt || "");
+      setApiTokenLastUsedAt(data.lastUsedAt || "");
+      setApiTokenBusy(false);
+    } catch {
+      setApiTokenError(t("common.error"));
+      setApiTokenBusy(false);
+    }
+  }
+
+  async function handleRevokeApiToken() {
+    setApiTokenBusy(true);
+    setApiTokenError("");
+    setApiTokenCopied(false);
+
+    try {
+      const res = await fetch("/api/profile/api-token", {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setApiTokenError(getApiErrorMessage(data, t("common.error")));
+        setApiTokenBusy(false);
+        return;
+      }
+
+      setRawApiToken("");
+      setApiTokenPreview("");
+      setApiTokenCreatedAt("");
+      setApiTokenLastUsedAt("");
+      setApiTokenBusy(false);
+    } catch {
+      setApiTokenError(t("common.error"));
+      setApiTokenBusy(false);
+    }
+  }
+
+  async function handleCopyApiToken() {
+    if (!rawApiToken) return;
+
+    try {
+      await navigator.clipboard.writeText(rawApiToken);
+      setApiTokenCopied(true);
+      window.setTimeout(() => setApiTokenCopied(false), 2000);
+    } catch {
+      setApiTokenError(t("common.error"));
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <section className="space-y-4">
@@ -271,6 +369,74 @@ export default function ProfileForm({
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
             {t("profile.groupOther")}
           </h2>
+        </div>
+
+        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 space-y-4 transition-colors duration-200 hover:border-border/50">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 shrink-0">
+                <KeyRound className="h-5 w-5 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="font-semibold">{t("profile.apiToken")}</h2>
+                <p className="text-sm text-muted-foreground/60">{t("profile.apiTokenDesc")}</p>
+              </div>
+            </div>
+            <a
+              href="/llms.txt"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              {t("profile.apiDocs")}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
+          {rawApiToken ? (
+            <div className="space-y-2">
+              <Label htmlFor="rawApiToken">{t("profile.apiTokenReady")}</Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="rawApiToken"
+                  readOnly
+                  value={rawApiToken}
+                  className="font-mono text-xs"
+                />
+                <Button type="button" variant="secondary" onClick={handleCopyApiToken}>
+                  <Copy className="h-4 w-4" />
+                  {apiTokenCopied ? t("shopping.copied") : t("profile.copyToken")}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground/70">{t("profile.apiTokenOneTime")}</p>
+            </div>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-dashed border-border/50 px-4 py-3 text-sm text-muted-foreground/70">
+              <p>{apiTokenPreview ? t("profile.apiTokenActive") : t("profile.apiTokenEmpty")}</p>
+              {apiTokenPreview && (
+                <p className="font-mono text-xs text-foreground/80">{apiTokenPreview}</p>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-1 text-sm text-muted-foreground/70">
+            {apiTokenCreatedAt && <p>{t("profile.apiTokenCreated")}: {formatDateTime(apiTokenCreatedAt)}</p>}
+            {apiTokenLastUsedAt && <p>{t("profile.apiTokenLastUsed")}: {formatDateTime(apiTokenLastUsedAt)}</p>}
+          </div>
+
+          {apiTokenError && <p className="text-sm text-destructive">{apiTokenError}</p>}
+
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" onClick={handleGenerateApiToken} disabled={apiTokenBusy}>
+              {apiTokenBusy ? t("common.loading") : apiTokenPreview ? t("profile.regenerateToken") : t("profile.generateToken")}
+            </Button>
+            {apiTokenPreview && (
+              <Button type="button" variant="outline" onClick={handleRevokeApiToken} disabled={apiTokenBusy}>
+                <Trash2 className="h-4 w-4" />
+                {t("profile.revokeToken")}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="bg-card/50 border border-border/30 rounded-2xl p-6 transition-colors duration-200 hover:border-border/50">

@@ -64,6 +64,34 @@ export const recipeSchema = z.object({
 
 export type RecipeInput = z.infer<typeof recipeSchema>;
 
+export const apiRecipeCreateSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().max(4000).optional(),
+  ingredients: z.array(z.union([ingredientSchema, z.string().min(1).max(500)])).min(1),
+  cookingSupplies: z.array(z.string().min(1).max(200)).optional(),
+  steps: z.array(z.union([stepSchema, z.string().min(1).max(2000)])).min(1),
+  servings: z.number().int().positive().optional(),
+  prepTime: z.number().int().positive().optional(),
+  cookTime: z.number().int().positive().optional(),
+  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+  imageUrl: z.string().optional(),
+  imageProvider: z.enum(["upload", "unsplash"]).optional(),
+  imageAuthorName: z.string().max(200).optional(),
+  imageAuthorUrl: z.string().url().optional(),
+  imageSourceUrl: z.string().url().optional(),
+  sourceUrl: z.string().url().optional().or(z.literal("")),
+  videoUrl: z.string().url().optional().or(z.literal("")),
+  notes: z.string().max(5000).optional(),
+  isPublished: z.boolean().optional(),
+  tagIds: z.array(z.number()).optional(),
+  collectionIds: z.array(z.number()).optional(),
+  tags: z.array(z.string().min(1).max(100)).optional(),
+  collections: z.array(z.string().min(1).max(200)).optional(),
+  aiEnhance: z.boolean().optional(),
+});
+
+export type ApiRecipeCreateInput = z.infer<typeof apiRecipeCreateSchema>;
+
 export const cookLogSchema = z.object({
   recipeId: z.number().int().positive(),
   photoUrl: z.string().optional(),

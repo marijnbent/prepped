@@ -15,6 +15,20 @@
       "when": 1773406059910,
       "tag": "0001_little_vindicator",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1773867869624,
+      "tag": "0002_perpetual_the_spike",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1773870024319,
+      "tag": "0003_chilly_sharon_carter",
+      "breakpoints": true
     }
   ]
 }

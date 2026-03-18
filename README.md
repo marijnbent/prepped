@@ -19,7 +19,7 @@ A self-hosted recipe manager for families and small groups. Import recipes from 
 - **YouTube videos** — embedded on recipe pages when available
 - **Mobile-friendly** — responsive design, works great on phones
 - **Multi-language** — English and Dutch (`PUBLIC_UI_LOCALE`)
-- **Single-file database** — SQLite, backup = copy one folder
+- **Single-file database** — SQLite
 
 ## Quick Start with Docker
 
@@ -75,86 +75,24 @@ This creates 3 users (`chef@test.com`, `maria@test.com`, `james@test.com` — al
 | `MEASUREMENT_SYSTEM` | No | `metric` (default) or `imperial` |
 | `PUBLIC_UI_LOCALE` | No | `en` (default) or `nl` |
 
-## Data & Backups
+## API Access
+
+Prepped includes a simple bearer-token API for recipe creation.
+
+- Generate or rotate your personal token from `/profile`
+- Send it as `Authorization: Bearer <token>`
+- Read the machine-friendly docs at `/llms.txt`
+
+Current endpoint:
+
+- `POST /api/v1/recipes` creates a recipe in your own account
+- Set `"aiEnhance": true` if you want the server to clean up plain-text ingredients and steps before saving
+
+## Data
 
 All data lives in the `data/` directory (or Docker volume):
 - `data/prepped.db` — SQLite database
 - `data/uploads/` — uploaded images
-
-To backup: copy the `data/` directory. To restore: put it back.
-
-For a consistent SQLite snapshot while WAL mode is enabled, use:
-
-```sh
-npm run backup:db
-```
-
-That writes a timestamped `.db` backup to `data/backups/` and keeps 14 days by default.
-
-Useful options:
-- `BACKUP_DIR=/path/to/backups npm run backup:db`
-- `BACKUP_RETENTION_DAYS=30 npm run backup:db`
-- `DATA_DIR=/custom/data npm run backup:db`
-
-Daily backup examples:
-
-Without Docker:
-
-```cron
-0 3 * * * cd /path/to/prepped && /usr/bin/env BACKUP_RETENTION_DAYS=30 npm run backup:db >> /var/log/prepped-backup.log 2>&1
-```
-
-With Docker Compose:
-
-```cron
-0 3 * * * cd /path/to/prepped && docker compose exec -T prepped /usr/bin/env BACKUP_RETENTION_DAYS=30 npm run backup:db >> /var/log/prepped-backup.log 2>&1
-```
-
-If you want full disaster recovery, back up `data/uploads/` too or snapshot the whole `data/` directory/volume on a schedule.
-
-To push both the database snapshot and uploaded images to Scaleway S3, use:
-
-```sh
-npm run backup:s3
-```
-
-This uploads:
-- `data/prepped.db` as a consistent snapshot to `s3://bentbackup/recepten.bentjes.nl/YYYY-MM-DDTHH-MM-SS/prepped-...db`
-- `data/uploads/` to one shared folder at `s3://bentbackup/recepten.bentjes.nl/images/...`
-
-Image backups are deduplicated by path: if an image already exists in the shared S3 `images/` folder, it is skipped on later runs.
-
-Required environment variables:
-- `SCW_ACCESS_KEY`
-- `SCW_SECRET_KEY`
-
-Optional environment variables:
-- `SCW_REGION=fr-par`
-- `SCW_ENDPOINT=https://s3.fr-par.scw.cloud`
-- `SCW_BUCKET=bentbackup`
-- `S3_BACKUP_PREFIX=recepten.bentjes.nl`
-- `DATA_DIR=/custom/data`
-- `DB_PATH=prepped.db`
-- `UPLOADS_DIR=/custom/uploads`
-
-Daily backup example:
-
-```cron
-0 3 * * * cd /path/to/prepped && /usr/bin/env SCW_ACCESS_KEY=... SCW_SECRET_KEY=... npm run backup:s3 >> /var/log/prepped-s3-backup.log 2>&1
-```
-
-If you're using Docker Compose, the repo now includes a `prepped-backup` service that runs this automatically once per day. It shares the same `data/` volume as the app and uploads to Scaleway S3 on schedule.
-
-Backup scheduler settings:
-- `BACKUP_TIME=03:00` runs the backup daily at 03:00 in the container timezone
-- `BACKUP_RUN_ON_START=true` also runs one backup right after the container starts
-- `TZ=Europe/Amsterdam` sets the timezone used by the daily scheduler
-
-Start both services:
-
-```sh
-docker compose up -d
-```
 
 ## Production Deployment
 

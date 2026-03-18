@@ -1,184 +1,303 @@
-const STORAGE_KEY = "prepped-shopping-list";
-const ORGANIZED_KEY = "prepped-shopping-organized";
-const ORGANIZED_FOR_LIST_KEY = "prepped-shopping-organized-for-list";
-const CHECKED_KEY = "prepped-shopping-checked";
+import {
+  createEmptyShoppingListState,
+  normalizeShoppingListState,
+  type OrganizedCategory,
+  type ShoppingListItem,
+  type ShoppingListState,
+} from "./shopping-list";
 
-export interface RecipeShoppingListItem {
-  type: "recipe";
-  recipeId: number;
-  servings: number;
-}
+export type {
+  ManualShoppingListItem,
+  OrganizedCategory,
+  RecipeShoppingListItem,
+  ShoppingListItem,
+  ShoppingListState,
+} from "./shopping-list";
 
-export interface ManualShoppingListItem {
-  type: "manual";
-  id: string;
-  name: string;
-  amount: string;
-  unit: string;
-}
-
-export type ShoppingListItem = RecipeShoppingListItem | ManualShoppingListItem;
+let state: ShoppingListState = createEmptyShoppingListState();
+let loaded = false;
+let loadPromise: Promise<ShoppingListState> | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let dirty = false;
+let saving = false;
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
 
-function normalizeList(raw: unknown): ShoppingListItem[] {
-  if (!Array.isArray(raw)) return [];
+function emitChange() {
+  if (!isBrowser()) {
+    return;
+  }
 
-  return raw.flatMap((item) => {
-    if (!item || typeof item !== "object") return [];
+  window.dispatchEvent(new Event("shopping-list-change"));
+}
 
-    if ("type" in item && item.type === "manual") {
-      const id = typeof item.id === "string" ? item.id : "";
-      const name = typeof item.name === "string" ? item.name.trim() : "";
-      const amount = typeof item.amount === "string" ? item.amount.trim() : "";
-      const unit = typeof item.unit === "string" ? item.unit.trim() : "";
+function setState(nextState: ShoppingListState) {
+  state = nextState;
+  emitChange();
+}
 
-      if (!id || !name) return [];
-      return [{ type: "manual", id, name, amount, unit }];
+function scheduleSave(immediate = false) {
+  if (!isBrowser() || !loaded) {
+    return;
+  }
+
+  dirty = true;
+
+  if (saveTimer) {
+    window.clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+
+  if (immediate) {
+    void flushSave();
+    return;
+  }
+
+  saveTimer = window.setTimeout(() => {
+    saveTimer = null;
+    void flushSave();
+  }, 250);
+}
+
+async function flushSave() {
+  if (!isBrowser() || !loaded || saving || !dirty) {
+    return;
+  }
+
+  dirty = false;
+  saving = true;
+
+  try {
+    const response = await fetch("/api/shopping-list", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to save shopping list (${response.status})`);
     }
 
-    const recipeId = typeof item.recipeId === "number" ? item.recipeId : NaN;
-    const servings = typeof item.servings === "number" ? item.servings : NaN;
-    if (!Number.isFinite(recipeId) || !Number.isFinite(servings)) return [];
+    const nextState = normalizeShoppingListState(await response.json());
+    state = nextState;
+  } catch (error) {
+    console.error("[shopping-list-store] failed to save", error);
+    dirty = true;
+  } finally {
+    saving = false;
+    if (dirty) {
+      void flushSave();
+    } else {
+      emitChange();
+    }
+  }
+}
 
-    return [{ type: "recipe", recipeId, servings }];
-  });
+export function primeShoppingListState(rawState: unknown) {
+  loaded = true;
+  setState(normalizeShoppingListState(rawState));
+}
+
+export async function ensureShoppingListLoaded(): Promise<ShoppingListState> {
+  if (!isBrowser()) {
+    return state;
+  }
+
+  if (loaded) {
+    return state;
+  }
+
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      try {
+        const response = await fetch("/api/shopping-list", {
+          headers: { Accept: "application/json" },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load shopping list (${response.status})`);
+        }
+
+        const nextState = normalizeShoppingListState(await response.json());
+        loaded = true;
+        setState(nextState);
+        return nextState;
+      } catch (error) {
+        console.error("[shopping-list-store] failed to load", error);
+        loaded = true;
+        setState(createEmptyShoppingListState());
+        return state;
+      } finally {
+        loadPromise = null;
+      }
+    })();
+  }
+
+  return loadPromise;
+}
+
+export function getShoppingListState(): ShoppingListState {
+  return state;
 }
 
 export function getList(): ShoppingListItem[] {
-  if (!isBrowser()) return [];
+  return state.items;
+}
+
+export function getOrganized(): OrganizedCategory[] | null {
+  return state.organized;
+}
+
+export function getOrganizedForList(): string | null {
+  return state.organizedFor;
+}
+
+export function getChecked(): string[] {
+  return state.checked;
+}
+
+export async function addItem(recipeId: number, defaultServings: number) {
+  await ensureShoppingListLoaded();
+
+  if (state.items.some((item) => item.type === "recipe" && item.recipeId === recipeId)) {
+    return;
+  }
+
+  setState({
+    ...state,
+    items: [...state.items, { type: "recipe", recipeId, servings: Math.max(1, Math.round(defaultServings)) }],
+  });
+  scheduleSave();
+}
+
+export async function removeItem(recipeId: number) {
+  await ensureShoppingListLoaded();
+
+  setState({
+    ...state,
+    items: state.items.filter((item) => item.type !== "recipe" || item.recipeId !== recipeId),
+  });
+  scheduleSave();
+}
+
+export async function updateServings(recipeId: number, servings: number) {
+  await ensureShoppingListLoaded();
+
+  setState({
+    ...state,
+    items: state.items.map((item) =>
+      item.type === "recipe" && item.recipeId === recipeId
+        ? { ...item, servings: Math.max(1, Math.round(servings)) }
+        : item
+    ),
+  });
+  scheduleSave();
+}
+
+export async function clearList() {
+  await ensureShoppingListLoaded();
+
+  const nextState = createEmptyShoppingListState();
+  setState(nextState);
+  dirty = false;
+
+  if (!isBrowser()) {
+    return;
+  }
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? normalizeList(JSON.parse(raw)) : [];
-  } catch {
-    return [];
+    const response = await fetch("/api/shopping-list", {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to clear shopping list (${response.status})`);
+    }
+
+    state = normalizeShoppingListState(await response.json());
+    emitChange();
+  } catch (error) {
+    console.error("[shopping-list-store] failed to clear", error);
+    dirty = true;
+    scheduleSave(true);
   }
 }
 
-function saveList(list: ShoppingListItem[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
+export async function isInList(recipeId: number): Promise<boolean> {
+  await ensureShoppingListLoaded();
 
-export function addItem(recipeId: number, defaultServings: number) {
-  const list = getList();
-  if (list.some((item) => item.type === "recipe" && item.recipeId === recipeId)) return;
-  list.push({ type: "recipe", recipeId, servings: defaultServings });
-  saveList(list);
-  window.dispatchEvent(new Event("shopping-list-change"));
-}
-
-export function removeItem(recipeId: number) {
-  const list = getList().filter(
-    (item) => item.type !== "recipe" || item.recipeId !== recipeId
-  );
-  saveList(list);
-  window.dispatchEvent(new Event("shopping-list-change"));
-}
-
-export function updateServings(recipeId: number, servings: number) {
-  const list = getList();
-  const item = list.find(
-    (entry): entry is RecipeShoppingListItem =>
-      entry.type === "recipe" && entry.recipeId === recipeId
-  );
-  if (item) {
-    item.servings = servings;
-    saveList(list);
-    window.dispatchEvent(new Event("shopping-list-change"));
-  }
-}
-
-export function clearList() {
-  saveList([]);
-  clearOrganized();
-  clearChecked();
-  window.dispatchEvent(new Event("shopping-list-change"));
-}
-
-export function isInList(recipeId: number): boolean {
-  return getList().some(
+  return state.items.some(
     (item) => item.type === "recipe" && item.recipeId === recipeId
   );
 }
 
-export function addManualItem(name: string, amount = "", unit = "") {
+export async function addManualItem(name: string, amount = "", unit = "") {
+  await ensureShoppingListLoaded();
+
   const trimmedName = name.trim();
-  if (!trimmedName) return;
-
-  const list = getList();
-  list.push({
-    type: "manual",
-    id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name: trimmedName,
-    amount: amount.trim(),
-    unit: unit.trim(),
-  });
-  saveList(list);
-  window.dispatchEvent(new Event("shopping-list-change"));
-}
-
-export function removeManualItem(id: string) {
-  const list = getList().filter(
-    (item) => item.type !== "manual" || item.id !== id
-  );
-  saveList(list);
-  window.dispatchEvent(new Event("shopping-list-change"));
-}
-
-// --- Organized result persistence ---
-
-export interface OrganizedCategory {
-  name: string;
-  items: { amount: string; unit: string; name: string }[];
-}
-
-export function getOrganized(): OrganizedCategory[] | null {
-  if (!isBrowser()) return null;
-  try {
-    const raw = localStorage.getItem(ORGANIZED_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
+  if (!trimmedName) {
+    return;
   }
+
+  setState({
+    ...state,
+    items: [
+      ...state.items,
+      {
+        type: "manual",
+        id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: trimmedName,
+        amount: amount.trim(),
+        unit: unit.trim(),
+      },
+    ],
+  });
+  scheduleSave();
+}
+
+export async function removeManualItem(id: string) {
+  await ensureShoppingListLoaded();
+
+  setState({
+    ...state,
+    items: state.items.filter((item) => item.type !== "manual" || item.id !== id),
+  });
+  scheduleSave();
 }
 
 export function saveOrganized(categories: OrganizedCategory[], listSignature?: string) {
-  localStorage.setItem(ORGANIZED_KEY, JSON.stringify(categories));
-  if (listSignature) {
-    localStorage.setItem(ORGANIZED_FOR_LIST_KEY, listSignature);
-  } else {
-    localStorage.removeItem(ORGANIZED_FOR_LIST_KEY);
-  }
-}
-
-export function getOrganizedForList(): string | null {
-  if (!isBrowser()) return null;
-  return localStorage.getItem(ORGANIZED_FOR_LIST_KEY);
+  setState({
+    ...state,
+    organized: categories,
+    organizedFor: listSignature || null,
+  });
+  scheduleSave(true);
 }
 
 export function clearOrganized() {
-  localStorage.removeItem(ORGANIZED_KEY);
-  localStorage.removeItem(ORGANIZED_FOR_LIST_KEY);
-}
-
-// --- Checked items persistence ---
-
-export function getChecked(): string[] {
-  if (!isBrowser()) return [];
-  try {
-    const raw = localStorage.getItem(CHECKED_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  setState({
+    ...state,
+    organized: null,
+    organizedFor: null,
+  });
+  scheduleSave();
 }
 
 export function saveChecked(items: string[]) {
-  localStorage.setItem(CHECKED_KEY, JSON.stringify(items));
+  setState({
+    ...state,
+    checked: [...items],
+  });
+  scheduleSave();
 }
 
 export function clearChecked() {
-  localStorage.removeItem(CHECKED_KEY);
+  setState({
+    ...state,
+    checked: [],
+  });
+  scheduleSave();
 }

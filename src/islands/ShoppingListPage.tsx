@@ -15,23 +15,26 @@ import {
 import { t } from "@/lib/i18n";
 import { scaleAmount } from "@/lib/scale-amount";
 import {
-  getList,
   addItem,
   addManualItem,
+  clearOrganized,
+  clearList,
+  ensureShoppingListLoaded,
+  getShoppingListState,
+  primeShoppingListState,
   removeItem,
   removeManualItem,
-  updateServings,
-  clearList,
-  getOrganized,
-  getOrganizedForList,
-  saveOrganized,
-  clearOrganized,
-  getChecked,
   saveChecked,
+  saveOrganized,
+  updateServings,
   type ManualShoppingListItem,
-  type ShoppingListItem,
-  type OrganizedCategory,
 } from "@/lib/shopping-list-store";
+import {
+  listSignature,
+  type OrganizedCategory,
+  type ShoppingListItem,
+  type ShoppingListState,
+} from "@/lib/shopping-list";
 
 interface Ingredient {
   amount: string;
@@ -51,6 +54,7 @@ interface Recipe {
 
 interface Props {
   recipes: Recipe[];
+  initialState: ShoppingListState;
 }
 
 interface MergedIngredient {
@@ -128,26 +132,6 @@ function mergeIngredients(
   return result;
 }
 
-function listSignature(items: ShoppingListItem[]): string {
-  return [...items]
-    .sort((a, b) => {
-      if (a.type !== b.type) return a.type.localeCompare(b.type);
-      if (a.type === "recipe" && b.type === "recipe") {
-        return a.recipeId - b.recipeId;
-      }
-      if (a.type === "manual" && b.type === "manual") {
-        return a.id.localeCompare(b.id);
-      }
-      return 0;
-    })
-    .map((item) =>
-      item.type === "recipe"
-        ? `recipe:${item.recipeId}:${item.servings}`
-        : `manual:${item.id}:${item.name}:${item.amount}:${item.unit}`
-    )
-    .join("|");
-}
-
 function formatListAsText(
   categories: OrganizedCategory[] | null,
   merged: MergedIngredient[]
@@ -193,13 +177,13 @@ function CustomizeHint() {
   );
 }
 
-export default function ShoppingListPage({ recipes: allRecipes }: Props) {
+export default function ShoppingListPage({ recipes: allRecipes, initialState }: Props) {
   const [listItems, setListItems] = useState<ShoppingListItem[]>([]);
   const [organized, setOrganized] = useState<OrganizedCategory[] | null>(null);
   const [organizing, setOrganizing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(initialState.items.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
   const [manualName, setManualName] = useState("");
   const stripRef = useRef<HTMLDivElement>(null);
@@ -227,27 +211,29 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
     };
   }, [updateScrollIndicators, listItems]);
 
-  // Sync from localStorage on mount
   const initializedRef = useRef(false);
   useEffect(() => {
-    const initialList = getList();
-    const initialSignature = listSignature(initialList);
-    const storedOrganized = getOrganized();
-    const storedOrganizedFor = getOrganizedForList();
+    function syncFromStore() {
+      const currentState = getShoppingListState();
+      const currentSignature = listSignature(currentState.items);
 
-    setListItems(initialList);
-    if (storedOrganized && storedOrganizedFor === initialSignature) {
-      setOrganized(storedOrganized);
-    } else {
-      setOrganized(null);
-      clearOrganized();
+      setListItems(currentState.items);
+      setOrganized(
+        currentState.organized && currentState.organizedFor === currentSignature
+          ? currentState.organized
+          : null
+      );
+      setCheckedItems(new Set(currentState.checked));
     }
-    setCheckedItems(new Set(getChecked()));
+
+    primeShoppingListState(initialState);
+    syncFromStore();
     initializedRef.current = true;
-    const handler = () => setListItems(getList());
+    const handler = () => syncFromStore();
     window.addEventListener("shopping-list-change", handler);
+    void ensureShoppingListLoaded().then(() => syncFromStore());
     return () => window.removeEventListener("shopping-list-change", handler);
-  }, []);
+  }, [initialState]);
 
   const recipeById = useMemo(
     () => new Map(allRecipes.map((recipe) => [recipe.id, recipe])),
@@ -310,12 +296,11 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
     if (!initializedRef.current) return;
     if (!organized) return;
     const currentSignature = listSignature(listItems);
-    const organizedFor = getOrganizedForList();
-    if (organizedFor !== currentSignature) {
+    if (getShoppingListState().organizedFor !== currentSignature) {
       setOrganized(null);
-      clearOrganized();
       setCheckedItems(new Set());
       saveChecked([]);
+      clearOrganized();
     }
   }, [listItems, organized]);
 
@@ -337,9 +322,9 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
       if (res.ok) {
         const data = await res.json();
         setOrganized(data.categories);
-        saveOrganized(data.categories, listSignature(listItems));
         setCheckedItems(new Set());
         saveChecked([]);
+        saveOrganized(data.categories, listSignature(listItems));
       }
     } catch {
       // silently fail
@@ -355,9 +340,9 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function handleClear() {
+  async function handleClear() {
     if (confirm(t("shopping.clearConfirm"))) {
-      clearList();
+      await clearList();
       setOrganized(null);
       setCheckedItems(new Set());
     }
@@ -382,7 +367,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
     ? organized.reduce((sum, cat) => sum + cat.items.length, 0)
     : merged.length;
 
-  function handleAddManualItem(event: FormEvent<HTMLFormElement>) {
+  async function handleAddManualItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!manualName.trim()) {
@@ -390,7 +375,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
       return;
     }
 
-    addManualItem(manualName);
+    await addManualItem(manualName);
     setManualName("");
     manualNameRef.current?.focus();
   }
@@ -402,28 +387,33 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
         <h1 className="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">
           {t("shopping.title")}
         </h1>
-        {hasItems && (
-          <p
-            className="text-muted-foreground/50 mt-2 text-sm animate-fade-up"
-            style={{ animationDelay: "60ms" }}
-          >
-            {[recipeCount > 0 ? `${recipeCount} ${t("shopping.recipeCount")}` : null, manualCount > 0 ? `${manualCount} ${t("shopping.manualCount")}` : null]
-              .filter(Boolean)
-              .join(" · ")}
-            {checkedCount > 0 && (
-              <span className="ml-2 text-primary/60">
-                &middot; {checkedCount}/{totalCount}
-              </span>
-            )}
-          </p>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-2 animate-fade-up" style={{ animationDelay: "60ms" }}>
+          <span className="inline-flex items-center rounded-full border border-border/40 bg-card/70 px-3 py-1 text-xs text-foreground/75">
+            {t("shopping.savedAccount")}
+          </span>
+          <span className="inline-flex items-center rounded-full border border-border/30 bg-secondary/50 px-3 py-1 text-xs text-muted-foreground/70">
+            {t("shopping.syncHint")}
+          </span>
+          {hasItems && (
+            <span className="text-sm text-muted-foreground/50">
+              {[recipeCount > 0 ? `${recipeCount} ${t("shopping.recipeCount")}` : null, manualCount > 0 ? `${manualCount} ${t("shopping.manualCount")}` : null]
+                .filter(Boolean)
+                .join(" · ")}
+              {checkedCount > 0 && (
+                <span className="ml-2 text-primary/60">
+                  &middot; {checkedCount}/{totalCount}
+                </span>
+              )}
+            </span>
+          )}
+        </div>
       </div>
 
       <div
         className="mb-6 animate-fade-up"
         style={{ animationDelay: "80ms" }}
       >
-        <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+        <div className="rounded-2xl border border-border/40 bg-card/60 p-4 shadow-sm shadow-black/5">
           <form
             onSubmit={handleAddManualItem}
             className="flex flex-col gap-3 sm:flex-row sm:items-end"
@@ -463,7 +453,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
                   </span>
                   <button
                     type="button"
-                    onClick={() => removeManualItem(item.id)}
+                    onClick={() => void removeManualItem(item.id)}
                     className="rounded text-muted-foreground/50 transition-colors hover:text-destructive"
                     aria-label={t("shopping.removeManual")}
                   >
@@ -530,7 +520,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
                     <div className="flex items-center gap-1 mt-0.5">
                       <button
                         onClick={() =>
-                          updateServings(
+                          void updateServings(
                             recipe.id,
                             Math.max(1, servings - 1)
                           )
@@ -545,7 +535,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
                       </span>
                       <button
                         onClick={() =>
-                          updateServings(recipe.id, servings + 1)
+                          void updateServings(recipe.id, servings + 1)
                         }
                         className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground/60 hover:bg-secondary hover:text-muted-foreground transition-colors"
                       >
@@ -559,8 +549,8 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
 
                   {/* Remove button */}
                   <button
-                    onClick={() => removeItem(recipe.id)}
-                    className="ml-0.5 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    onClick={() => void removeItem(recipe.id)}
+                    className="ml-0.5 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -632,9 +622,9 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
                     key={recipe.id}
                     onClick={() => {
                       if (inList) {
-                        removeItem(recipe.id);
+                        void removeItem(recipe.id);
                       } else {
-                        addItem(recipe.id, recipe.servings || 4);
+                        void addItem(recipe.id, recipe.servings || 4);
                       }
                     }}
                     className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left hover:bg-secondary/50 transition-colors"
@@ -682,8 +672,9 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
           </h2>
 
           {/* ── Sticky action toolbar ── */}
-          <div className="sticky top-0 z-20 -mx-4 px-4 py-3 mb-4 backdrop-blur-xl bg-background/80 border-b border-border/20">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="sticky top-0 z-20 -mx-4 mb-4 px-4 py-3 backdrop-blur-xl">
+            <div className="rounded-2xl border border-border/30 bg-background/85 px-3 py-3 shadow-sm shadow-black/5">
+              <div className="flex flex-wrap items-center gap-2">
               {/* AI Organize */}
               <Button
                 variant="outline"
@@ -736,7 +727,7 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleClear}
+                onClick={() => void handleClear()}
                 className="gap-1.5 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/5"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -745,7 +736,8 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
             </div>
 
             {/* AI customization hint */}
-            <CustomizeHint />
+              <CustomizeHint />
+            </div>
           </div>
 
           {/* ── Ingredient list ── */}

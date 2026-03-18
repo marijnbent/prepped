@@ -16,6 +16,9 @@ const user = db.select({
   shoppingPrompt: users.shoppingPrompt,
   cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault,
   dirkSecretModeEnabled: users.dirkSecretModeEnabled,
+  apiTokenPreview: users.apiTokenPreview,
+  apiTokenCreatedAt: users.apiTokenCreatedAt,
+  apiTokenLastUsedAt: users.apiTokenLastUsedAt,
 })
   .from(users)
   .where(eq(users.id, Astro.locals.user.id))
@@ -38,6 +41,9 @@ const user = db.select({
         shoppingPrompt={user?.shoppingPrompt || ""}
         cookingSuppliesExpandedByDefault={user?.cookingSuppliesExpandedByDefault ?? false}
         dirkSecretModeEnabled={user?.dirkSecretModeEnabled ?? false}
+        apiTokenPreview={user?.apiTokenPreview || ""}
+        apiTokenCreatedAt={user?.apiTokenCreatedAt ? user.apiTokenCreatedAt.toISOString() : ""}
+        apiTokenLastUsedAt={user?.apiTokenLastUsedAt ? user.apiTokenLastUsedAt.toISOString() : ""}
       />
     </div>
   </div>

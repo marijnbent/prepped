@@ -39,15 +39,36 @@ function ensureUsersColumns() {
   const missingColumns = [
     ["cooking_supplies_expanded_by_default", "INTEGER NOT NULL DEFAULT 0"],
     ["dirk_secret_mode_enabled", "INTEGER NOT NULL DEFAULT 0"],
+    ["api_token_hash", "TEXT"],
+    ["api_token_preview", "TEXT"],
+    ["api_token_created_at", "INTEGER"],
+    ["api_token_last_used_at", "INTEGER"],
   ].filter(([name]) => !existing.has(name));
 
   for (const [name, type] of missingColumns) {
     sqlite.exec(`ALTER TABLE users ADD COLUMN ${name} ${type}`);
   }
+
+  sqlite.exec("CREATE UNIQUE INDEX IF NOT EXISTS users_api_token_hash_unique ON users(api_token_hash)");
+}
+
+function ensureShoppingListsTable() {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS shopping_lists (
+      user_id TEXT PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      items TEXT NOT NULL DEFAULT '[]',
+      organized TEXT,
+      organized_for TEXT,
+      checked TEXT NOT NULL DEFAULT '[]',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `);
 }
 
 ensureRecipesColumns();
 ensureUsersColumns();
+ensureShoppingListsTable();
 
 export const db = drizzle(sqlite, { schema });
 

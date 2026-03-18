@@ -419,7 +419,9 @@ const hasUnsplashAttribution =
             client:visible
           />
           <div class="mt-4 pt-4 border-t border-border/15">
-            <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} showLabel client:load />
+            {currentUser && (
+              <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} showLabel client:load />
+            )}
           </div>
         </div>
         {cookingSupplies.length > 0 && (

@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import type { OrganizedCategory, ShoppingListItem } from "./shopping-list";
 
 // ---- Auth tables (managed by Better Auth) ----
 
@@ -13,9 +14,15 @@ export const users = sqliteTable("users", {
   shoppingPrompt: text("shopping_prompt"),
   cookingSuppliesExpandedByDefault: integer("cooking_supplies_expanded_by_default", { mode: "boolean" }).notNull().default(false),
   dirkSecretModeEnabled: integer("dirk_secret_mode_enabled", { mode: "boolean" }).notNull().default(false),
+  apiTokenHash: text("api_token_hash"),
+  apiTokenPreview: text("api_token_preview"),
+  apiTokenCreatedAt: integer("api_token_created_at", { mode: "timestamp" }),
+  apiTokenLastUsedAt: integer("api_token_last_used_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
-});
+}, (table) => [
+  uniqueIndex("users_api_token_hash_unique").on(table.apiTokenHash),
+]);
 
 export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(),
@@ -178,6 +185,22 @@ export const favorites = sqliteTable("favorites", {
   uniqueIndex("favorites_user_recipe_unique").on(table.userId, table.recipeId),
   index("favorites_user_created_at_idx").on(table.userId, table.createdAt),
 ]);
+
+export const shoppingLists = sqliteTable("shopping_lists", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  items: text("items", { mode: "json" }).notNull().$type<ShoppingListItem[]>(),
+  organized: text("organized", { mode: "json" }).$type<OrganizedCategory[] | null>(),
+  organizedFor: text("organized_for"),
+  checked: text("checked", { mode: "json" }).notNull().$type<string[]>(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
 
 // ---- Types ----
 

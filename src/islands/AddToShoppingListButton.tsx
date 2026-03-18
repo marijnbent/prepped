@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { ShoppingBasket, Check } from "lucide-react";
 import { t } from "@/lib/i18n";
-import { addItem, removeItem, isInList } from "@/lib/shopping-list-store";
+import {
+  addItem,
+  ensureShoppingListLoaded,
+  getList,
+  removeItem,
+} from "@/lib/shopping-list-store";
 
 interface Props {
   recipeId: number;
@@ -11,19 +16,40 @@ interface Props {
 
 export default function AddToShoppingListButton({ recipeId, defaultServings, showLabel }: Props) {
   const [inList, setInList] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setInList(isInList(recipeId));
-    const handler = () => setInList(isInList(recipeId));
+    function sync() {
+      setInList(
+        getList().some((item) => item.type === "recipe" && item.recipeId === recipeId)
+      );
+    }
+
+    void ensureShoppingListLoaded().then(() => {
+      sync();
+      setIsReady(true);
+    });
+
+    const handler = () => sync();
     window.addEventListener("shopping-list-change", handler);
     return () => window.removeEventListener("shopping-list-change", handler);
   }, [recipeId]);
 
-  function toggle() {
-    if (inList) {
-      removeItem(recipeId);
-    } else {
-      addItem(recipeId, defaultServings);
+  async function toggle() {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (inList) {
+        await removeItem(recipeId);
+      } else {
+        await addItem(recipeId, defaultServings);
+      }
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -33,13 +59,14 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          toggle();
+          void toggle();
         }}
         className={`inline-flex items-center gap-1.5 text-[13px] transition-colors duration-200 ${
           inList
             ? "text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
             : "text-muted-foreground/60 hover:text-muted-foreground"
         }`}
+        disabled={!isReady || isSaving}
       >
         {inList ? (
           <>
@@ -61,7 +88,7 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggle();
+        void toggle();
       }}
       className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-medium border transition-colors ${
         inList
@@ -69,6 +96,7 @@ export default function AddToShoppingListButton({ recipeId, defaultServings, sho
           : "bg-secondary/60 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground"
       }`}
       aria-label={inList ? t("shopping.removeFromList") : t("shopping.addToList")}
+      disabled={!isReady || isSaving}
     >
       <ShoppingBasket className={`w-3 h-3 ${inList ? "fill-current/20" : ""}`} />
       <span className="sr-only">{inList ? t("shopping.removeFromList") : t("shopping.addToList")}</span>
