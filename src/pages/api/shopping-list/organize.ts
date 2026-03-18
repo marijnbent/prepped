@@ -16,6 +16,7 @@ const organizeOutputSchema = z.object({
           amount: z.string(),
           unit: z.string(),
           name: z.string(),
+          checked: z.boolean(),
         })
       ),
     })
@@ -27,10 +28,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const { ingredients } = await request.json();
+  const { ingredients, checkedNames } = await request.json();
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
     return new Response(JSON.stringify({ error: "Ingredients required" }), { status: 400 });
   }
+  const checkedSet: Set<string> = new Set(Array.isArray(checkedNames) ? checkedNames : []);
 
   const userRow = db
     .select({ shoppingPrompt: users.shoppingPrompt })
@@ -44,16 +46,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       : "";
 
     const ingredientList = ingredients
-      .map((ing: { amount: string; unit: string; name: string }) =>
-        `${ing.amount} ${ing.unit} ${ing.name}`.trim()
-      )
+      .map((ing: { amount: string; unit: string; name: string }) => {
+        const label = `${ing.amount} ${ing.unit} ${ing.name}`.trim();
+        return checkedSet.has(ing.name.toLowerCase()) ? `[x] ${label}` : `[ ] ${label}`;
+      })
       .join("\n");
 
     const { object: result } = await withChatModelFallback((model) =>
       generateObject({
         model,
         schema: organizeOutputSchema,
-        prompt: `You are a shopping list organizer. Given a list of ingredients, merge duplicates intelligently, round amounts to practical shopping quantities, and organize them by supermarket category.
+        prompt: `You are a shopping list organizer. Given a list of ingredients (prefixed with [ ] unchecked or [x] already in the cart), merge duplicates intelligently, round amounts to practical shopping quantities, organize by supermarket category, and preserve the checked state of each item.
 
 CRITICAL RULES:
 - KEEP THE SAME LANGUAGE as the input ingredients. If the ingredients are in Dutch, use Dutch category names and Dutch ingredient names. If in English, use English. NEVER translate ingredient names or category names to a different language.
@@ -64,6 +67,7 @@ CRITICAL RULES:
 - Order categories as: Produce → Dairy & Eggs → Meat & Fish → Bakery → Pantry → Spices → Frozen → Cupboard → Other (translate category names to match the ingredient language). Put Cupboard near the end since those items are lowest priority to buy.
 - Only include categories that have items
 - For items without clear amounts, keep them as-is
+- Each input item is prefixed with [ ] (unchecked) or [x] (already collected). Set the output checked field accordingly. If two items are merged, mark the result checked only if ALL merged items were checked.
 
 Ingredients:
 ${ingredientList}${userInstruction}`,
