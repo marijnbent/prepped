@@ -56,17 +56,20 @@ export default function MobileToolbar({ user, pathname, authMode }: Props) {
             </span>
           </a>
 
-          {/* Collections */}
+          {/* Shopping list */}
           <a
-            href="/collections"
+            href="/shopping-list"
             className={`flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              isActive("/collections") ? "text-primary" : "text-muted-foreground"
+              isActive("/shopping-list") ? "text-primary" : "text-muted-foreground"
             }`}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+              <circle cx="8" cy="19" r="1.6" />
+              <circle cx="17" cy="19" r="1.6" />
+              <path d="M3 5h2.2a1 1 0 0 1 .97.74l.52 1.98" />
+              <path d="M7 9h12.4a1 1 0 0 1 .97 1.24l-1.1 4.4a1 1 0 0 1-.97.76H8.35a1 1 0 0 1-.97-.76L6.1 8.7" />
             </svg>
-            <span className="text-[10px] leading-none font-medium">{t("nav.collections")}</span>
+            <span className="text-[10px] leading-none font-medium">{t("nav.shoppingList")}</span>
           </a>
 
           {/* More */}

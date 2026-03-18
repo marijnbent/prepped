@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Minus,
@@ -17,7 +17,9 @@ import { scaleAmount } from "@/lib/scale-amount";
 import {
   getList,
   addItem,
+  addManualItem,
   removeItem,
+  removeManualItem,
   updateServings,
   clearList,
   getOrganized,
@@ -26,6 +28,7 @@ import {
   clearOrganized,
   getChecked,
   saveChecked,
+  type ManualShoppingListItem,
   type ShoppingListItem,
   type OrganizedCategory,
 } from "@/lib/shopping-list-store";
@@ -58,9 +61,33 @@ interface MergedIngredient {
 
 function mergeIngredients(
   recipes: Recipe[],
-  servingsByRecipeId: Map<number, number>
+  servingsByRecipeId: Map<number, number>,
+  manualItems: ManualShoppingListItem[]
 ): MergedIngredient[] {
   const merged = new Map<string, { amount: number; hasNumeric: boolean; nonNumeric: string[]; unit: string; name: string }>();
+
+  function mergeIngredient(ingredient: Ingredient) {
+    const key = `${ingredient.name.toLowerCase()}|${ingredient.unit.toLowerCase()}`;
+    const num = parseFloat(ingredient.amount);
+
+    if (!merged.has(key)) {
+      merged.set(key, {
+        amount: 0,
+        hasNumeric: false,
+        nonNumeric: [],
+        unit: ingredient.unit,
+        name: ingredient.name,
+      });
+    }
+
+    const entry = merged.get(key)!;
+    if (!isNaN(num)) {
+      entry.amount += num;
+      entry.hasNumeric = true;
+    } else if (ingredient.amount) {
+      entry.nonNumeric.push(ingredient.amount);
+    }
+  }
 
   for (const recipe of recipes) {
     const servings = servingsByRecipeId.get(recipe.id);
@@ -70,28 +97,17 @@ function mergeIngredients(
     const factor = servings / defaultServings;
 
     for (const ing of recipe.ingredients) {
-      const key = `${ing.name.toLowerCase()}|${ing.unit.toLowerCase()}`;
       const scaledAmount = scaleAmount(ing.amount, factor);
-      const num = parseFloat(scaledAmount);
-
-      if (!merged.has(key)) {
-        merged.set(key, {
-          amount: 0,
-          hasNumeric: false,
-          nonNumeric: [],
-          unit: ing.unit,
-          name: ing.name,
-        });
-      }
-
-      const entry = merged.get(key)!;
-      if (!isNaN(num)) {
-        entry.amount += num;
-        entry.hasNumeric = true;
-      } else if (scaledAmount) {
-        entry.nonNumeric.push(scaledAmount);
-      }
+      mergeIngredient({ ...ing, amount: scaledAmount });
     }
+  }
+
+  for (const item of manualItems) {
+    mergeIngredient({
+      amount: item.amount,
+      unit: item.unit,
+      name: item.name,
+    });
   }
 
   const result: MergedIngredient[] = [];
@@ -114,8 +130,21 @@ function mergeIngredients(
 
 function listSignature(items: ShoppingListItem[]): string {
   return [...items]
-    .sort((a, b) => a.recipeId - b.recipeId)
-    .map((item) => `${item.recipeId}:${item.servings}`)
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type.localeCompare(b.type);
+      if (a.type === "recipe" && b.type === "recipe") {
+        return a.recipeId - b.recipeId;
+      }
+      if (a.type === "manual" && b.type === "manual") {
+        return a.id.localeCompare(b.id);
+      }
+      return 0;
+    })
+    .map((item) =>
+      item.type === "recipe"
+        ? `recipe:${item.recipeId}:${item.servings}`
+        : `manual:${item.id}:${item.name}:${item.amount}:${item.unit}`
+    )
     .join("|");
 }
 
@@ -172,7 +201,9 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [manualName, setManualName] = useState("");
   const stripRef = useRef<HTMLDivElement>(null);
+  const manualNameRef = useRef<HTMLInputElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -226,24 +257,52 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
   const selectedRecipes = useMemo(
     () =>
       listItems
+        .filter(
+          (item): item is Extract<ShoppingListItem, { type: "recipe" }> =>
+            item.type === "recipe"
+        )
         .map((item) => recipeById.get(item.recipeId))
         .filter((r): r is Recipe => !!r),
     [listItems, recipeById]
   );
 
   const listItemMap = useMemo(
-    () => new Map(listItems.map((item) => [item.recipeId, item.servings])),
+    () =>
+      new Map(
+        listItems
+          .filter(
+            (item): item is Extract<ShoppingListItem, { type: "recipe" }> =>
+              item.type === "recipe"
+          )
+          .map((item) => [item.recipeId, item.servings])
+      ),
+    [listItems]
+  );
+
+  const manualItems = useMemo(
+    () =>
+      listItems.filter(
+        (item): item is ManualShoppingListItem => item.type === "manual"
+      ),
     [listItems]
   );
 
   const inListSet = useMemo(
-    () => new Set(listItems.map((item) => item.recipeId)),
+    () =>
+      new Set(
+        listItems
+          .filter(
+            (item): item is Extract<ShoppingListItem, { type: "recipe" }> =>
+              item.type === "recipe"
+          )
+          .map((item) => item.recipeId)
+      ),
     [listItems]
   );
 
   const merged = useMemo(
-    () => mergeIngredients(selectedRecipes, listItemMap),
-    [selectedRecipes, listItemMap]
+    () => mergeIngredients(selectedRecipes, listItemMap, manualItems),
+    [selectedRecipes, listItemMap, manualItems]
   );
 
   // Clear organized view only when recipes/servings changed from the organized snapshot
@@ -315,10 +374,26 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
   }
 
   const hasItems = listItems.length > 0;
+  const hasSelectedRecipes = selectedRecipes.length > 0;
   const checkedCount = checkedItems.size;
+  const recipeCount = selectedRecipes.length;
+  const manualCount = manualItems.length;
   const totalCount = organized
     ? organized.reduce((sum, cat) => sum + cat.items.length, 0)
     : merged.length;
+
+  function handleAddManualItem(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!manualName.trim()) {
+      manualNameRef.current?.focus();
+      return;
+    }
+
+    addManualItem(manualName);
+    setManualName("");
+    manualNameRef.current?.focus();
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -332,7 +407,9 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
             className="text-muted-foreground/50 mt-2 text-sm animate-fade-up"
             style={{ animationDelay: "60ms" }}
           >
-            {listItems.length} {t("shopping.recipeCount")}
+            {[recipeCount > 0 ? `${recipeCount} ${t("shopping.recipeCount")}` : null, manualCount > 0 ? `${manualCount} ${t("shopping.manualCount")}` : null]
+              .filter(Boolean)
+              .join(" · ")}
             {checkedCount > 0 && (
               <span className="ml-2 text-primary/60">
                 &middot; {checkedCount}/{totalCount}
@@ -342,8 +419,65 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
         )}
       </div>
 
+      <div
+        className="mb-6 animate-fade-up"
+        style={{ animationDelay: "80ms" }}
+      >
+        <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+          <form
+            onSubmit={handleAddManualItem}
+            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+          >
+            <div className="flex-1">
+              <label
+                htmlFor="manual-item-name"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                {t("shopping.manualLabel")}
+              </label>
+              <input
+                ref={manualNameRef}
+                id="manual-item-name"
+                type="text"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder={t("shopping.manualPlaceholder")}
+                className="w-full rounded-lg border border-border/30 bg-secondary/40 px-3 py-2 text-sm placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-colors"
+              />
+            </div>
+            <Button type="submit" size="sm" className="gap-1.5 rounded-lg sm:self-end">
+              <Plus className="h-3.5 w-3.5" />
+              {t("shopping.addManual")}
+            </Button>
+          </form>
+
+          {manualItems.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {manualItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border/30 bg-background px-3 py-1.5 text-sm"
+                >
+                  <span className="text-foreground/80">
+                    {[item.amount, item.unit, item.name].filter(Boolean).join(" ")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeManualItem(item.id)}
+                    className="rounded text-muted-foreground/50 transition-colors hover:text-destructive"
+                    aria-label={t("shopping.removeManual")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* ── Selected recipes: horizontal scroll strip ── */}
-      {hasItems ? (
+      {hasSelectedRecipes ? (
         <div
           className="mb-6 animate-fade-up"
           style={{ animationDelay: "100ms" }}
@@ -437,21 +571,23 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
           </div>
         </div>
       ) : (
-        /* ── Empty state ── */
-        <div
-          className="text-center py-20 animate-fade-up"
-          style={{ animationDelay: "100ms" }}
-        >
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 border border-border/30 mb-6">
-            <ShoppingBasket className="w-9 h-9 text-muted-foreground/30" />
+        !hasItems && (
+          /* ── Empty state ── */
+          <div
+            className="text-center py-20 animate-fade-up"
+            style={{ animationDelay: "100ms" }}
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 border border-border/30 mb-6">
+              <ShoppingBasket className="w-9 h-9 text-muted-foreground/30" />
+            </div>
+            <p className="text-muted-foreground text-lg font-serif">
+              {t("shopping.empty")}
+            </p>
+            <p className="text-muted-foreground/40 text-sm mt-2">
+              {t("shopping.emptyHint")}
+            </p>
           </div>
-          <p className="text-muted-foreground text-lg font-serif">
-            {t("shopping.empty")}
-          </p>
-          <p className="text-muted-foreground/40 text-sm mt-2">
-            {t("shopping.emptyHint")}
-          </p>
-        </div>
+        )
       )}
 
       {/* ── Recipe picker (collapsible) ── */}
@@ -687,59 +823,63 @@ export default function ShoppingListPage({ recipes: allRecipes }: Props) {
             </div>
           ) : (
             /* Basic merged view */
-            <ul className="space-y-0.5 pb-12">
-              {merged.map((item, i) => {
-                const key = `merged-${i}`;
-                const checked = checkedItems.has(key);
-                return (
-                  <li key={key}>
-                    <button
-                      onClick={() => toggleCheck(key)}
-                      className={`flex items-center gap-3 text-sm py-2 px-2 -mx-2 w-[calc(100%+1rem)] rounded-lg text-left transition-all duration-200 ${
-                        checked
-                          ? "opacity-40"
-                          : "hover:bg-secondary/40"
-                      }`}
-                    >
-                      <div
-                        className={`w-[18px] h-[18px] rounded-md border-[1.5px] shrink-0 flex items-center justify-center transition-all duration-200 ${
-                          checked
-                            ? "bg-primary/20 border-primary/50"
-                            : "border-border/50"
-                        }`}
-                      >
-                        {checked && (
-                          <Check className="w-2.5 h-2.5 text-primary" />
-                        )}
-                      </div>
-                      {item.amount && (
-                        <span
-                          className={`font-medium tabular-nums text-primary/80 min-w-[3rem] ${
-                            checked ? "line-through" : ""
+            <div className="space-y-8 pb-12">
+              {merged.length > 0 && (
+                <ul className="space-y-0.5">
+                  {merged.map((item, i) => {
+                    const key = `merged-${i}`;
+                    const checked = checkedItems.has(key);
+                    return (
+                      <li key={key}>
+                        <button
+                          onClick={() => toggleCheck(key)}
+                          className={`flex items-center gap-3 text-sm py-2 px-2 -mx-2 w-[calc(100%+1rem)] rounded-lg text-left transition-all duration-200 ${
+                            checked
+                              ? "opacity-40"
+                              : "hover:bg-secondary/40"
                           }`}
                         >
-                          {item.amount}
-                          {item.unit && (
-                            <span className="text-muted-foreground/50 ml-0.5 font-normal">
-                              {item.unit}
+                          <div
+                            className={`w-[18px] h-[18px] rounded-md border-[1.5px] shrink-0 flex items-center justify-center transition-all duration-200 ${
+                              checked
+                                ? "bg-primary/20 border-primary/50"
+                                : "border-border/50"
+                            }`}
+                          >
+                            {checked && (
+                              <Check className="w-2.5 h-2.5 text-primary" />
+                            )}
+                          </div>
+                          {item.amount && (
+                            <span
+                              className={`font-medium tabular-nums text-primary/80 min-w-[3rem] ${
+                                checked ? "line-through" : ""
+                              }`}
+                            >
+                              {item.amount}
+                              {item.unit && (
+                                <span className="text-muted-foreground/50 ml-0.5 font-normal">
+                                  {item.unit}
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                      <span
-                        className={`text-foreground/80 ${
-                          checked
-                            ? "line-through decoration-muted-foreground/30"
-                            : ""
-                        }`}
-                      >
-                        {item.name}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                          <span
+                            className={`text-foreground/80 ${
+                              checked
+                                ? "line-through decoration-muted-foreground/30"
+                                : ""
+                            }`}
+                          >
+                            {item.name}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           )}
         </div>
       )}
