@@ -17,6 +17,25 @@ interface Props {
   ingredients: Ingredient[];
 }
 
+function splitIngredientName(name: string) {
+  const parenIdx = name.indexOf("(");
+  const commaIdx = name.indexOf(",");
+  let splitIdx = -1;
+
+  if (parenIdx !== -1 && commaIdx !== -1) splitIdx = Math.min(parenIdx, commaIdx);
+  else if (parenIdx !== -1) splitIdx = parenIdx;
+  else if (commaIdx !== -1) splitIdx = commaIdx;
+
+  if (splitIdx === -1) {
+    return { primary: name, secondary: "" };
+  }
+
+  return {
+    primary: name.slice(0, splitIdx).trim(),
+    secondary: name.slice(splitIdx).trim(),
+  };
+}
+
 export default function ServingsScaler({ defaultServings, ingredients }: Props) {
   const [servings, setServings] = useState(defaultServings);
 
@@ -81,40 +100,38 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
               <h4 className="text-[11px] uppercase tracking-[0.1em] font-medium text-primary/50 mt-5 mb-2.5">{group}</h4>
             )}
             <ul className="space-y-2">
-              {ings.map((ing, i) => (
-                <li key={i} className="flex items-baseline gap-2.5 text-sm py-1 border-b border-border/15 last:border-0">
-                  <span className="font-medium tabular-nums text-primary/80 min-w-[3rem]">
-                    {ing.amount ? (
-                      <>
-                        {ing.amount}
-                        {ing.unit && <span className="text-muted-foreground/50 ml-0.5">{ing.unit}</span>}
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground/40 text-xs font-normal">{t("recipe.toTaste")}</span>
-                    )}
-                  </span>
-                  <span className="text-foreground/80">
-                    {(() => {
-                      const parenIdx = ing.name.indexOf("(");
-                      const commaIdx = ing.name.indexOf(",");
-                      let splitIdx = -1;
-                      if (parenIdx !== -1 && commaIdx !== -1) splitIdx = Math.min(parenIdx, commaIdx);
-                      else if (parenIdx !== -1) splitIdx = parenIdx;
-                      else if (commaIdx !== -1) splitIdx = commaIdx;
+              {ings.map((ing, i) => {
+                const { primary, secondary } = splitIngredientName(ing.name);
 
-                      if (splitIdx === -1) return ing.name;
-                      return (
+                return (
+                  <li
+                    key={i}
+                    className="grid grid-cols-[5.75rem_minmax(0,1fr)] items-start gap-x-3 py-2 border-b border-border/15 last:border-0"
+                  >
+                    <span className="pt-0.5 text-[0.95rem] font-semibold leading-5 tabular-nums text-primary/85 whitespace-nowrap">
+                      {ing.amount ? (
                         <>
-                          {ing.name.slice(0, splitIdx).trim()}
-                          <span className="block text-xs text-muted-foreground/50 mt-0.5">
-                            {ing.name.slice(splitIdx).trim()}
-                          </span>
+                          <span>{ing.amount}</span>
+                          {ing.unit && <span className="ml-1 text-primary/65 font-medium">{ing.unit}</span>}
                         </>
-                      );
-                    })()}
-                  </span>
-                </li>
-              ))}
+                      ) : (
+                        <span className="text-[0.8rem] font-medium tracking-[0.01em] text-muted-foreground/65">
+                          {t("recipe.toTaste")}
+                        </span>
+                      )}
+                    </span>
+
+                    <span className="min-w-0 pt-0.5 text-[1.02rem] leading-6 text-foreground/85">
+                      <span className="block text-balance">{primary}</span>
+                      {secondary && (
+                        <span className="mt-0.5 block text-[0.84rem] leading-5 text-muted-foreground/70">
+                          {secondary}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </li>
         ))}
