@@ -6,6 +6,7 @@ import { db } from "../../../lib/db";
 import { users } from "../../../lib/schema";
 import { eq } from "drizzle-orm";
 import { toAiClientError } from "../../../lib/ai-errors";
+import { locale, t } from "../../../lib/i18n";
 
 const organizeOutputSchema = z.object({
   categories: z.array(
@@ -59,6 +60,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         prompt: `You are a shopping list organizer. Given a list of ingredients (prefixed with [ ] unchecked or [x] already in the cart), merge duplicates intelligently, round amounts to practical shopping quantities, organize by supermarket category, and preserve the checked state of each item.
 
 CRITICAL RULES:
+- The default language for this installation is ${t("site.language")} (${locale}). Use that language unless the input ingredients or the user's personal instruction clearly indicate a different language.
 - KEEP THE SAME LANGUAGE as the input ingredients. If the ingredients are in Dutch, use Dutch category names and Dutch ingredient names. If in English, use English. NEVER translate ingredient names or category names to a different language.
 - Merge ingredients that are clearly the same item (e.g. "200g onion" + "150g onion" = "350g onion")
 - Round amounts to practical quantities (e.g. 267g butter → 250g butter, 3.5 onions → 4 onions)

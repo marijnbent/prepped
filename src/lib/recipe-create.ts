@@ -4,13 +4,13 @@ import { withChatModelFallback } from "./ai";
 import { toAiClientError } from "./ai-errors";
 import { db } from "./db";
 import {
+  buildImportRules,
   getImportContext,
   normalizeImportedIngredients,
   recipeOutputSchema,
   resolveCollectionIds,
   resolveTagIds,
 } from "./import-shared";
-import { t } from "./i18n";
 import { slugify } from "./slugify";
 import { recipeCollections, recipes, recipeTags, type Ingredient, type Step } from "./schema";
 import { type ApiRecipeCreateInput, recipeSchema, type RecipeInput } from "./validation";
@@ -65,6 +65,7 @@ function coalesceOptionalString(value: string | undefined) {
 
 async function enhanceRecipeDraft(input: ApiRecipeCreateInput, userId: string): Promise<RecipeInput> {
   const ctx = getImportContext(userId);
+  const importRules = buildImportRules(ctx);
 
   try {
     const { object } = await withChatModelFallback((model) =>
@@ -73,22 +74,22 @@ async function enhanceRecipeDraft(input: ApiRecipeCreateInput, userId: string): 
         schema: recipeOutputSchema,
         prompt: `Turn this recipe draft into a clean recipe ready to save.
 
-Normalization rules:
+${importRules}
+
+Additional normalization rules for draft cleanup:
 - Preserve the user's intended dish.
-- Keep the title close to the input and only fix obvious mistakes.
-- Preserve all meaningful ingredients from the draft. Do not omit ingredients unless they are exact duplicates or clearly accidental noise.
+- Keep all meaningful ingredients from the draft unless they are exact duplicates or clearly accidental noise.
 - Keep ingredient amounts as strings.
-- If an ingredient or step is a plain sentence, convert it into clean structured data.
+- If an ingredient or step is a plain sentence, convert it into clean structured data that matches the house style above.
 - Rewrite steps for clarity when helpful, but do not add major new content.
 - Extract notable cooking supplies into "cookingSupplies" when they are actually useful.
 - Keep notes, tips, and serving suggestions in "notes" when present.
-- Translate ingredient names and group names to ${t("site.language")} when useful for this installation, but do not translate the recipe title unless the user explicitly asked for that.
 - Prefer existing tags when they fit: [${ctx.existingTagNames.join(", ")}]
 - Prefer existing collections when they fit: [${ctx.existingCollectionNames.join(", ")}]
 - If the caller already supplied tags or collections, keep them when they make sense.
 
-Additional rules:
-- If the draft already contains structured data, keep it faithful and just normalize it.
+Structured-data rule:
+- If the draft already contains structured data, keep it faithful and normalize it into the same language and style as imported recipes.
 
 Recipe draft JSON:
 ${JSON.stringify(input).slice(0, 12000)}${ctx.userInstruction}`,
