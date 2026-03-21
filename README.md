@@ -97,6 +97,8 @@ All data lives in the `data/` directory (or Docker volume):
 For Docker deployments, `/app/data` is backed by the `prepped-data` volume by default.
 You can pin a different volume name with `PREPPED_DATA_VOLUME` when you need a stable
 production volume across compose project renames or Dokploy app renames.
+If that volume already exists outside the current compose project, also set
+`PREPPED_DATA_EXTERNAL=true`.
 
 ## Production Deployment
 
@@ -108,6 +110,7 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 4. Optionally set `INVITE_CODE` to restrict registration
 5. Do not rely on schema auto-sync on boot for production SQLite data
 6. Set `PREPPED_DATA_VOLUME` to your existing production volume name so redeploys reuse the same SQLite database and uploads
+7. If that volume was created by an older compose project, set `PREPPED_DATA_EXTERNAL=true`
 
 Recommended production migration flow:
 

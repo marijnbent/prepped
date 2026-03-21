@@ -23,3 +23,4 @@ services:
 volumes:
   prepped-data:
     name: ${PREPPED_DATA_VOLUME:-prepped-data}
+    external: ${PREPPED_DATA_EXTERNAL:-false}
