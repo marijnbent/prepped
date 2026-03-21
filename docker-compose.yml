@@ -22,3 +22,4 @@ services:
 
 volumes:
   prepped-data:
+    name: ${PREPPED_DATA_VOLUME:-prepped-data}

@@ -94,6 +94,10 @@ All data lives in the `data/` directory (or Docker volume):
 - `data/prepped.db` — SQLite database
 - `data/uploads/` — uploaded images
 
+For Docker deployments, `/app/data` is backed by the `prepped-data` volume by default.
+You can pin a different volume name with `PREPPED_DATA_VOLUME` when you need a stable
+production volume across compose project renames or Dokploy app renames.
+
 ## Production Deployment
 
 For production behind a reverse proxy (nginx, Caddy, etc.):
@@ -103,6 +107,7 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 3. Configure your reverse proxy to forward to port 4321
 4. Optionally set `INVITE_CODE` to restrict registration
 5. Do not rely on schema auto-sync on boot for production SQLite data
+6. Set `PREPPED_DATA_VOLUME` to your existing production volume name so redeploys reuse the same SQLite database and uploads
 
 Recommended production migration flow:
 
