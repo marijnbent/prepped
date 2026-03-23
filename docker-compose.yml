@@ -11,7 +11,7 @@ services:
     ports:
       - "4321:4321"
     volumes:
-      - prepped-data:/app/data
+      - ${PREPPED_DATA_MOUNT:-prepped-data}:/app/data
     env_file:
       - .env
     environment:

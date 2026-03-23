@@ -90,15 +90,17 @@ Current endpoint:
 
 ## Data
 
-All data lives in the `data/` directory (or Docker volume):
+All data lives in the `data/` directory (or Docker-managed mount):
 - `data/prepped.db` — SQLite database
 - `data/uploads/` — uploaded images
 
-For Docker deployments, `/app/data` is backed by the `prepped-data` volume by default.
-You can pin a different volume name with `PREPPED_DATA_VOLUME` when you need a stable
-production volume across compose project renames or Dokploy app renames.
-If that volume already exists outside the current compose project, also set
-`PREPPED_DATA_EXTERNAL=true`.
+For Docker deployments, `/app/data` uses the `prepped-data` volume by default.
+If you want direct host-managed storage instead, set `PREPPED_DATA_MOUNT` to a host path
+such as `/srv/recepten-bentjes-nl/data`.
+If you stay on named volumes, you can still pin a different volume name with
+`PREPPED_DATA_VOLUME` when you need a stable production volume across compose project
+renames or Dokploy app renames. If that volume already exists outside the current compose
+project, also set `PREPPED_DATA_EXTERNAL=true`.
 
 ## Production Deployment
 
@@ -109,8 +111,11 @@ For production behind a reverse proxy (nginx, Caddy, etc.):
 3. Configure your reverse proxy to forward to port 4321
 4. Optionally set `INVITE_CODE` to restrict registration
 5. Do not rely on schema auto-sync on boot for production SQLite data
-6. Set `PREPPED_DATA_VOLUME` to your existing production volume name so redeploys reuse the same SQLite database and uploads
-7. If that volume was created by an older compose project, set `PREPPED_DATA_EXTERNAL=true`
+6. Choose how `/app/data` should be mounted:
+   - set `PREPPED_DATA_MOUNT=/srv/recepten-bentjes-nl/data` if you want a direct host bind
+   - leave `PREPPED_DATA_MOUNT` unset if you want a Docker named volume
+7. If you stay on named volumes, set `PREPPED_DATA_VOLUME` to your stable production volume name
+8. If that volume was created by an older compose project, set `PREPPED_DATA_EXTERNAL=true`
 
 Recommended production migration flow:
 
