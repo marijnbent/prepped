@@ -11,9 +11,9 @@ interface ImportMetaEnv {
   readonly OPENROUTER_MODEL?: string;
   readonly OPENROUTER_BASE_URL?: string;
   readonly OPENROUTER_APP_NAME?: string;
-  readonly SCRAPE_DO_TOKEN?: string;
-  readonly SCRAPE_DO_BASE_URL?: string;
-  readonly SCRAPE_DO_GEO_CODE?: string;
+  readonly CLOUDFLARE_API_TOKEN?: string;
+  readonly CLOUDFLARE_ACCOUNT_ID?: string;
+  readonly CLOUDFLARE_BROWSER_RUN_MIN_INTERVAL_MS?: string;
   readonly INVITE_CODE: string;
   readonly MEASUREMENT_SYSTEM: "metric" | "imperial";
   readonly PUBLIC_UI_LOCALE?: string;

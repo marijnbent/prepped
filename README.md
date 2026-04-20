@@ -68,9 +68,9 @@ This creates 3 users (`chef@test.com`, `maria@test.com`, `james@test.com` — al
 | `OPENROUTER_FALLBACK_MODELS` | No | Comma-separated fallback chain (overrides `OPENROUTER_FALLBACK_MODEL`) |
 | `OPENROUTER_BASE_URL` | No | OpenRouter API base URL (default: `https://openrouter.ai/api/v1`) |
 | `OPENROUTER_APP_NAME` | No | App name sent in OpenRouter request headers (default: `Prepped`) |
-| `SCRAPE_DO_TOKEN` | No | scrape.do API token for fallback when direct import is blocked |
-| `SCRAPE_DO_BASE_URL` | No | scrape.do base URL (default: `http://api.scrape.do/`) |
-| `SCRAPE_DO_GEO_CODE` | No | scrape.do geo code (default: `NL`) |
+| `CLOUDFLARE_API_TOKEN` | No | Cloudflare API token with `Browser Rendering - Edit` permission for fallback when direct import is blocked |
+| `CLOUDFLARE_ACCOUNT_ID` | No | Cloudflare account id used for Browser Run quick actions |
+| `CLOUDFLARE_BROWSER_RUN_MIN_INTERVAL_MS` | No | Minimum delay between Browser Run quick actions in milliseconds (default: `10000` for free-tier limits) |
 | `INVITE_CODE` | No | If set, new users must enter this code to register |
 | `MEASUREMENT_SYSTEM` | No | `metric` (default) or `imperial` |
 | `PUBLIC_UI_LOCALE` | No | `en` (default) or `nl` |

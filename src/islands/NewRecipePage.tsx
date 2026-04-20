@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { normalizeImageProvider } from "@/lib/image-provider";
 
 type Mode = "choose" | "manual" | "importing" | "review";
-type UrlImportMode = "direct" | "scrape" | "scrape-super";
+type UrlImportMode = "direct" | "browser" | "browser-advanced";
 
 const PHOTO_UPLOAD_TIMEOUT_MS = 120_000;
 const PHOTO_MAX_EDGE = 1600;
@@ -27,7 +27,7 @@ interface ImportApiError {
 }
 
 function isUrlImportMode(value: unknown): value is UrlImportMode {
-  return value === "direct" || value === "scrape" || value === "scrape-super";
+  return value === "direct" || value === "browser" || value === "browser-advanced";
 }
 
 async function readError(response: Response, fallback: string): Promise<ImportApiError> {
@@ -51,8 +51,8 @@ async function readError(response: Response, fallback: string): Promise<ImportAp
 
 function importStageLabel(stage: UrlImportMode | null) {
   if (stage === "direct") return t("import.progressDirect");
-  if (stage === "scrape") return t("import.progressScrape");
-  if (stage === "scrape-super") return t("import.progressScrapeSuper");
+  if (stage === "browser") return t("import.progressBrowser");
+  if (stage === "browser-advanced") return t("import.progressBrowserAdvanced");
   return t("import.importing");
 }
 

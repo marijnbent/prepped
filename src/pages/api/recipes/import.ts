@@ -17,8 +17,8 @@ import {
 type ImportMode = ScrapeMode | "auto";
 
 function nextModeFor(currentMode: ImportMode): ScrapeMode | undefined {
-  if (currentMode === "direct") return "scrape";
-  if (currentMode === "scrape") return "scrape-super";
+  if (currentMode === "direct") return "browser";
+  if (currentMode === "browser") return "browser-advanced";
   return undefined;
 }
 
@@ -35,7 +35,7 @@ async function scrapeWithMode(url: string, mode: ImportMode) {
     return scrapeUrl(url, mode);
   }
 
-  const sequence: ScrapeMode[] = ["direct", "scrape", "scrape-super"];
+  const sequence: ScrapeMode[] = ["direct", "browser", "browser-advanced"];
   let lastError: ScrapeError | null = null;
 
   for (const stage of sequence) {
@@ -44,7 +44,7 @@ async function scrapeWithMode(url: string, mode: ImportMode) {
     } catch (err) {
       if (err instanceof ScrapeError) {
         lastError = err;
-        const isLastStage = stage === "scrape-super";
+        const isLastStage = stage === "browser-advanced";
         if (!isLastStage && canAutoRetry(err)) {
           continue;
         }
@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "URL required" }), { status: 400 });
   }
 
-  if (!["direct", "scrape", "scrape-super", "auto"].includes(mode)) {
+  if (!["direct", "browser", "browser-advanced", "auto"].includes(mode)) {
     return new Response(JSON.stringify({ error: "Invalid mode" }), { status: 400 });
   }
 
@@ -155,8 +155,8 @@ ${content.slice(0, 10000)}${ctx.userInstruction}`,
       const message = err.code === "SCRAPE_BLOCKED"
         ? "This website blocks automated access. Try copying the recipe text and using paste import instead."
         : err.code === "SCRAPE_CONFIG_MISSING"
-          ? "Scrape fallback is not configured on the server."
-        : `Could not read the page: ${err.message}`;
+          ? "Browser rendering fallback is not configured on the server."
+          : `Could not read the page: ${err.message}`;
       return new Response(
         JSON.stringify({
           error: message,
