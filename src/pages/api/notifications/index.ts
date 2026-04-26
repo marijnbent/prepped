@@ -32,7 +32,7 @@ export const GET: APIRoute = async ({ locals }) => {
     .innerJoin(users, eq(notifications.actorId, users.id))
     .innerJoin(recipes, eq(notifications.recipeId, recipes.id))
     .innerJoin(recipeComments, eq(notifications.commentId, recipeComments.id))
-    .where(eq(notifications.recipientId, locals.user.id))
+    .where(and(eq(notifications.recipientId, locals.user.id), isNull(notifications.readAt)))
     .orderBy(desc(notifications.createdAt))
     .limit(20)
     .all();

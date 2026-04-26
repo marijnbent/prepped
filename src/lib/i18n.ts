@@ -202,6 +202,7 @@ const strings = {
     "notifications.loading": "Loading...",
     "notifications.empty": "No notifications",
     "notifications.commented": "reacted to",
+    "notifications.dismissAll": "Dismiss all",
 
     // Chat
     "chat.title": "Ask about this recipe",
@@ -585,6 +586,7 @@ const strings = {
     "notifications.loading": "Laden...",
     "notifications.empty": "Geen meldingen",
     "notifications.commented": "reageerde op",
+    "notifications.dismissAll": "Alles weg",
 
     // Chat
     "chat.title": "Vraag over dit recept",

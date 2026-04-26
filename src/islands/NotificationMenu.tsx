@@ -61,11 +61,18 @@ export default function NotificationMenu() {
   async function openNotification(item: NotificationItem) {
     if (!item.readAt) {
       setUnread((current) => Math.max(0, current - 1));
-      setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, readAt: new Date() } : entry));
+      setItems((current) => current.filter((entry) => entry.id !== item.id));
       await fetch(`/api/notifications/${item.id}/read`, { method: "POST" });
     }
 
     window.location.href = item.href;
+  }
+
+  async function dismissAll() {
+    if (items.length === 0) return;
+    setItems([]);
+    setUnread(0);
+    await fetch("/api/notifications/dismiss-all", { method: "POST" });
   }
 
   return (
@@ -86,8 +93,17 @@ export default function NotificationMenu() {
 
       {open && (
         <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-2xl border border-border/35 bg-card/95 shadow-xl shadow-black/10 backdrop-blur-2xl">
-          <div className="border-b border-border/25 px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border/25 px-4 py-3">
             <h2 className="font-serif text-lg leading-none tracking-tight">{t("notifications.title")}</h2>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={dismissAll}
+                className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/20"
+              >
+                {t("notifications.dismissAll")}
+              </button>
+            )}
           </div>
           <div className="max-h-96 overflow-y-auto p-2">
             {!loaded ? (

@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../../../lib/db";
 import { notifications, recipeComments, recipes, users } from "../../../../lib/schema";
 import { recipeCommentSchema } from "../../../../lib/validation";
@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ params }) => {
     .from(recipeComments)
     .innerJoin(users, eq(recipeComments.authorId, users.id))
     .where(eq(recipeComments.recipeId, recipeId))
-    .orderBy(recipeComments.createdAt)
+    .orderBy(desc(recipeComments.createdAt))
     .all();
 
   return json({ comments });

@@ -84,7 +84,7 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
         return;
       }
 
-      setComments((current) => [...current, data]);
+      setComments((current) => [data, ...current]);
       setBody("");
     } catch {
       setError(t("comments.error"));
@@ -128,31 +128,33 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
 
       {canComment ? (
         <div className="rounded-2xl bg-card/60 border border-border/25 p-5 backdrop-blur-sm space-y-4">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {quickEmojis.map(({ emoji, label }) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => insertEmoji(emoji)}
-                disabled={saving}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-xl transition-all hover:bg-secondary/70 hover:scale-105 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/20 active:scale-95 disabled:opacity-50"
-                aria-label={label}
-                title={label}
-              >
-                <span aria-hidden="true">{emoji}</span>
-              </button>
-            ))}
-          </div>
-
           <form onSubmit={submitComment} className="space-y-3">
-            <Textarea
-              ref={textareaRef}
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder={t("comments.placeholder")}
-              rows={3}
-              maxLength={1000}
-            />
+            <div className="overflow-hidden rounded-xl border border-input/80 bg-secondary/30 shadow-xs transition-all focus-within:border-primary/40 focus-within:bg-background focus-within:ring-[3px] focus-within:ring-primary/15 hover:border-input hover:bg-secondary/40">
+              <Textarea
+                ref={textareaRef}
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                placeholder={t("comments.placeholder")}
+                rows={3}
+                maxLength={1000}
+                className="min-h-24 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:bg-transparent hover:bg-transparent"
+              />
+              <div className="flex flex-wrap items-center gap-1 border-t border-border/20 px-2.5 py-2">
+                {quickEmojis.map(({ emoji, label }) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => insertEmoji(emoji)}
+                    disabled={saving}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-lg transition-all hover:bg-background/80 hover:scale-105 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/20 active:scale-95 disabled:opacity-50"
+                    aria-label={label}
+                    title={label}
+                  >
+                    <span aria-hidden="true">{emoji}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={saving || !body.trim()} size="sm">
               <Send className="h-3.5 w-3.5" />
