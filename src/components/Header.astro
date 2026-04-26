@@ -2,6 +2,7 @@
 import { t } from "../lib/i18n";
 import UserMenu from "../islands/UserMenu";
 import ThemeToggle from "../islands/ThemeToggle";
+import NotificationMenu from "../islands/NotificationMenu";
 
 interface Props {
   user?: { id: string; name: string; email: string } | null;
@@ -92,10 +93,13 @@ const primaryNav = [
           {t("nav.newRecipe")}
         </a>
       )}
+      {user && <NotificationMenu client:load />}
       <ThemeToggle client:load />
       <UserMenu user={user} authMode={authMode} client:load />
     </div>
 
-    {/* Mobile: nothing on right side -- toolbar handles navigation */}
+    <div class="md:hidden flex items-center">
+      {user && <NotificationMenu client:load />}
+    </div>
   </div>
 </header>

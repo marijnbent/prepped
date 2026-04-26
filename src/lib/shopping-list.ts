@@ -19,6 +19,11 @@ export interface OrganizedCategory {
   items: { amount: string; unit: string; name: string }[];
 }
 
+export interface OrganizedForMetadata {
+  recipeSignature: string | null;
+  manualItemIds: string[] | null;
+}
+
 export interface ShoppingListState {
   items: ShoppingListItem[];
   organized: OrganizedCategory[] | null;
@@ -158,6 +163,62 @@ export function normalizeShoppingListState(raw: unknown): ShoppingListState {
         ? record.organizedFor
         : null,
     checked: normalizeCheckedItems(record.checked),
+  };
+}
+
+export function serializeOrganizedFor(
+  recipeSignature: string | null,
+  manualItems: ManualShoppingListItem[] = []
+): string | null {
+  if (!recipeSignature) {
+    return null;
+  }
+
+  return JSON.stringify({
+    recipeSignature,
+    manualItemIds: manualItems.map((item) => item.id),
+  });
+}
+
+export function parseOrganizedFor(value: string | null | undefined): OrganizedForMetadata {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  if (!normalized) {
+    return {
+      recipeSignature: null,
+      manualItemIds: null,
+    };
+  }
+
+  if (normalized.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(normalized) as Record<string, unknown>;
+      const recipeSignature =
+        typeof parsed.recipeSignature === "string" && parsed.recipeSignature.trim()
+          ? parsed.recipeSignature.trim()
+          : null;
+      const manualItemIds = Array.isArray(parsed.manualItemIds)
+        ? parsed.manualItemIds.flatMap((item) => {
+            if (typeof item !== "string") {
+              return [];
+            }
+
+            const id = item.trim();
+            return id ? [id] : [];
+          })
+        : null;
+
+      return {
+        recipeSignature,
+        manualItemIds,
+      };
+    } catch {
+      // Fall back to the legacy plain-string format below.
+    }
+  }
+
+  return {
+    recipeSignature: normalized,
+    manualItemIds: null,
   };
 }
 

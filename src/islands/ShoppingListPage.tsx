@@ -23,7 +23,6 @@ import {
   getShoppingListState,
   primeShoppingListState,
   removeItem,
-  removeManualItem,
   saveChecked,
   saveOrganized,
   updateServings,
@@ -31,6 +30,8 @@ import {
 } from "@/lib/shopping-list-store";
 import {
   listSignature,
+  parseOrganizedFor,
+  serializeOrganizedFor,
   type OrganizedCategory,
   type ShoppingListItem,
   type ShoppingListState,
@@ -134,7 +135,8 @@ function mergeIngredients(
 
 function formatListAsText(
   categories: OrganizedCategory[] | null,
-  merged: MergedIngredient[]
+  merged: MergedIngredient[],
+  pendingManualItems: ManualShoppingListItem[] = []
 ): string {
   const lines: string[] = [t("shopping.title"), "=".repeat(t("shopping.title").length), ""];
 
@@ -142,6 +144,15 @@ function formatListAsText(
     for (const cat of categories) {
       lines.push(cat.name);
       for (const item of cat.items) {
+        const parts = [item.amount, item.unit, item.name].filter(Boolean);
+        lines.push(`- ${parts.join(" ")}`);
+      }
+      lines.push("");
+    }
+
+    if (pendingManualItems.length > 0) {
+      lines.push(t("shopping.manualLabel"));
+      for (const item of pendingManualItems) {
         const parts = [item.amount, item.unit, item.name].filter(Boolean);
         lines.push(`- ${parts.join(" ")}`);
       }
@@ -160,7 +171,8 @@ function formatListAsText(
 function formatListAsCheckboxes(
   categories: OrganizedCategory[] | null,
   merged: MergedIngredient[],
-  checkedItems: Set<string>
+  checkedItems: Set<string>,
+  pendingManualItems: ManualShoppingListItem[] = []
 ): string {
   const lines: string[] = [];
 
@@ -169,6 +181,17 @@ function formatListAsCheckboxes(
       lines.push(`## ${cat.name}`);
       cat.items.forEach((item, i) => {
         const key = `${cat.name}-${i}`;
+        const checked = checkedItems.has(key);
+        const parts = [item.amount, item.unit, item.name].filter(Boolean);
+        lines.push(`- [${checked ? "x" : " "}] ${parts.join(" ")}`);
+      });
+      lines.push("");
+    }
+
+    if (pendingManualItems.length > 0) {
+      lines.push(`## ${t("shopping.manualLabel")}`);
+      pendingManualItems.forEach((item) => {
+        const key = `manual-organized-${item.id}`;
         const checked = checkedItems.has(key);
         const parts = [item.amount, item.unit, item.name].filter(Boolean);
         lines.push(`- [${checked ? "x" : " "}] ${parts.join(" ")}`);
@@ -284,6 +307,34 @@ function IngredientRow({
   );
 }
 
+function normalizeIngredientLabel(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function organizedIncludesManualItem(
+  categories: OrganizedCategory[],
+  item: ManualShoppingListItem
+): boolean {
+  const manualName = normalizeIngredientLabel(item.name);
+  const manualLabel = normalizeIngredientLabel(
+    [item.amount, item.unit, item.name].filter(Boolean).join(" ")
+  );
+
+  return categories.some((category) =>
+    category.items.some((organizedItem) => {
+      const organizedName = normalizeIngredientLabel(organizedItem.name);
+      if (organizedName === manualName) {
+        return true;
+      }
+
+      const organizedLabel = normalizeIngredientLabel(
+        [organizedItem.amount, organizedItem.unit, organizedItem.name].filter(Boolean).join(" ")
+      );
+      return organizedLabel === manualLabel;
+    })
+  );
+}
+
 /* Category accent colors — cycles through warm palette */
 const CATEGORY_ACCENTS = [
   "border-l-primary/60",
@@ -312,6 +363,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
   const [pickerOpen, setPickerOpen] = useState(initialState.items.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
   const [manualName, setManualName] = useState("");
+  const [organizedManualIds, setOrganizedManualIds] = useState<string[] | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const manualNameRef = useRef<HTMLInputElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -343,14 +395,20 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
       const currentState = getShoppingListState();
       // Compare only recipe-based signature so manual item changes don't clear organized
       const recipeOnlySig = listSignature(currentState.items.filter((i) => i.type === "recipe"));
-      const hasOrganized = !!(currentState.organized && currentState.organizedFor === recipeOnlySig);
+      const organizedMeta = parseOrganizedFor(currentState.organizedFor);
+      const hasOrganized = !!(
+        currentState.organized && organizedMeta.recipeSignature === recipeOnlySig
+      );
 
       setListItems(currentState.items);
       setOrganized(hasOrganized ? currentState.organized : null);
+      setOrganizedManualIds(hasOrganized ? organizedMeta.manualItemIds : null);
       setCheckedItems(new Set(currentState.checked));
 
       if (hasOrganized) {
         organizedForRecipeSig.current = recipeOnlySig;
+      } else {
+        organizedForRecipeSig.current = null;
       }
     }
 
@@ -419,6 +477,19 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
     [selectedRecipes, listItemMap, manualItems]
   );
 
+  const pendingManualItems = useMemo(() => {
+    if (!organized) {
+      return [];
+    }
+
+    if (organizedManualIds) {
+      const includedIds = new Set(organizedManualIds);
+      return manualItems.filter((item) => !includedIds.has(item.id));
+    }
+
+    return manualItems.filter((item) => !organizedIncludesManualItem(organized, item));
+  }, [manualItems, organized, organizedManualIds]);
+
   // Track the recipe-only signature at the time of the last organize, so manual item
   // additions don't invalidate the organized view.
   const organizedForRecipeSig = useRef<string | null>(null);
@@ -431,6 +502,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
     if (!organized) return;
     if (organizedForRecipeSig.current !== null && organizedForRecipeSig.current !== recipeOnlySignature) {
       setOrganized(null);
+      setOrganizedManualIds(null);
       setCheckedItems(new Set());
       saveChecked([]);
       clearOrganized();
@@ -461,7 +533,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
         if (checkedItems.has(`merged-${i}`)) checkedNames.push(item.name.toLowerCase());
       });
     }
-    manualItems.forEach((item) => {
+    pendingManualItems.forEach((item) => {
       if (checkedItems.has(`manual-organized-${item.id}`)) checkedNames.push(item.name.toLowerCase());
     });
 
@@ -480,13 +552,11 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
             if (item.checked) newChecked.add(`${cat.name}-${i}`);
           });
         }
-        manualItems.forEach((item) => {
-          if (checkedNames.includes(item.name.toLowerCase())) newChecked.add(`manual-organized-${item.id}`);
-        });
         setOrganized(data.categories);
+        setOrganizedManualIds(manualItems.map((item) => item.id));
         setCheckedItems(newChecked);
         saveChecked(Array.from(newChecked));
-        saveOrganized(data.categories, recipeOnlySignature);
+        saveOrganized(data.categories, serializeOrganizedFor(recipeOnlySignature, manualItems));
         organizedForRecipeSig.current = recipeOnlySignature;
       }
     } catch {
@@ -497,7 +567,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
   }
 
   async function handleCopy() {
-    const text = formatListAsCheckboxes(organized, merged, checkedItems);
+    const text = formatListAsCheckboxes(organized, merged, checkedItems, pendingManualItems);
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -508,6 +578,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
     if (confirm(t("shopping.clearConfirm"))) {
       await clearList();
       setOrganized(null);
+      setOrganizedManualIds(null);
       setCheckedItems(new Set());
     }
   }
@@ -528,7 +599,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
   const recipeCount = selectedRecipes.length;
   const manualCount = manualItems.length;
   const totalCount = organized
-    ? organized.reduce((sum, cat) => sum + cat.items.length, 0)
+    ? organized.reduce((sum, cat) => sum + cat.items.length, 0) + pendingManualItems.length
     : merged.length;
 
   async function handleAddManualItem(event: FormEvent<HTMLFormElement>) {
@@ -1034,18 +1105,18 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
                 })}
 
                 {/* Manual items appended at the bottom, unorganized */}
-                {manualItems.length > 0 && (
+                {pendingManualItems.length > 0 && (
                   <div>
                     <div className={`flex items-center justify-between mb-1 pl-3 border-l-2 border-border/40 py-0.5`}>
                       <h3 className="text-[11px] uppercase tracking-[0.12em] font-semibold text-muted-foreground/50">
                         {t("shopping.manualLabel")}
                       </h3>
                       <span className="text-[10px] text-muted-foreground/40 tabular-nums font-medium">
-                        {manualItems.length}
+                        {pendingManualItems.length}
                       </span>
                     </div>
                     <ul className="divide-y divide-border/20">
-                      {manualItems.map((item) => {
+                      {pendingManualItems.map((item) => {
                         const key = `manual-organized-${item.id}`;
                         return (
                           <IngredientRow

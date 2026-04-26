@@ -2,13 +2,14 @@
 import Layout from "../../../../layouts/Layout.astro";
 import ServingsScaler from "../../../../islands/ServingsScaler";
 import RecipeChat from "../../../../islands/RecipeChat";
+import RecipeComments from "../../../../islands/RecipeComments";
 import CookLogForm from "../../../../islands/CookLogForm";
 import FavoriteButton from "../../../../islands/FavoriteButton";
 import AddToShoppingListButton from "../../../../islands/AddToShoppingListButton";
 import SaveRecipeDialog from "../../../../islands/SaveRecipeDialog";
 import CopyRecipeDialog from "../../../../islands/CopyRecipeDialog";
 import { db } from "../../../../lib/db";
-import { recipes, recipeTags, tags, recipeCollections, collections, users, favorites, cookLogs } from "../../../../lib/schema";
+import { recipes, recipeComments, recipeTags, tags, recipeCollections, collections, users, favorites, cookLogs } from "../../../../lib/schema";
 import { buildRecipePlainText, formatRecipeIngredientLine, formatRecipeStepLine, formatStepDuration, groupRecipeIngredients } from "../../../../lib/recipe-export";
 import { applyDirkSecretRecipeMode } from "../../../../lib/recipe-secrets";
 import { eq, and, asc, count, inArray } from "drizzle-orm";
@@ -108,6 +109,22 @@ const logs = db
   .where(eq(cookLogs.recipeId, recipe.id))
   .orderBy(cookLogs.cookedAt)
   .all();
+
+const comments = db
+  .select({
+    id: recipeComments.id,
+    body: recipeComments.body,
+    reaction: recipeComments.reaction,
+    createdAt: recipeComments.createdAt,
+    authorId: recipeComments.authorId,
+    authorName: users.name,
+  })
+  .from(recipeComments)
+  .innerJoin(users, eq(recipeComments.authorId, users.id))
+  .where(eq(recipeComments.recipeId, recipe.id))
+  .orderBy(recipeComments.createdAt)
+  .all()
+  .map((comment) => ({ ...comment, createdAt: comment.createdAt.toISOString() }));
 
 // Check if current user already forked this recipe
 const forkedRecipe = currentUser
@@ -556,71 +573,83 @@ const hasUnsplashAttribution =
       </div>
     )}
 
-    {/* ===== Add Cook Log ===== */}
-    {currentUser && (
-      <div class="no-print mt-20">
-        <div class="separator-warm mb-12" />
-        <div class="rounded-2xl bg-card/60 border border-border/25 p-6 md:p-8 backdrop-blur-sm">
-          <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
-            {t("cookLog.addEntry")}
-            <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-          </h2>
-          <CookLogForm
-            recipeId={recipe.id}
-            redirectTo={`/users/${userId}/recipes/${recipe.slug}`}
-            client:visible
-          />
-        </div>
-      </div>
-    )}
+    <div class="no-print mt-20">
+      <div class="separator-warm mb-12" />
+      <div class="grid grid-cols-1 gap-10 lg:grid-cols-2">
+        <RecipeComments
+          recipeId={recipe.id}
+          initialComments={comments}
+          canComment={!!currentUser}
+          loginHref={`/login?redirect=/users/${userId}/recipes/${recipe.slug}`}
+          client:visible
+        />
 
-    {/* ===== Cook Logs ===== */}
-    {logs.length > 0 && (
-      <div class="no-print mt-16">
-        <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
-          {t("cookLog.title")}
-          <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-        </h2>
-        <div class="space-y-4">
-          {logs.map((log) => (
-            <div class="rounded-2xl bg-card/50 border border-border/20 p-5 transition-all duration-300 hover:bg-card/70 hover:border-border/35">
-              <div class="flex items-center gap-4 mb-3">
-                {log.authorName && (
-                  <span class="inline-flex items-center gap-1.5">
-                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                      {log.authorName.charAt(0).toUpperCase()}
-                    </span>
-                    <span class="text-sm font-medium text-foreground/75">{log.authorName}</span>
-                  </span>
-                )}
-                <time class="text-xs text-muted-foreground/40 tabular-nums">
-                  {formatDate(log.cookedAt)}
-                </time>
-                {log.rating && (
-                  <div class="flex items-center gap-1 ml-auto">
-                    {Array.from({ length: 5 }).map((_, si) => (
-                      <span class:list={[
-                        "inline-block w-2 h-2 rounded-full transition-colors",
-                        si < log.rating! ? "bg-primary" : "bg-border/40"
-                      ]} />
-                    ))}
-                  </div>
-                )}
-              </div>
-              {log.photoUrl && (
-                <img
-                  src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
-                  alt={t("cookLog.photoAlt")}
-                  class="block w-full max-w-full rounded-xl mb-3 border border-border/15 sm:max-w-sm"
-                  loading="lazy"
-                />
-              )}
-              {log.notes && <p class="text-sm text-foreground/65 leading-relaxed">{log.notes}</p>}
+        <section class="space-y-6">
+          {currentUser && (
+            <div class="rounded-2xl bg-card/60 border border-border/25 p-6 backdrop-blur-sm">
+              <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
+                {t("cookLog.addEntry")}
+                <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
+              </h2>
+              <CookLogForm
+                recipeId={recipe.id}
+                redirectTo={`/users/${userId}/recipes/${recipe.slug}`}
+                client:visible
+              />
             </div>
-          ))}
-        </div>
+          )}
+
+          <div>
+            <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
+              {t("cookLog.title")}
+              <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
+            </h2>
+            {logs.length > 0 ? (
+              <div class="space-y-4">
+                {logs.map((log) => (
+                  <div class="rounded-2xl bg-card/50 border border-border/20 p-5 transition-all duration-300 hover:bg-card/70 hover:border-border/35">
+                    <div class="flex items-center gap-4 mb-3">
+                      {log.authorName && (
+                        <span class="inline-flex items-center gap-1.5">
+                          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                            {log.authorName.charAt(0).toUpperCase()}
+                          </span>
+                          <span class="text-sm font-medium text-foreground/75">{log.authorName}</span>
+                        </span>
+                      )}
+                      <time class="text-xs text-muted-foreground/40 tabular-nums">
+                        {formatDate(log.cookedAt)}
+                      </time>
+                      {log.rating && (
+                        <div class="flex items-center gap-1 ml-auto">
+                          {Array.from({ length: 5 }).map((_, si) => (
+                            <span class:list={[
+                              "inline-block w-2 h-2 rounded-full transition-colors",
+                              si < log.rating! ? "bg-primary" : "bg-border/40"
+                            ]} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {log.photoUrl && (
+                      <img
+                        src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
+                        alt={t("cookLog.photoAlt")}
+                        class="block w-full max-w-full rounded-xl mb-3 border border-border/15 sm:max-w-sm"
+                        loading="lazy"
+                      />
+                    )}
+                    {log.notes && <p class="text-sm text-foreground/65 leading-relaxed">{log.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p class="text-sm text-muted-foreground/60">{t("cookLog.noLogs")}</p>
+            )}
+          </div>
+        </section>
       </div>
-    )}
+    </div>
   </article>
 
   <script is:inline>

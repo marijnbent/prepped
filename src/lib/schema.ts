@@ -186,6 +186,43 @@ export const favorites = sqliteTable("favorites", {
   index("favorites_user_created_at_idx").on(table.userId, table.createdAt),
 ]);
 
+export const recipeComments = sqliteTable("recipe_comments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  body: text("body"),
+  reaction: text("reaction", { enum: ["fire", "water", "spicy"] }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+}, (table) => [
+  index("recipe_comments_recipe_id_created_at_idx").on(table.recipeId, table.createdAt),
+  index("recipe_comments_author_id_idx").on(table.authorId),
+]);
+
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipientId: text("recipient_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  commentId: integer("comment_id")
+    .notNull()
+    .references(() => recipeComments.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["recipe_comment"] }).notNull().default("recipe_comment"),
+  readAt: integer("read_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+}, (table) => [
+  index("notifications_recipient_created_at_idx").on(table.recipientId, table.createdAt),
+  index("notifications_recipient_read_at_idx").on(table.recipientId, table.readAt),
+  index("notifications_comment_id_idx").on(table.commentId),
+]);
+
 export const shoppingLists = sqliteTable("shopping_lists", {
   userId: text("user_id")
     .primaryKey()

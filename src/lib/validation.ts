@@ -123,3 +123,13 @@ export const favoriteToggleSchema = z.object({
 });
 
 export type FavoriteToggleInput = z.infer<typeof favoriteToggleSchema>;
+
+export const recipeCommentSchema = z.object({
+  body: z.string().trim().max(1000).optional(),
+  reaction: z.enum(["fire", "water", "spicy"]).optional(),
+}).refine((value) => !!value.reaction || !!value.body, {
+  message: "Comment or reaction is required",
+  path: ["body"],
+});
+
+export type RecipeCommentInput = z.infer<typeof recipeCommentSchema>;

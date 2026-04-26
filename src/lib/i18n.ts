@@ -180,6 +180,23 @@ const strings = {
     "cookLog.photoAlt": "Cook log photo",
     "cookLog.forRecipe": "for",
 
+    // Comments
+    "comments.title": "Comments",
+    "comments.placeholder": "Add a comment...",
+    "comments.post": "Post",
+    "comments.empty": "No comments yet",
+    "comments.login": "Log in to comment",
+    "comments.error": "Could not save comment",
+    "comments.reactionFire": "Fire",
+    "comments.reactionWater": "Three drops",
+    "comments.reactionSpicy": "Bit spicy",
+
+    // Notifications
+    "notifications.title": "Notifications",
+    "notifications.loading": "Loading...",
+    "notifications.empty": "No notifications",
+    "notifications.commented": "reacted to",
+
     // Chat
     "chat.title": "Ask about this recipe",
     "chat.placeholder": "Ask a question about this recipe...",
@@ -539,6 +556,23 @@ const strings = {
     "cookLog.emptyHint": "Kook een recept en noteer je ervaring",
     "cookLog.photoAlt": "Kooklogfoto",
     "cookLog.forRecipe": "voor",
+
+    // Comments
+    "comments.title": "Reacties",
+    "comments.placeholder": "Voeg een reactie toe...",
+    "comments.post": "Plaatsen",
+    "comments.empty": "Nog geen reacties",
+    "comments.login": "Log in om te reageren",
+    "comments.error": "Reactie opslaan mislukt",
+    "comments.reactionFire": "Fire",
+    "comments.reactionWater": "Drie druppels",
+    "comments.reactionSpicy": "Beetje spicy",
+
+    // Notifications
+    "notifications.title": "Meldingen",
+    "notifications.loading": "Laden...",
+    "notifications.empty": "Geen meldingen",
+    "notifications.commented": "reageerde op",
 
     // Chat
     "chat.title": "Vraag over dit recept",

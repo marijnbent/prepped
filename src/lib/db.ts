@@ -66,9 +66,46 @@ function ensureShoppingListsTable() {
   `);
 }
 
+function ensureCommentsAndNotificationsTables() {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS recipe_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+      author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body TEXT,
+      reaction TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS recipe_comments_recipe_id_created_at_idx
+      ON recipe_comments(recipe_id, created_at);
+    CREATE INDEX IF NOT EXISTS recipe_comments_author_id_idx
+      ON recipe_comments(author_id);
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      actor_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+      comment_id INTEGER NOT NULL REFERENCES recipe_comments(id) ON DELETE CASCADE,
+      type TEXT NOT NULL DEFAULT 'recipe_comment',
+      read_at INTEGER,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS notifications_recipient_created_at_idx
+      ON notifications(recipient_id, created_at);
+    CREATE INDEX IF NOT EXISTS notifications_recipient_read_at_idx
+      ON notifications(recipient_id, read_at);
+    CREATE INDEX IF NOT EXISTS notifications_comment_id_idx
+      ON notifications(comment_id);
+  `);
+}
+
 ensureRecipesColumns();
 ensureUsersColumns();
 ensureShoppingListsTable();
+ensureCommentsAndNotificationsTables();
 
 export const db = drizzle(sqlite, { schema });
 
