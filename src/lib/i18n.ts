@@ -187,9 +187,15 @@ const strings = {
     "comments.empty": "No comments yet",
     "comments.login": "Log in to comment",
     "comments.error": "Could not save comment",
+    "comments.reactionSplash": "Splash",
     "comments.reactionFire": "Fire",
     "comments.reactionWater": "Three drops",
     "comments.reactionSpicy": "Bit spicy",
+    "comments.reactionYum": "Yum",
+    "comments.reactionMelting": "Melting",
+    "comments.reactionDrool": "Drool",
+    "comments.reactionSparkle": "Sparkle",
+    "comments.reactionPerfect": "Perfect",
 
     // Notifications
     "notifications.title": "Notifications",
@@ -564,9 +570,15 @@ const strings = {
     "comments.empty": "Nog geen reacties",
     "comments.login": "Log in om te reageren",
     "comments.error": "Reactie opslaan mislukt",
+    "comments.reactionSplash": "Splash",
     "comments.reactionFire": "Fire",
     "comments.reactionWater": "Drie druppels",
     "comments.reactionSpicy": "Beetje spicy",
+    "comments.reactionYum": "Lekker",
+    "comments.reactionMelting": "Smelt",
+    "comments.reactionDrool": "Kwijlen",
+    "comments.reactionSparkle": "Sprankel",
+    "comments.reactionPerfect": "Perfect",
 
     // Notifications
     "notifications.title": "Meldingen",

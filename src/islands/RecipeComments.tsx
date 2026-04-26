@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,19 +23,29 @@ interface Props {
   loginHref: string;
 }
 
-const reactions: { value: Reaction; label: string; emoji: string }[] = [
-  { value: "fire", label: t("comments.reactionFire"), emoji: "🔥" },
-  { value: "water", label: t("comments.reactionWater"), emoji: "💧💧💧" },
-  { value: "spicy", label: t("comments.reactionSpicy"), emoji: "🌶️" },
+const quickEmojis = [
+  { emoji: "💦", label: t("comments.reactionSplash") },
+  { emoji: "🔥", label: t("comments.reactionFire") },
+  { emoji: "🌶️", label: t("comments.reactionSpicy") },
+  { emoji: "😋", label: t("comments.reactionYum") },
+  { emoji: "🫠", label: t("comments.reactionMelting") },
+  { emoji: "🤤", label: t("comments.reactionDrool") },
+  { emoji: "✨", label: t("comments.reactionSparkle") },
+  { emoji: "👌", label: t("comments.reactionPerfect") },
 ];
+
+const legacyReactionEmoji: Record<Reaction, string> = {
+  fire: "🔥",
+  water: "💦",
+  spicy: "🌶️",
+};
 
 function formatCommentDate(value: string | Date) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function reactionText(reaction: Reaction) {
-  const item = reactions.find((entry) => entry.value === reaction);
-  return item ? `${item.emoji} ${item.label}` : "";
+  return legacyReactionEmoji[reaction] || "";
 }
 
 export default function RecipeComments({ recipeId, initialComments, canComment, loginHref }: Props) {
@@ -43,6 +53,7 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const highlightedId = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -89,6 +100,25 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
     submit({ body: trimmed });
   }
 
+  function insertEmoji(emoji: string) {
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? body.length;
+    const end = textarea?.selectionEnd ?? body.length;
+    const prefix = body.slice(0, start);
+    const suffix = body.slice(end);
+    const needsLeadingSpace = prefix.length > 0 && !/\s$/.test(prefix);
+    const needsTrailingSpace = suffix.length > 0 && !/^\s/.test(suffix);
+    const insertion = `${needsLeadingSpace ? " " : ""}${emoji}${needsTrailingSpace ? " " : ""}`;
+    const next = `${prefix}${insertion}${suffix}`.slice(0, 1000);
+    const caret = Math.min(1000, prefix.length + insertion.length);
+
+    setBody(next);
+    window.requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(caret, caret);
+    });
+  }
+
   return (
     <section className="space-y-5">
       <h2 className="font-serif text-2xl tracking-tight flex items-center gap-3">
@@ -98,24 +128,25 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
 
       {canComment ? (
         <div className="rounded-2xl bg-card/60 border border-border/25 p-5 backdrop-blur-sm space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {reactions.map(({ value, label, emoji }) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {quickEmojis.map(({ emoji, label }) => (
               <button
-                key={value}
+                key={emoji}
                 type="button"
-                onClick={() => submit({ reaction: value })}
+                onClick={() => insertEmoji(emoji)}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/35 bg-secondary/45 px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-primary/30 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-xl transition-all hover:bg-secondary/70 hover:scale-105 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/20 active:scale-95 disabled:opacity-50"
+                aria-label={label}
                 title={label}
               >
                 <span aria-hidden="true">{emoji}</span>
-                <span>{label}</span>
               </button>
             ))}
           </div>
 
           <form onSubmit={submitComment} className="space-y-3">
             <Textarea
+              ref={textareaRef}
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder={t("comments.placeholder")}
@@ -166,7 +197,7 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
                   </time>
                 </div>
                 {comment.reaction && (
-                  <p className="mb-2 inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                  <p className="mb-2 text-lg leading-none">
                     {reactionText(comment.reaction)}
                   </p>
                 )}
