@@ -24,16 +24,32 @@ const organizeOutputSchema = z.object({
   ),
 });
 
+const organizeInputSchema = z.object({
+  ingredients: z.array(
+    z.object({
+      amount: z.string(),
+      unit: z.string(),
+      name: z.string().min(1),
+    })
+  ).min(1),
+  checkedNames: z.array(z.string()).optional(),
+});
+
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const { ingredients, checkedNames } = await request.json();
-  if (!Array.isArray(ingredients) || ingredients.length === 0) {
-    return new Response(JSON.stringify({ error: "Ingredients required" }), { status: 400 });
+  const body = await request.json().catch(() => null);
+  const parsed = organizeInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return new Response(JSON.stringify({ error: "Ingredients required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
-  const checkedSet: Set<string> = new Set(Array.isArray(checkedNames) ? checkedNames : []);
+  const { ingredients, checkedNames = [] } = parsed.data;
+  const checkedSet: Set<string> = new Set(checkedNames);
 
   const userRow = db
     .select({ shoppingPrompt: users.shoppingPrompt })

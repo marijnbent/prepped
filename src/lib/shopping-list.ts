@@ -170,7 +170,7 @@ export function serializeOrganizedFor(
   recipeSignature: string | null,
   manualItems: ManualShoppingListItem[] = []
 ): string | null {
-  if (!recipeSignature) {
+  if (recipeSignature === null) {
     return null;
   }
 
@@ -193,7 +193,7 @@ export function parseOrganizedFor(value: string | null | undefined): OrganizedFo
     try {
       const parsed = JSON.parse(normalized) as Record<string, unknown>;
       const recipeSignature =
-        typeof parsed.recipeSignature === "string" && parsed.recipeSignature.trim()
+        typeof parsed.recipeSignature === "string"
           ? parsed.recipeSignature.trim()
           : null;
       const manualItemIds = Array.isArray(parsed.manualItemIds)

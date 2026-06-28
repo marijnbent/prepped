@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import {
   Minus,
   Plus,
@@ -36,6 +37,13 @@ import {
   type ShoppingListItem,
   type ShoppingListState,
 } from "@/lib/shopping-list";
+
+type OrganizeResponse = {
+  categories?: Array<{
+    name: string;
+    items: Array<{ amount: string; unit: string; name: string; checked?: boolean }>;
+  }>;
+};
 
 interface Ingredient {
   amount: string;
@@ -363,6 +371,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
   const [pickerOpen, setPickerOpen] = useState(initialState.items.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
   const [manualName, setManualName] = useState("");
+  const [organizeError, setOrganizeError] = useState("");
   const [organizedManualIds, setOrganizedManualIds] = useState<string[] | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const manualNameRef = useRef<HTMLInputElement>(null);
@@ -519,6 +528,7 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
   async function handleOrganize() {
     if (merged.length === 0) return;
     setOrganizing(true);
+    setOrganizeError("");
 
     // Collect currently checked item names to send to the LLM
     const checkedNames: string[] = [];
@@ -543,24 +553,32 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ingredients: merged, checkedNames }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        // Build checked set from the checked field returned by the LLM
-        const newChecked = new Set<string>();
-        for (const cat of data.categories as OrganizedCategory[]) {
-          cat.items.forEach((item: { name: string; checked?: boolean }, i: number) => {
-            if (item.checked) newChecked.add(`${cat.name}-${i}`);
-          });
-        }
-        setOrganized(data.categories);
-        setOrganizedManualIds(manualItems.map((item) => item.id));
-        setCheckedItems(newChecked);
-        saveChecked(Array.from(newChecked));
-        saveOrganized(data.categories, serializeOrganizedFor(recipeOnlySignature, manualItems));
-        organizedForRecipeSig.current = recipeOnlySignature;
+      const data = await res.json().catch(() => null) as OrganizeResponse | null;
+      if (!res.ok) {
+        setOrganizeError(getApiErrorMessage(data, t("shopping.organizeError")));
+        return;
       }
+
+      if (!Array.isArray(data?.categories) || data.categories.length === 0) {
+        setOrganizeError(t("shopping.organizeError"));
+        return;
+      }
+
+      // Build checked set from the checked field returned by the LLM
+      const newChecked = new Set<string>();
+      for (const cat of data.categories) {
+        cat.items.forEach((item: { name: string; checked?: boolean }, i: number) => {
+          if (item.checked) newChecked.add(`${cat.name}-${i}`);
+        });
+      }
+      setOrganized(data.categories);
+      setOrganizedManualIds(manualItems.map((item) => item.id));
+      setCheckedItems(newChecked);
+      saveChecked(Array.from(newChecked));
+      saveOrganized(data.categories, serializeOrganizedFor(recipeOnlySignature, manualItems));
+      organizedForRecipeSig.current = recipeOnlySignature;
     } catch {
-      // silently fail
+      setOrganizeError(t("shopping.organizeError"));
     } finally {
       setOrganizing(false);
     }
@@ -1051,6 +1069,9 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
             {/* AI customization hint */}
             <div className="mb-4">
               <CustomizeHint />
+              {organizeError && (
+                <p className="mt-2 text-sm text-destructive">{organizeError}</p>
+              )}
             </div>
 
             {/* Warm separator */}
