@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { Plus, LogOut, Settings, ShoppingCart, BookOpen, Heart, Users } from "lucide-react";
+import { FolderOpen, LogOut, Settings, ShoppingCart, BookOpen, Heart, Users } from "lucide-react";
 import { t } from "@/lib/i18n";
 import ThemeToggle from "./ThemeToggle";
 
@@ -43,6 +42,14 @@ export default function MobileNav({ user, authMode, open, onOpenChange }: Props)
           >
             <ShoppingCart className="h-4 w-4" />
             {t("nav.shoppingList")}
+          </a>
+          <a
+            href="/collections"
+            className="text-sm py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5"
+            onClick={() => onOpenChange(false)}
+          >
+            <FolderOpen className="h-4 w-4" />
+            {t("nav.collections")}
           </a>
           <a
             href="/users"
