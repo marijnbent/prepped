@@ -38,11 +38,11 @@ FROM node:22-slim AS runtime
 
 WORKDIR /app
 
-COPY --from=build /app/dist ./dist
-COPY --from=pruned-deps /app/node_modules ./node_modules
-COPY package.json ./
-COPY docker-entrypoint.sh ./
+COPY --link --from=pruned-deps /app/node_modules ./node_modules
+COPY --link package.json ./
+COPY --link docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && mkdir -p /app/data
+COPY --link --from=build /app/dist ./dist
 
 VOLUME /app/data
 
