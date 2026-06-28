@@ -1,6 +1,6 @@
 /// <reference path="../.astro/types.d.ts" />
 
-// Keep environment typing explicit for Astro SSR builds.
+// Keep environment typing explicit for Astro SSR builds and middleware locals.
 interface ImportMetaEnv {
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string;
