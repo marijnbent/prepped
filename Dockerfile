@@ -1,15 +1,18 @@
-FROM node:22-slim AS base
+# syntax=docker/dockerfile:1.7
 
-# Install dependencies for sharp and better-sqlite3
+FROM node:22-slim AS deps
+
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-# Install dependencies
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
+
+FROM deps AS build
 
 # Build-time config (Vite bakes import.meta.env at build)
 ARG AUTH_MODE=password
@@ -24,30 +27,23 @@ ENV INVITE_CODE=$INVITE_CODE
 ENV MEASUREMENT_SYSTEM=$MEASUREMENT_SYSTEM
 ENV PUBLIC_DATE_LOCALE=$PUBLIC_DATE_LOCALE
 
-# Copy source and build
 COPY . .
 RUN npm run build
 
-# Production image
-FROM node:22-slim AS runtime
+FROM deps AS pruned-deps
+RUN --mount=type=cache,target=/root/.npm \
+    npm prune --omit=dev --no-audit --no-fund
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libvips-dev && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:22-slim AS runtime
 
 WORKDIR /app
 
-COPY --from=base /app/dist ./dist
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/package.json ./
-COPY --from=base /app/scripts ./scripts
-
-# Entrypoint runs DB preflight, then starts the server.
+COPY --from=build /app/dist ./dist
+COPY --from=pruned-deps /app/node_modules ./node_modules
+COPY package.json ./
 COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh && mkdir -p /app/data
 
-# Data directory for SQLite + uploads
-RUN mkdir -p /app/data
 VOLUME /app/data
 
 ENV HOST=0.0.0.0
