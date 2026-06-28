@@ -6,7 +6,11 @@ import { notifications, recipeComments, recipes, users } from "../../../lib/sche
 function json(data: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(data), {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      ...init?.headers,
+    },
   });
 }
 

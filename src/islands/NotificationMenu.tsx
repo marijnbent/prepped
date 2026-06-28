@@ -31,9 +31,14 @@ export default function NotificationMenu() {
   const [unread, setUnread] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const isMutatingRef = useRef(false);
 
   async function load() {
-    const res = await fetch("/api/notifications", { headers: { Accept: "application/json" } });
+    if (isMutatingRef.current) return;
+    const res = await fetch("/api/notifications", {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
     if (!res.ok) return;
     const data = await res.json();
     setItems(data.notifications || []);
@@ -59,20 +64,51 @@ export default function NotificationMenu() {
   }, []);
 
   async function openNotification(item: NotificationItem) {
+    const wasUnread = !item.readAt;
+
     if (!item.readAt) {
       setUnread((current) => Math.max(0, current - 1));
       setItems((current) => current.filter((entry) => entry.id !== item.id));
-      await fetch(`/api/notifications/${item.id}/read`, { method: "POST" });
     }
 
-    window.location.href = item.href;
+    try {
+      if (wasUnread) {
+        await fetch(`/api/notifications/${item.id}/read`, {
+          method: "POST",
+          cache: "no-store",
+          keepalive: true,
+        });
+      }
+    } finally {
+      window.location.href = item.href;
+    }
   }
 
   async function dismissAll() {
-    if (items.length === 0) return;
+    if (items.length === 0 && unread === 0) return;
+    const previousItems = items;
+    const previousUnread = unread;
+
+    isMutatingRef.current = true;
     setItems([]);
     setUnread(0);
-    await fetch("/api/notifications/dismiss-all", { method: "POST" });
+
+    try {
+      const res = await fetch("/api/notifications/dismiss-all", {
+        method: "POST",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to dismiss notifications");
+      }
+    } catch {
+      setItems(previousItems);
+      setUnread(previousUnread);
+    } finally {
+      isMutatingRef.current = false;
+      await load();
+    }
   }
 
   return (
