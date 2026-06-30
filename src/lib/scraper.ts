@@ -49,6 +49,13 @@ interface CloudflareScrapeGroup {
   results?: CloudflareScrapeNode[];
 }
 
+interface TikTokOEmbedResponse {
+  title?: unknown;
+  author_name?: unknown;
+  thumbnail_url?: unknown;
+  html?: unknown;
+}
+
 const DEFAULT_CLOUDFLARE_API_BASE_URL = "https://api.cloudflare.com/client/v4";
 const DEFAULT_BROWSER_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -140,8 +147,69 @@ async function scrapeInstagram(url: string): Promise<ScrapeResult> {
   };
 }
 
+function getTikTokOEmbedVideoUrl(html: unknown): string | null {
+  if (typeof html !== "string" || !html.trim()) {
+    return null;
+  }
+
+  const fragment = JSDOM.fragment(html);
+  const cite = fragment.querySelector("blockquote[cite]")?.getAttribute("cite");
+  if (cite && isTikTokUrl(cite)) {
+    return cite;
+  }
+
+  const matchedUrl = html.match(/https:\/\/www\.tiktok\.com\/@[^\s"'<>?]+\/(?:video|photo)\/\d+/);
+  if (matchedUrl?.[0] && isTikTokUrl(matchedUrl[0])) {
+    return matchedUrl[0];
+  }
+
+  return null;
+}
+
+async function scrapeTikTok(url: string): Promise<ScrapeResult> {
+  const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+  const response = await fetchWithTimeout(oembedUrl, {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": DEFAULT_BROWSER_UA,
+    },
+  });
+
+  if (!response.ok) {
+    throw new ScrapeError(`TikTok oEmbed failed: ${response.status}`, "SCRAPE_FAILED");
+  }
+
+  let data: TikTokOEmbedResponse;
+  try {
+    data = await response.json() as TikTokOEmbedResponse;
+  } catch {
+    throw new ScrapeError("TikTok oEmbed returned invalid JSON", "SCRAPE_PARSE_FAILED");
+  }
+
+  const caption = typeof data.title === "string" ? data.title.trim() : "";
+  const author = typeof data.author_name === "string" ? data.author_name.trim() : "";
+  const thumbnailUrl = typeof data.thumbnail_url === "string" ? data.thumbnail_url : null;
+  const videoUrl = getTikTokOEmbedVideoUrl(data.html) || url;
+
+  return {
+    title: caption.split("\n")[0].trim() || `Recipe by ${author}`,
+    content: caption,
+    imageUrl: thumbnailUrl,
+    videoUrl,
+  };
+}
+
 function isInstagramUrl(url: string): boolean {
   return /^https?:\/\/(www\.)?instagram\.com\/(p|reel)\//.test(url);
+}
+
+function isTikTokUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname === "tiktok.com" || hostname.endsWith(".tiktok.com");
+  } catch {
+    return false;
+  }
 }
 
 function isChallengePage(html: string): boolean {
@@ -689,6 +757,9 @@ export async function scrapeUrl(url: string, mode: ScrapeMode = "direct"): Promi
 
   if (isInstagramUrl(safeUrl)) {
     return scrapeInstagram(safeUrl);
+  }
+  if (isTikTokUrl(safeUrl)) {
+    return scrapeTikTok(safeUrl);
   }
   const { html, supplementalContent } = await fetchHtml(safeUrl, mode);
   return parseHtml(safeUrl, html, supplementalContent);
