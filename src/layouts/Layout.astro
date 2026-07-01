@@ -16,6 +16,7 @@ const pageTitle = title ? `${title} - ${t("site.title")}` : t("site.title");
 const pageDescription = description || t("site.description");
 const canonicalUrl = Astro.url.href;
 const user = Astro.locals.user;
+const analyticsIdentity = user ? { id: user.id, name: user.name } : null;
 const authMode = import.meta.env.AUTH_MODE || "password";
 const pathname = Astro.url.pathname;
 ---
@@ -52,6 +53,28 @@ const pathname = Astro.url.pathname;
     {image && <meta property="og:image" content={image} />}
 
     <title>{pageTitle}</title>
+
+    <script defer src="https://analytics.cowsandbytes.party/script.js" data-website-id="e8fddee2-6f80-4f83-b92e-fd4ba0eba6e1"></script>
+    {analyticsIdentity && (
+      <script is:inline define:vars={{ analyticsIdentity }}>
+        (function() {
+          function identify(attemptsLeft) {
+            if (window.umami && typeof window.umami.identify === "function") {
+              window.umami.identify(analyticsIdentity);
+              return;
+            }
+
+            if (attemptsLeft > 0) {
+              window.setTimeout(function() {
+                identify(attemptsLeft - 1);
+              }, 200);
+            }
+          }
+
+          identify(25);
+        })();
+      </script>
+    )}
 
     {/* Prevent flash of wrong theme */}
     <script is:inline>
