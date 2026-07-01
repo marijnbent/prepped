@@ -30,6 +30,7 @@ export default function NotificationMenu() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [isDismissing, setIsDismissing] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const isMutatingRef = useRef(false);
 
@@ -85,27 +86,28 @@ export default function NotificationMenu() {
   }
 
   async function dismissAll() {
-    if (items.length === 0 && unread === 0) return;
-    const previousItems = items;
-    const previousUnread = unread;
+    if (isDismissing || (items.length === 0 && unread === 0)) return;
 
     isMutatingRef.current = true;
-    setItems([]);
-    setUnread(0);
+    setIsDismissing(true);
 
     try {
       const res = await fetch("/api/notifications/dismiss-all", {
         method: "POST",
         cache: "no-store",
+        keepalive: true,
       });
 
       if (!res.ok) {
         throw new Error("Failed to dismiss notifications");
       }
-    } catch {
-      setItems(previousItems);
-      setUnread(previousUnread);
+
+      setItems([]);
+      setUnread(0);
+    } catch (error) {
+      console.error("[notifications] failed to dismiss", error);
     } finally {
+      setIsDismissing(false);
       isMutatingRef.current = false;
       await load();
     }
@@ -135,6 +137,7 @@ export default function NotificationMenu() {
               <button
                 type="button"
                 onClick={dismissAll}
+                disabled={isDismissing}
                 className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/20"
               >
                 {t("notifications.dismissAll")}
