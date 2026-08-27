@@ -1,9 +1,21 @@
 import type { APIRoute } from "astro";
-import { processAndSaveImage, processAndSaveImageBuffer } from "../../../lib/images";
+import {
+  decodeBase64Image,
+  MAX_IMAGE_SIZE_BYTES,
+  processAndSaveImage,
+  processAndSaveImageBuffer,
+} from "../../../lib/images";
+
+const MAX_UPLOAD_REQUEST_BYTES = Math.ceil(MAX_IMAGE_SIZE_BYTES * 4 / 3) + 100_000;
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
+
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_REQUEST_BYTES) {
+    return new Response(JSON.stringify({ error: "Request too large" }), { status: 413 });
   }
 
   const contentType = request.headers.get("content-type") || "";
@@ -32,7 +44,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const dataUrlMatch = image.match(/^data:([^;]+);base64,(.+)$/);
     const base64Payload = dataUrlMatch ? dataUrlMatch[2] : image;
     mimeType = dataUrlMatch?.[1] || (typeof body?.mimeType === "string" ? body.mimeType : "") || "image/jpeg";
-    buffer = Buffer.from(base64Payload, "base64");
+    try {
+      buffer = decodeBase64Image(base64Payload);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid image";
+      return new Response(JSON.stringify({ error: message }), { status: 413 });
+    }
   } else {
     const formData = await request.formData();
     const uploadedFile = formData.get("file");

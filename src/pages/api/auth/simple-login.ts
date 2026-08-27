@@ -25,6 +25,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: { "Content-Type": "application/json" },
     });
   }
+  if (name.length > 80) {
+    return new Response(JSON.stringify({ message: "Name is too long" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   // Find user by name (case-insensitive)
   let user = db
@@ -36,7 +42,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!user) {
     const id = generateId();
     const slug = slugify(name) || "user";
-    const email = `${slug}@family.local`;
+    const email = `${slug}-${id.slice(0, 8).toLowerCase()}@family.local`;
     const now = new Date();
 
     db.insert(users)
@@ -56,6 +62,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   cookies.set("simple_session", user.id, {
     httpOnly: true,
+    secure: import.meta.env.PROD,
     path: "/",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365, // 1 year

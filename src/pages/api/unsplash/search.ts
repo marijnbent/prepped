@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify({ error: message }), { status: 502 });
     }
 
-    const results = Array.isArray(data.results) ? data.results.map(toUnsplashPhotoResult) : [];
+    const results = data && Array.isArray(data.results) ? data.results.map(toUnsplashPhotoResult) : [];
 
     return new Response(JSON.stringify({ results }), {
       headers: { "Content-Type": "application/json" },

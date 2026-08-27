@@ -1,7 +1,10 @@
 import { lookup } from "node:dns/promises";
+import type { LookupAddress } from "node:dns";
 import { isIP } from "node:net";
 
 const BLOCKED_HOST_SUFFIXES = [".localhost", ".local", ".internal", ".home", ".lan"];
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const MAX_REDIRECTS = 5;
 
 export class UnsafeUrlError extends Error {
   code: "UNSAFE_URL";
@@ -169,7 +172,7 @@ export async function assertPublicHttpUrl(input: string | URL): Promise<URL> {
     throw new UnsafeUrlError("Local hostnames are not allowed");
   }
 
-  let resolved: Awaited<ReturnType<typeof lookup>>;
+  let resolved: LookupAddress[];
   try {
     resolved = await lookup(hostname, { all: true, verbatim: true });
   } catch {
@@ -187,4 +190,29 @@ export async function assertPublicHttpUrl(input: string | URL): Promise<URL> {
   }
 
   return url;
+}
+
+/** Fetch a public URL while validating every redirect target. */
+export async function fetchPublicHttpUrl(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  let url = await assertPublicHttpUrl(input);
+
+  for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {
+    const response = await fetch(url, { ...init, redirect: "manual" });
+    if (!REDIRECT_STATUSES.has(response.status)) {
+      return response;
+    }
+
+    const location = response.headers.get("location");
+    await response.body?.cancel();
+    if (!location) {
+      throw new UnsafeUrlError("Redirect response is missing a location");
+    }
+    if (redirectCount === MAX_REDIRECTS) {
+      throw new UnsafeUrlError("Too many redirects");
+    }
+
+    url = await assertPublicHttpUrl(new URL(location, url));
+  }
+
+  throw new UnsafeUrlError("Too many redirects");
 }

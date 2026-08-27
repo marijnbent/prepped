@@ -1,19 +1,20 @@
 import sharp from "sharp";
-import { join } from "path";
+import { isAbsolute, join, relative, resolve, sep } from "path";
 import { mkdirSync, existsSync } from "fs";
 import { randomUUID } from "crypto";
-import { assertPublicHttpUrl } from "./url-safety";
+import { fetchPublicHttpUrl } from "./url-safety";
 
 const UPLOADS_DIR = join(process.cwd(), "data", "uploads");
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 20_000;
+const MAX_INPUT_PIXELS = 40_000_000;
 
 function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = IMAGE_DOWNLOAD_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+  return fetchPublicHttpUrl(input, { ...init, signal: controller.signal }).finally(() => {
     clearTimeout(timeout);
   });
 }
@@ -24,9 +25,50 @@ function ensureValidImageType(type: string) {
   }
 }
 
-function ensureValidImageSize(size: number) {
-  if (size > MAX_SIZE) {
+export function ensureValidImageSize(size: number) {
+  if (size > MAX_IMAGE_SIZE_BYTES) {
     throw new Error("File too large. Max 10MB.");
+  }
+}
+
+export function decodeBase64Image(payload: string): Buffer {
+  const estimatedBytes = Math.ceil(payload.length * 0.75);
+  ensureValidImageSize(estimatedBytes);
+  const buffer = Buffer.from(payload, "base64");
+  ensureValidImageSize(buffer.length);
+  return buffer;
+}
+
+async function readResponseBufferWithLimit(response: Response): Promise<Buffer> {
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength)) ensureValidImageSize(contentLength);
+
+  if (!response.body) {
+    const buffer = Buffer.from(await response.arrayBuffer());
+    ensureValidImageSize(buffer.length);
+    return buffer;
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_IMAGE_SIZE_BYTES) {
+      await reader.cancel();
+      ensureValidImageSize(size);
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)), size);
+}
+
+async function ensureValidImageBuffer(buffer: Buffer) {
+  const metadata = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+  if (!metadata.format || !["jpeg", "png", "webp"].includes(metadata.format)) {
+    throw new Error("Invalid image data. Use JPEG, PNG, or WebP.");
   }
 }
 
@@ -34,6 +76,7 @@ async function saveProcessedBuffers(
   buffer: Buffer,
   subdir: "recipes" | "cook-logs"
 ): Promise<{ full: string; thumb: string }> {
+  await ensureValidImageBuffer(buffer);
   const id = randomUUID();
   const dir = join(UPLOADS_DIR, subdir);
   mkdirSync(dir, { recursive: true });
@@ -81,8 +124,7 @@ export async function downloadAndSaveImage(
   url: string,
   subdir: "recipes" | "cook-logs"
 ): Promise<{ full: string; thumb: string }> {
-  const safeUrl = (await assertPublicHttpUrl(url)).toString();
-  const response = await fetchWithTimeout(safeUrl, {
+  const response = await fetchWithTimeout(url, {
     headers: { "User-Agent": "Mozilla/5.0" },
   });
 
@@ -90,16 +132,14 @@ export async function downloadAndSaveImage(
     throw new Error(`Failed to download image: ${response.status}`);
   }
 
-  const buffer = Buffer.from(await response.arrayBuffer());
-  ensureValidImageSize(buffer.length);
+  const buffer = await readResponseBufferWithLimit(response);
   return saveProcessedBuffers(buffer, subdir);
 }
 
 export function getUploadPath(relativePath: string): string | null {
-  // Prevent directory traversal
-  const normalized = relativePath.replace(/\.\./g, "").replace(/\/\//g, "/");
-  const fullPath = join(UPLOADS_DIR, normalized);
-  if (!fullPath.startsWith(UPLOADS_DIR)) return null;
+  const fullPath = resolve(UPLOADS_DIR, relativePath);
+  const fromUploads = relative(UPLOADS_DIR, fullPath);
+  if (!fromUploads || fromUploads === ".." || fromUploads.startsWith(`..${sep}`) || isAbsolute(fromUploads)) return null;
   if (!existsSync(fullPath)) return null;
   return fullPath;
 }

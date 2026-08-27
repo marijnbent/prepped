@@ -575,7 +575,10 @@ export default function ShoppingListPage({ recipes: allRecipes, initialState }: 
       setOrganizedManualIds(manualItems.map((item) => item.id));
       setCheckedItems(newChecked);
       saveChecked(Array.from(newChecked));
-      saveOrganized(data.categories, serializeOrganizedFor(recipeOnlySignature, manualItems));
+      saveOrganized(
+        data.categories,
+        serializeOrganizedFor(recipeOnlySignature ?? undefined, manualItems) ?? undefined,
+      );
       organizedForRecipeSig.current = recipeOnlySignature;
     } catch {
       setOrganizeError(t("shopping.organizeError"));

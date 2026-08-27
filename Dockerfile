@@ -41,6 +41,8 @@ WORKDIR /app
 COPY --link --from=pruned-deps /app/node_modules ./node_modules
 COPY --link package.json ./
 COPY --link docker-entrypoint.sh ./
+COPY --link scripts/migrate-runtime.mjs scripts/migration-support.mjs ./scripts/
+COPY --link drizzle ./drizzle
 RUN chmod +x docker-entrypoint.sh && mkdir -p /app/data
 COPY --link --from=build /app/dist ./dist
 
@@ -51,5 +53,8 @@ ENV PORT=4321
 ENV NODE_ENV=production
 
 EXPOSE 4321
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||4321)+'/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
 
 CMD ["./docker-entrypoint.sh"]

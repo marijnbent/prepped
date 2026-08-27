@@ -9,6 +9,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
+  const user = locals.user;
 
   const body = await request.json();
   const result = copyRecipeSchema.safeParse(body);
@@ -23,7 +24,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!source) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
-  if (source.createdBy !== locals.user.id && !source.isPublished) {
+  if (source.createdBy !== user.id && !source.isPublished) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
 
@@ -32,7 +33,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const existing = db
     .select()
     .from(recipes)
-    .where(and(eq(recipes.slug, slug), eq(recipes.createdBy, locals.user.id)))
+    .where(and(eq(recipes.slug, slug), eq(recipes.createdBy, user.id)))
     .get();
   if (existing) {
     slug = `${slug}-${Date.now()}`;
@@ -52,7 +53,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const defaultCollection = db
       .select({ id: collections.id })
       .from(collections)
-      .where(eq(collections.createdBy, locals.user.id))
+      .where(eq(collections.createdBy, user.id))
       .orderBy(asc(collections.sortOrder), asc(collections.id))
       .get();
     if (defaultCollection) {
@@ -84,7 +85,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         notes: source.notes,
         isPublished: true,
         copiedFrom: source.id,
-        createdBy: locals.user.id,
+        createdBy: user.id,
       })
       .returning()
       .get();
@@ -99,7 +100,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const allowedCollections = tx
         .select({ id: collections.id })
         .from(collections)
-        .where(and(eq(collections.createdBy, locals.user.id), inArray(collections.id, collectionIdsToUse)))
+        .where(and(eq(collections.createdBy, user.id), inArray(collections.id, collectionIdsToUse)))
         .all()
         .map((col) => col.id);
 

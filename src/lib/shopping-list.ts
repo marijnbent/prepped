@@ -79,7 +79,7 @@ export function normalizeShoppingListItems(raw: unknown): ShoppingListItem[] {
     return [];
   }
 
-  return raw.flatMap((item) => {
+  return raw.flatMap<ShoppingListItem>((item): ShoppingListItem[] => {
     if (!item || typeof item !== "object") {
       return [];
     }

@@ -1,6 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
-import { assertPublicHttpUrl } from "./url-safety";
+import { assertPublicHttpUrl, fetchPublicHttpUrl } from "./url-safety";
 
 export class ScrapeError extends Error {
   code: "SCRAPE_BLOCKED" | "SCRAPE_FAILED" | "SCRAPE_PARSE_FAILED" | "SCRAPE_CONFIG_MISSING";
@@ -88,6 +88,15 @@ function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = SCRAPE_F
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    clearTimeout(timeout);
+  });
+}
+
+function fetchPublicWithTimeout(input: string, init: RequestInit, timeoutMs = SCRAPE_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetchPublicHttpUrl(input, { ...init, signal: controller.signal }).finally(() => {
     clearTimeout(timeout);
   });
 }
@@ -442,7 +451,7 @@ function parseHtml(url: string, html: string, supplementalContent = ""): ScrapeR
 async function fetchDirectHtml(url: string): Promise<HtmlFetchResult> {
   let response: Response;
   try {
-    response = await fetchWithTimeout(url, {
+    response = await fetchPublicWithTimeout(url, {
       headers: {
         "User-Agent": DEFAULT_BROWSER_UA,
       },
@@ -494,8 +503,9 @@ function cloudflareErrorMessage(payload: unknown): string {
     return "Cloudflare API returned an unknown error";
   }
 
-  const errors = Array.isArray((payload as CloudflareApiEnvelope<unknown>).errors)
-    ? (payload as CloudflareApiEnvelope<unknown>).errors
+  const rawErrors = (payload as CloudflareApiEnvelope<unknown>).errors;
+  const errors: CloudflareApiError[] = Array.isArray(rawErrors)
+    ? rawErrors
     : [];
   const messages = errors
     .map((error) => {

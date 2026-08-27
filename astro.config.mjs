@@ -9,7 +9,7 @@ export default defineConfig({
   adapter: node({ mode: "standalone" }),
   integrations: [react()],
   server: {
-    host: process.env.HOST || "localhost",
+    host: process.env.HOST || "127.0.0.1",
     port: parseInt(process.env.PORT || "4322"),
   },
   vite: {

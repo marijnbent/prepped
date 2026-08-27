@@ -41,8 +41,8 @@ cd prepped
 npm install
 cp .env.example .env
 # Edit .env with your settings
-npx drizzle-kit push    # Create database tables
-npm run dev             # Start dev server at localhost:4321
+npm run db:migrate      # Apply reviewed database migrations
+npm run dev             # Start at https://prepped.localhost
 ```
 
 ### Seed dev data
@@ -54,6 +54,16 @@ npm run seed
 ```
 
 This creates 3 users (`chef@test.com`, `maria@test.com`, `james@test.com` — all password `test1234`) with ~12 recipes, cook logs, and cross-user forks.
+
+### Development checks
+
+```sh
+npm test
+npm run check
+npm run build
+```
+
+The readiness endpoint is available at `/ready`.
 
 ## Environment Variables
 

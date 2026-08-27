@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import type { OrganizedCategory, ShoppingListItem } from "./shopping-list";
 
 // ---- Auth tables (managed by Better Auth) ----
@@ -87,7 +87,7 @@ export const recipes = sqliteTable("recipes", {
   videoUrl: text("video_url"),
   notes: text("notes"),
   isPublished: integer("is_published", { mode: "boolean" }).notNull().default(true),
-  copiedFrom: integer("copied_from").references(() => recipes.id, { onDelete: "set null" }),
+  copiedFrom: integer("copied_from").references((): AnySQLiteColumn => recipes.id, { onDelete: "set null" }),
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

@@ -17,7 +17,7 @@ export type {
 let state: ShoppingListState = createEmptyShoppingListState();
 let loaded = false;
 let loadPromise: Promise<ShoppingListState> | null = null;
-let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let saveTimer: number | null = null;
 let dirty = false;
 let saving = false;
 
