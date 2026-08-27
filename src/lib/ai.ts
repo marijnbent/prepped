@@ -15,7 +15,7 @@ let _openrouter: ReturnType<typeof createOpenAI> | null = null;
 
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const DEFAULT_OPENROUTER_PRIMARY_MODEL = "openai/gpt-5.6-luna";
-const DEFAULT_OPENROUTER_FALLBACK_MODEL = "openai/gpt-5-mini";
+const DEFAULT_OPENROUTER_FALLBACK_MODEL = "openai/gpt-5.6-luna";
 
 function resolveOpenRouterApiKey() {
   const apiKey = (import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "").trim();
