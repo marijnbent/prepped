@@ -3,11 +3,11 @@ import { and, eq } from "drizzle-orm";
 import { withChatModelFallback } from "./ai";
 import { toAiClientError } from "./ai-errors";
 import { db } from "./db";
+import { normalizeRecipeOutput, recipeOutputSchema } from "./recipe-output";
 import {
   buildImportRules,
   getImportContext,
   normalizeImportedIngredients,
-  recipeOutputSchema,
   resolveCollectionIds,
   resolveTagIds,
 } from "./import-shared";
@@ -68,7 +68,7 @@ async function enhanceRecipeDraft(input: ApiRecipeCreateInput, userId: string): 
   const importRules = buildImportRules(ctx);
 
   try {
-    const { object } = await withChatModelFallback((model) =>
+    const { object: rawObject } = await withChatModelFallback((model) =>
       generateObject({
         model,
         schema: recipeOutputSchema,
@@ -95,6 +95,7 @@ Recipe draft JSON:
 ${JSON.stringify(input).slice(0, 12000)}${ctx.userInstruction}`,
       }),
     );
+    const object = normalizeRecipeOutput(rawObject);
 
     return recipeSchema.parse({
       title: object.title,

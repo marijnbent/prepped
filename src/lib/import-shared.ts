@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { db } from "./db";
 import { tags, collections, users } from "./schema";
 import { eq, and } from "drizzle-orm";
@@ -6,34 +5,6 @@ import { slugify } from "./slugify";
 import { getDefaultCollections, defaultTags } from "./defaults";
 import { locale, t } from "./i18n";
 import { isCupboardGroup, sortIngredientsCupboardLast } from "./ingredient-groups";
-
-export const recipeOutputSchema = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  ingredients: z.array(
-    z.object({
-      amount: z.string(),
-      unit: z.string(),
-      name: z.string(),
-      group: z.string().optional(),
-    })
-  ),
-  cookingSupplies: z.array(z.string()).optional(),
-  steps: z.array(
-    z.object({
-      order: z.number(),
-      instruction: z.string(),
-      duration: z.number().optional(),
-    })
-  ),
-  servings: z.number().optional(),
-  prepTime: z.number().optional(),
-  cookTime: z.number().optional(),
-  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-  notes: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  collections: z.array(z.string()).optional(),
-});
 
 export function resolveTagIds(tagNames: string[]): number[] {
   const ids: number[] = [];

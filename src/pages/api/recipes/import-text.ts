@@ -2,8 +2,8 @@ import type { APIRoute } from "astro";
 import { generateObject } from "ai";
 import { withChatModelFallback } from "../../../lib/ai";
 import { toAiClientError } from "../../../lib/ai-errors";
+import { normalizeRecipeOutput, recipeOutputSchema } from "../../../lib/recipe-output";
 import {
-  recipeOutputSchema,
   resolveTagIds,
   resolveCollectionIds,
   getImportContext,
@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const rules = buildImportRules(ctx);
 
   try {
-    const { object: recipe } = await withChatModelFallback((model) =>
+    const { object } = await withChatModelFallback((model) =>
       generateObject({
         model,
         schema: recipeOutputSchema,
@@ -37,6 +37,7 @@ Text:
 ${text.slice(0, 10000)}${ctx.userInstruction}`,
       })
     );
+    const recipe = normalizeRecipeOutput(object);
 
     const tagIds = recipe.tags?.length ? resolveTagIds(recipe.tags) : [];
     const collectionIds = recipe.collections?.length

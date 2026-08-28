@@ -5,8 +5,8 @@ import { scrapeUrl, ScrapeError, type ScrapeMode } from "../../../lib/scraper";
 import { downloadAndSaveImage } from "../../../lib/images";
 import { toAiClientError } from "../../../lib/ai-errors";
 import { assertPublicHttpUrl, UnsafeUrlError } from "../../../lib/url-safety";
+import { normalizeRecipeOutput, recipeOutputSchema } from "../../../lib/recipe-output";
 import {
-  recipeOutputSchema,
   resolveTagIds,
   resolveCollectionIds,
   getImportContext,
@@ -93,7 +93,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const { title, content, imageUrl, videoUrl } = await scrapeWithMode(normalizedUrl, mode);
 
-    const { object: recipe } = await withChatModelFallback((model) =>
+    const { object } = await withChatModelFallback((model) =>
       generateObject({
         model,
         schema: recipeOutputSchema,
@@ -107,6 +107,7 @@ Content:
 ${content.slice(0, 10000)}${ctx.userInstruction}`,
       })
     );
+    const recipe = normalizeRecipeOutput(object);
 
     const tagIds = recipe.tags?.length ? resolveTagIds(recipe.tags) : [];
     const collectionIds = recipe.collections?.length
