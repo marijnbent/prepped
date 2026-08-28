@@ -106,9 +106,13 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
                 return (
                   <li
                     key={i}
-                    className="grid grid-cols-[5.75rem_minmax(0,1fr)] items-start gap-x-3 py-2 border-b border-border/15 last:border-0"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5 py-2.5 border-b border-border/15 last:border-0"
                   >
-                    <span className="pt-0.5 text-[0.95rem] font-semibold leading-5 tabular-nums text-primary/85 whitespace-nowrap">
+                    <span className="min-w-0 text-[1.02rem] leading-6 text-foreground/85 break-words">
+                      {primary}
+                    </span>
+
+                    <span className="text-right text-[0.9rem] font-semibold leading-5 tabular-nums text-primary/85 whitespace-nowrap">
                       {ing.amount ? (
                         <>
                           <span>{ing.amount}</span>
@@ -121,14 +125,11 @@ export default function ServingsScaler({ defaultServings, ingredients }: Props) 
                       )}
                     </span>
 
-                    <span className="min-w-0 pt-0.5 text-[1.02rem] leading-6 text-foreground/85">
-                      <span className="block text-balance">{primary}</span>
-                      {secondary && (
-                        <span className="mt-0.5 block text-[0.84rem] leading-5 text-muted-foreground/70">
-                          {secondary}
-                        </span>
-                      )}
-                    </span>
+                    {secondary && (
+                      <span className="col-span-2 text-[0.84rem] leading-5 text-muted-foreground/70">
+                        {secondary}
+                      </span>
+                    )}
                   </li>
                 );
               })}
