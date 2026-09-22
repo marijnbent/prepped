@@ -14,8 +14,8 @@ export class AIConfigError extends Error {
 let _openrouter: ReturnType<typeof createOpenAI> | null = null;
 
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-const DEFAULT_OPENROUTER_PRIMARY_MODEL = "openai/gpt-5.6-luna";
-const DEFAULT_OPENROUTER_FALLBACK_MODEL = "openai/gpt-5.6-luna";
+const DEFAULT_OPENROUTER_PRIMARY_MODEL = "openai/gpt-luna-latest";
+const DEFAULT_OPENROUTER_FALLBACK_MODEL = "openai/gpt-luna-latest";
 
 function resolveOpenRouterApiKey() {
   const apiKey = (import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "").trim();
