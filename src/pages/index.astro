@@ -2,7 +2,6 @@
 import Layout from "../layouts/Layout.astro";
 import { formatStepDuration } from "../lib/recipe-export";
 import RecipeCard from "../components/RecipeCard.astro";
-import Wordmark from "../components/Wordmark.astro";
 import { db } from "../lib/db";
 import { recipes, cookLogs, users } from "../lib/schema";
 import { desc, eq, count, ne, and } from "drizzle-orm";
@@ -210,8 +209,7 @@ const sectionLink = "text-sm text-muted-foreground hover:underline underline-off
     ) : (
       <>
         <section class="pt-12 pb-16 md:pt-20 md:pb-20">
-          <h1 class="text-7xl md:text-9xl"><Wordmark /></h1>
-          <p class="text-lg md:text-xl text-muted-foreground mt-6 max-w-lg leading-relaxed">{t("home.heroDesc")}</p>
+          <h1 class="text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">{t("home.heroDesc")}</h1>
           <div class="flex flex-wrap gap-3 mt-8">
             <a href="/register" class={pillPrimary}>{t("home.getStarted")}</a>
             <a href="/login" class={pillOutline}>{t("auth.login")}</a>
