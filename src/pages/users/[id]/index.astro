@@ -4,6 +4,8 @@ import RecipeCard from "../../../components/RecipeCard.astro";
 import { db } from "../../../lib/db";
 import { users, recipes, collections, recipeCollections } from "../../../lib/schema";
 import { eq, and, desc, count, inArray } from "drizzle-orm";
+import Avatar from "../../../components/Avatar.astro";
+import { ArrowLeft } from "lucide-react";
 import { t } from "../../../lib/i18n";
 
 const { id } = Astro.params;
@@ -45,98 +47,59 @@ const collectionCounts = userCollectionIds.length === 0
       .all();
 const countsMap = new Map(collectionCounts.map((c) => [c.collectionId, c.count]));
 
-const initials = profileUser.name
-  .split(" ")
-  .map((n) => n[0])
-  .join("")
-  .toUpperCase()
-  .slice(0, 2);
+const recipeCountLabel = (n: number) => `${n} ${n === 1 ? t("count.recipe") : t("count.recipes")}`;
 ---
 
 <Layout title={profileUser.name}>
   <div class="max-w-6xl mx-auto">
-    {/* Profile header */}
-    <div class="flex items-center gap-6 mb-8 animate-fade-up">
-      {profileUser.image ? (
-        <img
-          src={profileUser.image}
-          alt={profileUser.name}
-          class="w-24 h-24 rounded-full object-cover border-2 border-border/20 shadow-lg shadow-primary/[0.04]"
-        />
-      ) : (
-        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-primary/12 to-primary/5 border-2 border-primary/15 flex items-center justify-center shadow-lg shadow-primary/[0.04]">
-          <span class="text-3xl font-serif text-primary/80">{initials}</span>
-        </div>
-      )}
-      <div>
-        <h1 class="font-serif text-4xl md:text-5xl tracking-tight">{profileUser.name}</h1>
-        <p class="text-muted-foreground/40 mt-2 text-sm">
-          {userRecipes.length} {userRecipes.length === 1 ? t("count.recipe") : t("count.recipes")}
-        </p>
+    <a href="/users" class="inline-flex items-center gap-1.5 mb-5 text-sm text-muted-foreground hover:underline underline-offset-4">
+      <ArrowLeft size={16} strokeWidth={2} />
+      {t("nav.community")}
+    </a>
+    <header class="flex items-center gap-5 mb-12">
+      <Avatar name={profileUser.name} image={profileUser.image} class="w-16 h-16 md:w-20 md:h-20 text-xl md:text-2xl" />
+      <div class="min-w-0">
+        <h1 class="text-5xl md:text-6xl font-medium tracking-[-0.04em] leading-none break-words">{profileUser.name}</h1>
+        <p class="text-sm text-muted-foreground mt-3">{recipeCountLabel(userRecipes.length)}</p>
       </div>
-    </div>
+    </header>
 
-    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 60ms;" />
-
-    {/* Recipes */}
     {userRecipes.length > 0 ? (
-      <section class="mb-16">
-        <h2 class="font-serif text-2xl tracking-tight mb-6">{t("user.recipes")}</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {userRecipes.map((recipe, i) => (
-            <div class="animate-fade-up" style={`animation-delay: ${i * 50}ms;`}>
-              <RecipeCard recipe={recipe} href={`/users/${profileUser.id}/recipes/${recipe.slug}`} />
-            </div>
+      <section class="mb-20">
+        <h2 class="text-2xl font-medium tracking-tight mb-6">{t("user.recipes")}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+          {userRecipes.map((recipe) => (
+            <RecipeCard recipe={recipe} href={isOwnProfile ? `/recipes/${recipe.slug}` : `/users/${profileUser.id}/recipes/${recipe.slug}`} />
           ))}
         </div>
       </section>
     ) : (
-      <div class="text-center py-20 animate-fade-up">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/60 mb-5 border border-border/20">
-          <svg class="w-7 h-7 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-          </svg>
-        </div>
-        <p class="text-muted-foreground/60 text-lg font-serif">{t("user.noRecipes")}</p>
+      <div class="mb-20">
+        <p class="text-xl font-medium">{t("user.noRecipes")}</p>
+        {isOwnProfile && (
+          <a href="/recipes/new" class="inline-flex mt-6 rounded-full bg-primary px-[18px] py-[9px] text-sm font-medium text-primary-foreground">
+            {t("nav.newRecipe")}
+          </a>
+        )}
       </div>
     )}
 
-    {/* Collections */}
     {userCollections.length > 0 && (
-      <section class="mb-16">
-        <h2 class="font-serif text-2xl tracking-tight mb-6">{t("nav.collections")}</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {userCollections.map((col, i) => {
-            const recipeCount = countsMap.get(col.id) || 0;
-            return (
-              <a
-                href={`/users/${profileUser.id}/collections/${col.slug}`}
-                class="group block animate-fade-up"
-                style={`animation-delay: ${i * 50}ms;`}
-              >
-                <div class="card-shine relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1">
-                  <div class="aspect-[16/9] bg-gradient-to-br from-secondary via-muted/80 to-primary/[0.06] flex items-center justify-center relative overflow-hidden">
-                    <div class="absolute top-4 right-4 w-16 h-16 rounded-full border border-primary/[0.08] animate-float" />
-                    <svg class="w-10 h-10 text-muted-foreground/15 transition-all duration-500 group-hover:text-primary/20 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-                    </svg>
-                  </div>
-                  <div class="p-4 pb-5">
-                    <h3 class="font-serif text-lg leading-snug group-hover:text-primary transition-colors duration-300">
-                      {col.name}
-                    </h3>
-                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-border/20">
-                      <span class="text-xs text-muted-foreground/40 tabular-nums">
-                        {recipeCount} {t("collection.recipes")}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
-                </div>
+      <section class="mb-10">
+        <h2 class="text-2xl font-medium tracking-tight mb-3">{t("nav.collections")}</h2>
+        <ul class="max-w-2xl divide-y divide-border border-t border-border">
+          {userCollections.map((col) => (
+            <li>
+              <a href={isOwnProfile ? `/collections/${col.slug}` : `/users/${profileUser.id}/collections/${col.slug}`} class="group flex items-baseline justify-between gap-4 py-4">
+                <span class="min-w-0">
+                  <span class="block font-medium group-hover:underline underline-offset-4">{col.name}</span>
+                  {col.description && <span class="block text-sm text-muted-foreground mt-1 line-clamp-1">{col.description}</span>}
+                </span>
+                <span class="shrink-0 text-sm text-muted-foreground">{recipeCountLabel(countsMap.get(col.id) || 0)}</span>
               </a>
-            );
-          })}
-        </div>
+            </li>
+          ))}
+        </ul>
       </section>
     )}
   </div>

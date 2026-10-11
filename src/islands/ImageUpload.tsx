@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { t } from "@/lib/i18n";
 
@@ -187,18 +186,20 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
           <img
             src={imageUrl}
             alt={t("upload.preview")}
-            className="rounded-lg max-w-xs max-h-48 object-cover"
+            className="rounded-[20px] max-w-xs max-h-48 object-cover"
           />
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+            aria-label={t("common.delete")}
+            className="absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-full bg-background text-foreground hover:bg-secondary cursor-pointer"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       ) : (
-        <div
+        <button
+          type="button"
           onDrop={handleDrop}
           onDragOver={(e) => {
             e.preventDefault();
@@ -206,29 +207,29 @@ export default function ImageUpload({ value, onChange, subdir = "recipes" }: Pro
           }}
           onDragLeave={() => setDragOver(false)}
           onClick={() => inputRef.current?.click()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          className={`block w-full rounded-[20px] border-[1.5px] border-dashed p-8 text-center cursor-pointer transition-colors ${
             dragOver
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50"
+              ? "border-foreground bg-secondary"
+              : "border-muted-foreground/50 hover:border-foreground hover:bg-secondary"
           }`}
         >
           {uploading ? (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              <p className="text-sm text-muted-foreground">{t("upload.uploading")}</p>
-            </div>
+            <span className="flex flex-col items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="text-sm text-muted-foreground">{t("upload.uploading")}</span>
+            </span>
           ) : (
             <>
-              <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
+              <ImageIcon className="h-6 w-6 mx-auto mb-3" />
+              <span className="block text-sm font-medium">
                 {t("upload.dropHint")}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              </span>
+              <span className="block text-sm text-muted-foreground mt-1">
                 {t("upload.fileTypes")}
-              </p>
+              </span>
             </>
           )}
-        </div>
+        </button>
       )}
       <input
         ref={inputRef}

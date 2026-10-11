@@ -1,0 +1,36 @@
+---
+import { ArrowLeft } from "lucide-react";
+
+interface Props {
+  title: string;
+  count?: number;
+  description?: string | null;
+  back?: { href: string; label: string };
+  class?: string;
+}
+
+const { title, count, description, back, class: className } = Astro.props;
+---
+
+<header class:list={["mb-10", className]}>
+  {back && (
+    <a href={back.href} class="inline-flex items-center gap-1.5 mb-5 text-sm text-muted-foreground hover:underline underline-offset-4">
+      <ArrowLeft size={16} strokeWidth={2} />
+      {back.label}
+    </a>
+  )}
+  <div class="flex flex-wrap items-end justify-between gap-5">
+    <h1 class="min-w-0 text-5xl md:text-6xl font-medium tracking-[-0.04em] leading-none break-words">
+      {title}
+      {count !== undefined && (
+        <span class="inline-block align-middle ml-2 text-xl tracking-normal text-muted-foreground">{count}</span>
+      )}
+    </h1>
+    {Astro.slots.has("actions") && (
+      <div class="flex flex-wrap items-center gap-2">
+        <slot name="actions" />
+      </div>
+    )}
+  </div>
+  {description && <p class="mt-4 max-w-2xl text-lg text-muted-foreground">{description}</p>}
+</header>

@@ -69,15 +69,12 @@ export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props)
                 type="button"
                 onClick={() => setRating(n === rating ? 0 : n)}
                 onMouseEnter={() => setHoverRating(n)}
-                className="p-0.5 transition-transform hover:scale-110 active:scale-90"
-                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                className="rounded-[6px] p-0.5"
+                aria-label={`${t("cookLog.rating")} ${n}/5`}
               >
                 <Star
-                  className={`h-6 w-6 transition-colors duration-150 ${
-                    active
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted-foreground/40 hover:text-muted-foreground"
-                  }`}
+                  className={`size-6 transition-colors ${active ? "fill-foreground text-foreground" : "text-muted-foreground/60"}`}
+                  strokeWidth={1.5}
                 />
               </button>
             );
@@ -111,11 +108,11 @@ export default function CookLogForm({ recipeId, recipeSlug, redirectTo }: Props)
           type="date"
           value={cookedAt}
           onChange={(e) => setCookedAt(e.target.value)}
-          className="w-40"
+          className="w-44"
         />
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
       <div className="flex gap-3">
         <Button type="submit" disabled={saving}>

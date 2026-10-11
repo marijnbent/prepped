@@ -3,6 +3,8 @@ import Layout from "../../layouts/Layout.astro";
 import { db } from "../../lib/db";
 import { users, recipes } from "../../lib/schema";
 import { eq, count } from "drizzle-orm";
+import PageHeader from "../../components/PageHeader.astro";
+import Avatar from "../../components/Avatar.astro";
 import { t } from "../../lib/i18n";
 
 const allUsers = db
@@ -26,62 +28,29 @@ const recipeCounts = db
   .all();
 
 const countsMap = new Map(recipeCounts.map((r) => [r.createdBy, r.count]));
+const members = allUsers
+  .map((u) => ({ ...u, recipeCount: countsMap.get(u.id) || 0 }))
+  .sort((a, b) => b.recipeCount - a.recipeCount || a.name.localeCompare(b.name));
 ---
 
 <Layout title={t("nav.community")}>
   <div class="max-w-6xl mx-auto">
-    <div class="mb-10">
-      <h1 class="font-serif text-4xl md:text-5xl tracking-tight animate-fade-up">{t("nav.community")}</h1>
-      <p class="text-muted-foreground/40 mt-2 text-sm animate-fade-up" style="animation-delay: 60ms;">
-        {allUsers.length} {allUsers.length === 1 ? t("count.member") : t("count.members")}
-      </p>
-    </div>
+    <PageHeader title={t("nav.community")} count={members.length} />
 
-    <div class="separator-warm mb-10 animate-fade-up" style="animation-delay: 80ms;" />
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-      {allUsers.map((u, i) => {
-        const recipeCount = countsMap.get(u.id) || 0;
-        const initials = u.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2);
-        return (
-          <a
-            href={`/users/${u.id}`}
-            class="group block animate-fade-up"
-            style={`animation-delay: ${i * 50}ms;`}
-          >
-            <div class="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1 p-6 text-center">
-              {/* Decorative background glow */}
-              <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-20 rounded-full bg-primary/[0.04] blur-[50px] pointer-events-none group-hover:bg-primary/[0.08] transition-colors duration-500" />
-              {/* Avatar */}
-              <div class="relative">
-                {u.image ? (
-                  <img
-                    src={u.image}
-                    alt={u.name}
-                    class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-2 border-border/20 transition-all duration-300 group-hover:border-primary/20 group-hover:shadow-lg group-hover:shadow-primary/10"
-                  />
-                ) : (
-                  <div class="w-20 h-20 rounded-full mx-auto mb-4 bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/15 flex items-center justify-center transition-all duration-300 group-hover:border-primary/25 group-hover:shadow-lg group-hover:shadow-primary/10">
-                    <span class="text-2xl font-serif text-primary/80">{initials}</span>
-                  </div>
-                )}
-              </div>
-              <h3 class="font-serif text-lg group-hover:text-primary transition-colors duration-300">
-                {u.name}
-              </h3>
-              <p class="text-xs text-muted-foreground/40 mt-2 tabular-nums">
-                {recipeCount} {t("collection.recipes")}
-              </p>
-              <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
-            </div>
+    <ul class="max-w-2xl divide-y divide-border border-t border-border">
+      {members.map((member) => (
+        <li>
+          <a href={`/users/${member.id}`} class="group flex items-center gap-4 py-4">
+            <Avatar name={member.name} image={member.image} class="w-12 h-12" />
+            <span class="min-w-0 flex-1 truncate text-xl font-medium tracking-[-0.025em] group-hover:underline underline-offset-4">
+              {member.name}
+            </span>
+            <span class="shrink-0 text-sm text-muted-foreground">
+              {member.recipeCount} {member.recipeCount === 1 ? t("count.recipe") : t("count.recipes")}
+            </span>
           </a>
-        );
-      })}
-    </div>
+        </li>
+      ))}
+    </ul>
   </div>
 </Layout>

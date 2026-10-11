@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Globe, MessageCircle, ShoppingBasket, Check, KeyRound, Copy, Trash2, ExternalLink } from "lucide-react";
+import { Check, Copy, Trash2, ExternalLink } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -288,205 +288,168 @@ export default function ProfileForm({
     }
   }
 
+  const promptFields = [
+    {
+      id: "importPrompt",
+      label: t("profile.importPrompt"),
+      description: t("profile.importPromptDesc"),
+      placeholder: t("profile.importPromptPlaceholder"),
+      value: importPrompt,
+      onChange: setImportPrompt,
+    },
+    {
+      id: "chatPrompt",
+      label: t("profile.chatPrompt"),
+      description: t("profile.chatPromptDesc"),
+      placeholder: t("profile.chatPromptPlaceholder"),
+      value: chatPrompt,
+      onChange: setChatPrompt,
+    },
+    {
+      id: "shoppingPrompt",
+      label: t("profile.shoppingPrompt"),
+      description: t("profile.shoppingPromptDesc"),
+      placeholder: t("profile.shoppingPromptPlaceholder"),
+      value: shoppingPrompt,
+      onChange: setShoppingPrompt,
+    },
+  ];
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-            {t("profile.groupPrompts")}
-          </h2>
-        </div>
-
-        {/* Import instructions card */}
-        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 space-y-4 transition-colors duration-200 hover:border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 shrink-0">
-              <Globe className="h-5 w-5 text-primary" />
+    <form onSubmit={handleSubmit} className="max-w-2xl">
+      <section>
+        <h2 className="text-2xl font-medium tracking-tight">{t("profile.groupPrompts")}</h2>
+        <div className="mt-6 space-y-8">
+          {promptFields.map((field) => (
+            <div key={field.id}>
+              <Label htmlFor={field.id} className="text-base">{field.label}</Label>
+              <p id={`${field.id}-desc`} className="mt-1 mb-3 text-sm text-muted-foreground">{field.description}</p>
+              <Textarea
+                id={field.id}
+                aria-describedby={`${field.id}-desc`}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                placeholder={field.placeholder}
+                rows={3}
+                maxLength={500}
+                className="resize-none"
+              />
             </div>
-            <div>
-              <h2 className="font-semibold">{t("profile.importPrompt")}</h2>
-              <p className="text-sm text-muted-foreground/60">{t("profile.importPromptDesc")}</p>
-            </div>
-          </div>
-          <Textarea
-            id="importPrompt"
-            value={importPrompt}
-            onChange={(e) => setImportPrompt(e.target.value)}
-            placeholder={t("profile.importPromptPlaceholder")}
-            rows={3}
-            maxLength={500}
-            className="resize-none"
-          />
-        </div>
-
-        {/* Chat instructions card */}
-        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 space-y-4 transition-colors duration-200 hover:border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 shrink-0">
-              <MessageCircle className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold">{t("profile.chatPrompt")}</h2>
-              <p className="text-sm text-muted-foreground/60">{t("profile.chatPromptDesc")}</p>
-            </div>
-          </div>
-          <Textarea
-            id="chatPrompt"
-            value={chatPrompt}
-            onChange={(e) => setChatPrompt(e.target.value)}
-            placeholder={t("profile.chatPromptPlaceholder")}
-            rows={3}
-            maxLength={500}
-            className="resize-none"
-          />
-        </div>
-
-        {/* Shopping list instructions card */}
-        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 space-y-4 transition-colors duration-200 hover:border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 shrink-0">
-              <ShoppingBasket className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold">{t("profile.shoppingPrompt")}</h2>
-              <p className="text-sm text-muted-foreground/60">{t("profile.shoppingPromptDesc")}</p>
-            </div>
-          </div>
-          <Textarea
-            id="shoppingPrompt"
-            value={shoppingPrompt}
-            onChange={(e) => setShoppingPrompt(e.target.value)}
-            placeholder={t("profile.shoppingPromptPlaceholder")}
-            rows={3}
-            maxLength={500}
-            className="resize-none"
-          />
+          ))}
         </div>
       </section>
 
-      <section className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-            {t("profile.groupOther")}
-          </h2>
-        </div>
-
-        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 space-y-4 transition-colors duration-200 hover:border-border/50">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 shrink-0">
-                <KeyRound className="h-5 w-5 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="font-semibold">{t("profile.apiToken")}</h2>
-                <p className="text-sm text-muted-foreground/60">{t("profile.apiTokenDesc")}</p>
-              </div>
-            </div>
-            <a
-              href="/llms.txt"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-            >
-              {t("profile.apiDocs")}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-
-          {rawApiToken ? (
-            <div className="space-y-2">
-              <Label htmlFor="rawApiToken">{t("profile.apiTokenReady")}</Label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  id="rawApiToken"
-                  readOnly
-                  value={rawApiToken}
-                  className="font-mono text-xs"
-                />
-                <Button type="button" variant="secondary" onClick={handleCopyApiToken}>
-                  <Copy className="h-4 w-4" />
-                  {apiTokenCopied ? t("shopping.copied") : t("profile.copyToken")}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground/70">{t("profile.apiTokenOneTime")}</p>
-            </div>
-          ) : (
-            <div className="space-y-2 rounded-xl border border-dashed border-border/50 px-4 py-3 text-sm text-muted-foreground/70">
-              <p>{apiTokenPreview ? t("profile.apiTokenActive") : t("profile.apiTokenEmpty")}</p>
-              {apiTokenPreview && (
-                <p className="font-mono text-xs text-foreground/80">{apiTokenPreview}</p>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-1 text-sm text-muted-foreground/70">
-            {apiTokenCreatedAt && <p>{t("profile.apiTokenCreated")}: {formatDateTime(apiTokenCreatedAt)}</p>}
-            {apiTokenLastUsedAt && <p>{t("profile.apiTokenLastUsed")}: {formatDateTime(apiTokenLastUsedAt)}</p>}
-          </div>
-
-          {apiTokenError && <p className="text-sm text-destructive">{apiTokenError}</p>}
-
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" onClick={handleGenerateApiToken} disabled={apiTokenBusy}>
-              {apiTokenBusy ? t("common.loading") : apiTokenPreview ? t("profile.regenerateToken") : t("profile.generateToken")}
-            </Button>
-            {apiTokenPreview && (
-              <Button type="button" variant="outline" onClick={handleRevokeApiToken} disabled={apiTokenBusy}>
-                <Trash2 className="h-4 w-4" />
-                {t("profile.revokeToken")}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 transition-colors duration-200 hover:border-border/50">
+      <section className="mt-16 border-t border-border pt-10">
+        <h2 className="text-2xl font-medium tracking-tight">{t("profile.groupOther")}</h2>
+        <div className="mt-6 space-y-6">
           <div className="flex items-start gap-3">
             <Checkbox
               id="cookingSuppliesExpandedByDefault"
               ref={cookingSuppliesToggleRef}
               checked={cookingSuppliesExpandedByDefault}
               onCheckedChange={handleCookingSuppliesToggle}
-              className="mt-1 border-violet-300/80 focus-visible:border-violet-500 focus-visible:ring-violet-300/40 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600 data-[state=checked]:text-white dark:border-violet-400/40 dark:data-[state=checked]:border-violet-400 dark:data-[state=checked]:bg-violet-400 dark:data-[state=checked]:text-violet-950"
+              className="mt-[3px]"
             />
-            <div className="space-y-1.5">
-              <Label htmlFor="cookingSuppliesExpandedByDefault" className="cursor-pointer text-base font-semibold">
-                {t("profile.cookingSuppliesExpandedByDefault")}
-              </Label>
-            </div>
+            <Label htmlFor="cookingSuppliesExpandedByDefault" className="cursor-pointer text-base">
+              {t("profile.cookingSuppliesExpandedByDefault")}
+            </Label>
           </div>
-        </div>
-
-        <div className="bg-card/50 border border-border/30 rounded-2xl p-6 transition-colors duration-200 hover:border-border/50">
           <div className="flex items-start gap-3">
             <Checkbox
               id="dirkSecretModeEnabled"
               ref={dirkSecretToggleRef}
               checked={dirkSecretModeEnabled}
               onCheckedChange={handleDirkSecretToggle}
-              className="mt-1 border-rose-300/80 focus-visible:border-rose-500 focus-visible:ring-rose-300/40 data-[state=checked]:border-rose-600 data-[state=checked]:bg-rose-600 data-[state=checked]:text-white dark:border-rose-400/40 dark:data-[state=checked]:border-rose-400 dark:data-[state=checked]:bg-rose-400 dark:data-[state=checked]:text-rose-950"
+              className="mt-[3px]"
             />
-            <div className="space-y-1.5">
-              <Label htmlFor="dirkSecretModeEnabled" className="cursor-pointer text-base font-semibold">
-                {t("profile.dirkSecretModeEnabled")}
-              </Label>
-            </div>
+            <Label htmlFor="dirkSecretModeEnabled" className="cursor-pointer text-base">
+              {t("profile.dirkSecretModeEnabled")}
+            </Label>
           </div>
+        </div>
+
+        {error && <p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
+
+        <div className="mt-8 flex items-center gap-4">
+          <Button type="submit" disabled={saving}>
+            {saving ? t("common.loading") : t("common.save")}
+          </Button>
+          <span role="status" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            {saved && (
+              <>
+                <Check className="size-4" />
+                {t("profile.saved")}
+              </>
+            )}
+          </span>
         </div>
       </section>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <section className="mt-16 border-t border-border pt-10">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h2 className="text-2xl font-medium tracking-tight">{t("profile.apiToken")}</h2>
+          <a
+            href="/llms.txt"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm underline-offset-4 hover:underline"
+          >
+            {t("profile.apiDocs")}
+            <ExternalLink className="size-3.5" />
+          </a>
+        </div>
+        <p className="mt-2 text-muted-foreground">{t("profile.apiTokenDesc")}</p>
 
-      <div className="flex items-center gap-3">
-        <Button type="submit" disabled={saving} className="shadow-sm shadow-primary/20">
-          {saving ? t("common.loading") : t("common.save")}
-        </Button>
-        {saved && (
-          <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400 animate-fade-up">
-            <Check className="h-3.5 w-3.5" />
-            {t("profile.saved")}
-          </span>
+        {rawApiToken ? (
+          <div className="mt-6">
+            <Label htmlFor="rawApiToken">{t("profile.apiTokenReady")}</Label>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <Input id="rawApiToken" readOnly value={rawApiToken} className="font-mono text-xs" />
+              <Button type="button" variant="secondary" onClick={handleCopyApiToken} className="shrink-0">
+                {apiTokenCopied ? <Check /> : <Copy />}
+                {apiTokenCopied ? t("shopping.copied") : t("profile.copyToken")}
+              </Button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">{t("profile.apiTokenOneTime")}</p>
+          </div>
+        ) : (
+          <p className="mt-6">
+            {apiTokenPreview ? t("profile.apiTokenActive") : t("profile.apiTokenEmpty")}
+            {apiTokenPreview && <span className="mt-1 block font-mono text-xs text-muted-foreground">{apiTokenPreview}</span>}
+          </p>
         )}
-      </div>
+
+        {(apiTokenCreatedAt || apiTokenLastUsedAt) && (
+          <dl className="mt-4 space-y-1 text-sm text-muted-foreground">
+            {apiTokenCreatedAt && (
+              <div className="flex gap-1.5">
+                <dt>{t("profile.apiTokenCreated")}:</dt>
+                <dd>{formatDateTime(apiTokenCreatedAt)}</dd>
+              </div>
+            )}
+            {apiTokenLastUsedAt && (
+              <div className="flex gap-1.5">
+                <dt>{t("profile.apiTokenLastUsed")}:</dt>
+                <dd>{formatDateTime(apiTokenLastUsedAt)}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+
+        {apiTokenError && <p role="alert" className="mt-4 text-sm text-destructive">{apiTokenError}</p>}
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Button type="button" variant={apiTokenPreview ? "outline" : "default"} onClick={handleGenerateApiToken} disabled={apiTokenBusy}>
+            {apiTokenBusy ? t("common.loading") : apiTokenPreview ? t("profile.regenerateToken") : t("profile.generateToken")}
+          </Button>
+          {apiTokenPreview && (
+            <Button type="button" variant="ghost" onClick={handleRevokeApiToken} disabled={apiTokenBusy}>
+              <Trash2 />
+              {t("profile.revokeToken")}
+            </Button>
+          )}
+        </div>
+      </section>
     </form>
   );
 }

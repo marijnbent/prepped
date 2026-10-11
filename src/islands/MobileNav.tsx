@@ -22,81 +22,83 @@ export default function MobileNav({ user, authMode, open, onOpenChange }: Props)
     window.location.href = "/";
   }
 
+  const itemClass = "flex items-center gap-3 rounded-full px-3 py-2.5 transition-colors hover:bg-secondary";
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-72 bg-card/95 backdrop-blur-2xl border-border/30">
-        <SheetTitle className="text-xl font-serif text-primary tracking-tight">Prepped</SheetTitle>
-        <nav className="flex flex-col gap-1 mt-6">
+      <SheetContent side="right" className="w-72 gap-0 p-5">
+        <SheetTitle className="px-3 text-sm font-normal text-muted-foreground">{t("nav.more")}</SheetTitle>
+        <nav className="mt-4 flex flex-col gap-0.5">
           <a
             href="/cook-log"
-            className="text-sm py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5"
+            className={itemClass}
             onClick={() => onOpenChange(false)}
           >
-            <BookOpen className="h-4 w-4" />
+            <BookOpen className="size-[18px]" strokeWidth={1.75} />
             {t("nav.cookLog")}
           </a>
           <a
             href="/shopping-list"
-            className="text-sm py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5"
+            className={itemClass}
             onClick={() => onOpenChange(false)}
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="size-[18px]" strokeWidth={1.75} />
             {t("nav.shoppingList")}
           </a>
           <a
             href="/collections"
-            className="text-sm py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5"
+            className={itemClass}
             onClick={() => onOpenChange(false)}
           >
-            <FolderOpen className="h-4 w-4" />
+            <FolderOpen className="size-[18px]" strokeWidth={1.75} />
             {t("nav.collections")}
           </a>
           <a
             href="/users"
-            className="text-sm py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5"
+            className={itemClass}
             onClick={() => onOpenChange(false)}
           >
-            <Users className="h-4 w-4" />
+            <Users className="size-[18px]" strokeWidth={1.75} />
             {t("nav.community")}
           </a>
           <a
             href="/favorites"
-            className="text-sm py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5"
+            className={itemClass}
             onClick={() => onOpenChange(false)}
           >
-            <Heart className="h-4 w-4" />
+            <Heart className="size-[18px]" strokeWidth={1.75} />
             {t("nav.favorites")}
           </a>
           {user ? (
             <>
-              <div className="my-3 h-px bg-gradient-to-r from-border/40 to-transparent" />
+              <div className="my-3 border-t border-border" />
               <a
                 href="/profile"
-                className="text-sm py-2.5 px-3 rounded-lg hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5 text-muted-foreground"
+                className={itemClass}
                 onClick={() => onOpenChange(false)}
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="size-[18px]" strokeWidth={1.75} />
                 {t("profile.title")}
               </a>
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-sm text-muted-foreground">{t("theme.toggle")}</span>
+              <div className="flex items-center justify-between py-1 pl-3">
+                <span>{t("theme.toggle")}</span>
                 <ThemeToggle />
               </div>
-              <div className="my-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
+              <div className="my-3 border-t border-border" />
               <button
                 onClick={handleLogout}
-                className="text-sm py-2.5 px-3 rounded-lg hover:bg-secondary/60 transition-all duration-200 flex items-center gap-2.5 text-left text-muted-foreground"
+                className={`${itemClass} text-left`}
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="size-[18px]" strokeWidth={1.75} />
                 {t("nav.logout")}
               </button>
             </>
           ) : (
             <>
-              <div className="my-3 h-px bg-gradient-to-r from-border/40 to-transparent" />
+              <div className="my-3 border-t border-border" />
               <a
                 href="/login"
-                className="text-sm py-2.5 px-3 rounded-lg hover:bg-secondary/60 transition-all duration-200 text-primary"
+                className={itemClass}
                 onClick={() => onOpenChange(false)}
               >
                 {t("nav.login")}

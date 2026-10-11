@@ -1,5 +1,7 @@
 ---
+import { Search } from "lucide-react";
 import { t } from "../lib/i18n";
+import Wordmark from "./Wordmark.astro";
 import UserMenu from "../islands/UserMenu";
 import ThemeToggle from "../islands/ThemeToggle";
 import NotificationMenu from "../islands/NotificationMenu";
@@ -21,85 +23,47 @@ const primaryNav = [
 ];
 ---
 
-<header
-  class="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-2xl backdrop-saturate-150"
->
-  <div class="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-    {/* Logo + nav cluster */}
-    <div class="flex items-center gap-10">
-      <a
-        href="/"
-        class="group flex items-center gap-2.5 transition-all duration-300 hover:opacity-80"
-      >
-        {/* Amber flame mark */}
-        <span
-          class="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/12 transition-all duration-300 group-hover:bg-primary/20 group-hover:shadow-lg group-hover:shadow-primary/10"
-        >
-          <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-          </svg>
-        </span>
-        <span class="font-serif text-xl tracking-tight text-foreground">
-          Prepped
-        </span>
-      </a>
-
-      {/* Desktop primary navigation */}
-      <nav class="hidden md:flex items-center gap-0.5">
-        {primaryNav.map((link) => {
-          const isActive = pathname.startsWith(link.href);
-          return (
+<header class="sticky top-0 z-50 bg-background">
+  <div class="container mx-auto px-4 sm:px-6">
+    <div class="max-w-6xl mx-auto h-20 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-8">
+        <a href="/" class="text-[28px]"><Wordmark /></a>
+        <nav class="hidden lg:flex items-center gap-6">
+          {primaryNav.map((link) => (
             <a
               href={link.href}
+              aria-current={pathname.startsWith(link.href) ? "page" : undefined}
               class:list={[
-                "relative text-[13px] uppercase tracking-[0.08em] px-4 py-2 rounded-lg transition-all duration-200 font-medium",
-                isActive
-                  ? "text-primary bg-primary/[0.07]"
-                  : "text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50",
+                "text-[15px] hover:underline underline-offset-4",
+                pathname.startsWith(link.href) ? "text-foreground font-medium" : "text-muted-foreground",
               ]}
             >
               {link.label}
-              {/* Active indicator dot */}
-              {isActive && (
-                <span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
             </a>
-          );
-        })}
-      </nav>
-    </div>
-
-    {/* Desktop right side actions */}
-    <div class="hidden md:flex items-center gap-1.5">
-      {/* Search button */}
-      <a
-        href="/recipes?search="
-        class="inline-flex items-center justify-center rounded-lg w-9 h-9 text-muted-foreground/60 hover:text-foreground hover:bg-secondary/50 transition-all duration-200"
-        title={t("common.search")}
-      >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-      </a>
-      {user && !isEditPage && (
+          ))}
+        </nav>
+      </div>
+      <div class="hidden lg:flex items-center gap-2">
         <a
-          href="/recipes/new"
-          class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 hover:brightness-[1.05] active:scale-[0.97]"
+          href="/recipes?search="
+          class="inline-flex items-center justify-center rounded-full w-10 h-10 text-muted-foreground hover:bg-secondary"
+          aria-label={t("common.search")}
         >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {t("nav.newRecipe")}
+          <Search size={18} strokeWidth={2} />
         </a>
-      )}
-      {user && <NotificationMenu client:load />}
-      <ThemeToggle client:load />
-      <UserMenu user={user} authMode={authMode} client:load />
-    </div>
-
-    <div class="md:hidden flex items-center">
-      {user && <NotificationMenu client:load />}
+        {user && !isEditPage && (
+          <a href="/recipes/new" class="rounded-full bg-primary px-[18px] py-[9px] text-sm font-medium text-primary-foreground">
+            {t("nav.newRecipe")}
+          </a>
+        )}
+        {user && <NotificationMenu client:load />}
+        <ThemeToggle client:load />
+        <UserMenu user={user} authMode={authMode} client:load />
+      </div>
+      <div class="lg:hidden flex items-center">
+        {user && <NotificationMenu client:load />}
+        <ThemeToggle client:load />
+      </div>
     </div>
   </div>
 </header>

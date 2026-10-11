@@ -1,8 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { formatStepDuration } from "../lib/recipe-export";
 import RecipeCard from "../components/RecipeCard.astro";
+import Wordmark from "../components/Wordmark.astro";
 import { db } from "../lib/db";
-import { recipes, cookLogs, collections, recipeCollections, users } from "../lib/schema";
+import { recipes, cookLogs, users } from "../lib/schema";
 import { desc, eq, count, ne, and } from "drizzle-orm";
 import { t, formatDate } from "../lib/i18n";
 
@@ -14,17 +16,18 @@ const totalLogs = db.select({ count: count() }).from(cookLogs).get()!.count;
 const totalMembers = db.select({ count: count() }).from(users).get()!.count;
 
 // Logged-in data
-let myRecipes: any[] = [];
-let communityRecipes: any[] = [];
-let recentLogs: any[] = [];
+let myRecipes: (typeof recipes.$inferSelect)[] = [];
+let communityRecipes: (Pick<typeof recipes.$inferSelect, "id" | "title" | "slug" | "description" | "imageUrl" | "prepTime" | "cookTime" | "difficulty" | "createdBy"> & { authorName: string })[] = [];
+let recentLogs: (Pick<typeof cookLogs.$inferSelect, "id" | "photoUrl" | "notes" | "rating" | "cookedAt"> & { recipeTitle: string; recipeSlug: string; recipeOwnerId: string; recipeImageUrl: string | null; authorName: string | null })[] = [];
 
 if (user) {
+  // One featured recipe plus two full rows of three
   myRecipes = db
     .select()
     .from(recipes)
     .where(and(eq(recipes.isPublished, true), eq(recipes.createdBy, user.id)))
     .orderBy(desc(recipes.createdAt))
-    .limit(6)
+    .limit(7)
     .all();
 
   communityRecipes = db
@@ -91,245 +94,114 @@ if (user) {
 }
 
 const firstName = user?.name?.split(" ")[0] || "";
+const featured = myRecipes[0];
+const otherRecipes = myRecipes.slice(1);
+
+const stats = [
+  { label: t("nav.recipes"), value: totalRecipes },
+  { label: t("home.members"), value: totalMembers },
+  { label: t("home.cooked"), value: totalLogs },
+];
+
+const imageSrc = (url: string) => (url.startsWith("/") ? `/api/uploads${url}` : url);
+
+const recipeMeta = (recipe: { prepTime: number | null; cookTime: number | null; difficulty: string | null }) => {
+  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+  return [
+    totalTime > 0 && formatStepDuration(totalTime, t("recipe.minutes"), t("recipe.hours")),
+    recipe.difficulty && t(`recipe.${recipe.difficulty}` as "recipe.easy" | "recipe.medium" | "recipe.hard").toLocaleLowerCase(),
+  ]
+    .filter(Boolean)
+    .join(", ");
+};
+
+// Community recipe pages need a session, so send visitors through login first
+const communityHref = (recipe: { createdBy: string; slug: string }) => {
+  const path = `/users/${recipe.createdBy}/recipes/${recipe.slug}`;
+  return user ? path : `/login?redirect=${encodeURIComponent(path)}`;
+};
+
+const pill = "inline-flex rounded-full px-[18px] py-[9px] font-medium";
+const pillPrimary = `${pill} bg-primary text-primary-foreground`;
+const pillOutline = `${pill} border-[1.5px] border-foreground hover:bg-secondary`;
+const sectionLink = "text-sm text-muted-foreground hover:underline underline-offset-4";
 ---
 
 <Layout>
   <div class="max-w-6xl mx-auto">
-
     {user ? (
       <>
-        {/* ========== LOGGED-IN DASHBOARD ========== */}
-
-        {/* Greeting + quick actions */}
-        <section class="pt-6 pb-10 md:pt-10 md:pb-14 animate-fade-up">
-          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.14em] text-primary font-semibold mb-2.5">
-                {t("site.title")}
-              </p>
-              <h1 class="font-serif text-3xl md:text-4xl tracking-tight leading-snug">
-                {t("home.welcome")}, {firstName}
-              </h1>
-            </div>
-            <div class="flex items-center gap-2">
-              <a
-                href="/recipes/new"
-                class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 hover:brightness-110 transition-all duration-300 active:scale-[0.97]"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                {t("nav.newRecipe")}
-              </a>
-              <a
-                href="/users"
-                class="inline-flex items-center gap-2 rounded-xl border border-border/40 bg-secondary/40 px-5 py-2.5 text-sm font-medium hover:bg-secondary/70 hover:border-border/60 transition-all duration-200"
-              >
-                <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 0 0-16 0" />
-                </svg>
-                {t("nav.community")}
-              </a>
-            </div>
-          </div>
+        <section class="pt-5 pb-12 md:pt-8 md:pb-16">
+          <h1 class="text-4xl md:text-6xl font-medium tracking-[-0.04em] leading-none">
+            {t("home.welcome")}, {firstName}
+          </h1>
         </section>
 
-        {/* Your recent recipes */}
-        {myRecipes.length > 0 && (
-          <section class="mb-16">
-            <div class="flex items-end justify-between mb-8">
-              <h2 class="font-serif text-2xl md:text-3xl tracking-tight">{t("nav.recipes")}</h2>
-              <a
-                href="/recipes"
-                class="group/link inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.06em] font-medium text-muted-foreground/60 hover:text-primary transition-colors duration-300"
-              >
-                {t("home.viewAll")}
-                <svg class="w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                </svg>
-              </a>
+        {featured ? (
+          <section class="mb-20">
+            <div class="flex items-end justify-between gap-4 mb-7">
+              <h2 class="text-2xl font-medium tracking-tight">{t("nav.recipes")}</h2>
+              <a href="/recipes" class={sectionLink}>{t("home.viewAll")}</a>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-              {myRecipes.map((recipe, i) => (
-                <div class="animate-fade-up" style={`animation-delay: ${i * 60}ms;`}>
-                  <RecipeCard recipe={recipe} />
-                </div>
-              ))}
+
+            <div class:list={["grid gap-8 md:gap-12 items-center mb-12", featured.imageUrl && "md:grid-cols-[1.2fr_1fr]"]}>
+              {featured.imageUrl && (
+                <a href={`/recipes/${featured.slug}`} class="block rounded-[20px] overflow-hidden aspect-[4/3]">
+                  <img src={imageSrc(featured.imageUrl)} alt={featured.title} class="w-full h-full object-cover" />
+                </a>
+              )}
+              <div class="md:py-6">
+                <h3 class="text-4xl lg:text-5xl font-medium tracking-[-0.04em] leading-none">
+                  <a href={`/recipes/${featured.slug}`} class="hover:underline underline-offset-4">{featured.title}</a>
+                </h3>
+                <p class="text-muted-foreground mt-4">{recipeMeta(featured)}</p>
+                {featured.description && (
+                  <p class="mt-5 text-muted-foreground leading-relaxed line-clamp-3 max-w-lg">{featured.description}</p>
+                )}
+                <a href={`/recipes/${featured.slug}`} class:list={[pillOutline, "mt-7 text-sm"]}>{t("recipe.open")}</a>
+              </div>
+            </div>
+
+            {otherRecipes.length > 0 && (
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+                {otherRecipes.map((recipe) => <RecipeCard recipe={recipe} />)}
+              </div>
+            )}
+          </section>
+        ) : (
+          <section class="mb-20">
+            <h2 class="text-3xl font-medium tracking-tight">{t("home.emptyTitle")}</h2>
+            <p class="text-muted-foreground mt-3 max-w-lg">{t("home.emptyDesc")}</p>
+            <div class="flex flex-wrap gap-3 mt-6">
+              <a href="/recipes/new" class:list={[pillPrimary, "text-sm"]}>{t("home.addRecipe")}</a>
+              <a href="/users" class:list={[pillOutline, "text-sm"]}>{t("home.browseCommunity")}</a>
             </div>
           </section>
         )}
 
-        {/* Empty state for new users */}
-        {myRecipes.length === 0 && (
-          <section class="mb-16 rounded-2xl border border-dashed border-border/40 bg-gradient-to-br from-card/50 to-secondary/20 p-10 md:p-14 text-center animate-fade-up relative overflow-hidden">
-            {/* Decorative background glow */}
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-48 rounded-full bg-primary/[0.04] blur-[80px] pointer-events-none" />
-            <div class="relative">
-              <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-5 border border-primary/15">
-                <svg class="w-7 h-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-                </svg>
-              </div>
-              <h3 class="font-serif text-xl mb-2">{t("home.emptyTitle")}</h3>
-              <p class="text-sm text-muted-foreground/50 mb-6 max-w-sm mx-auto leading-relaxed">
-                {t("home.emptyDesc")}
-              </p>
-              <div class="flex flex-wrap justify-center gap-3">
-                <a
-                  href="/recipes/new"
-                  class="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:brightness-110 transition-all duration-300"
-                >
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
-                  {t("home.addRecipe")}
-                </a>
-                <a
-                  href="/users"
-                  class="inline-flex items-center gap-2 rounded-xl border border-border/40 bg-secondary/40 px-6 py-2.5 text-sm font-medium hover:bg-secondary/70 transition-all duration-200"
-                >
-                  {t("home.browseCommunity")}
-                </a>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Cook log strip */}
         {recentLogs.length > 0 && (
-          <section class="mb-16">
-            <div class="flex items-end justify-between mb-8">
-              <h2 class="font-serif text-2xl md:text-3xl tracking-tight">{t("cookLog.title")}</h2>
-              <a
-                href="/cook-log"
-                class="group/link inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.06em] font-medium text-muted-foreground/60 hover:text-primary transition-colors duration-300"
-              >
-                {t("home.viewAll")}
-                <svg class="w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                </svg>
-              </a>
+          <section class="mb-20">
+            <div class="flex items-end justify-between gap-4 mb-2">
+              <h2 class="text-2xl font-medium tracking-tight">{t("cookLog.title")}</h2>
+              <a href="/cook-log" class={sectionLink}>{t("home.viewAll")}</a>
             </div>
-            <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:overflow-visible">
-              {recentLogs.map((log, i) => (
+            <div class="divide-y divide-border">
+              {recentLogs.map((log) => (
                 <a
-                  href={log.recipeOwnerId === user.id
-                    ? `/recipes/${log.recipeSlug}`
-                    : `/users/${log.recipeOwnerId}/recipes/${log.recipeSlug}`}
-                  class="group shrink-0 w-56 sm:w-auto snap-start animate-fade-up"
-                  style={`animation-delay: ${i * 50}ms;`}
+                  href={log.recipeOwnerId === user.id ? `/recipes/${log.recipeSlug}` : `/users/${log.recipeOwnerId}/recipes/${log.recipeSlug}`}
+                  class="group flex items-start gap-5 py-5"
                 >
-                  <div class="relative rounded-2xl bg-card/40 border border-border/25 overflow-hidden transition-all duration-300 hover:border-border/45 hover:bg-card/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/[0.03] h-full flex flex-col">
-                    <div class="p-4 flex flex-col flex-1">
-                      {/* Notes as the main content */}
-                      {log.notes ? (
-                        <p class="text-sm leading-relaxed text-foreground/75 line-clamp-3 flex-1">{log.notes}</p>
-                      ) : (
-                        <p class="text-sm text-muted-foreground/20 italic leading-relaxed flex-1">{t("cookLog.emptyHint")}</p>
-                      )}
-
-                      {/* Bottom section: recipe context + meta */}
-                      <div class="mt-3 pt-3 border-t border-border/15">
-                        <div class="flex items-center gap-2">
-                          {log.photoUrl && (
-                            <div class="shrink-0 w-8 h-8 rounded-lg overflow-hidden ring-1 ring-border/15">
-                              <img
-                                src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
-                                alt=""
-                                class="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </div>
-                          )}
-                          <div class="min-w-0 flex-1">
-                            <span class="text-xs text-muted-foreground/50 group-hover:text-primary/70 transition-colors duration-200 font-medium line-clamp-1 block">{log.recipeTitle}</span>
-                            <div class="flex items-center gap-2 mt-0.5">
-                              <time class="text-[11px] text-muted-foreground/35 tabular-nums">{formatDate(log.cookedAt)}</time>
-                              {log.rating && (
-                                <>
-                                  <span class="text-border/25">&middot;</span>
-                                  <div class="flex items-center gap-0.5">
-                                    {Array.from({ length: 5 }).map((_, si) => (
-                                      <span class:list={[
-                                        "inline-block w-1.5 h-1.5 rounded-full",
-                                        si < log.rating! ? "bg-primary" : "bg-border/30"
-                                      ]} />
-                                    ))}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hover glow */}
-                    <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
+                  {log.photoUrl && (
+                    <img src={imageSrc(log.photoUrl)} alt="" class="w-20 h-20 rounded-[20px] object-cover" loading="lazy" />
+                  )}
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-medium group-hover:underline underline-offset-4">{log.recipeTitle}</h3>
+                    {log.notes && <p class="text-muted-foreground mt-1 line-clamp-2">{log.notes}</p>}
+                    <p class="text-sm text-muted-foreground mt-2">
+                      <time>{formatDate(log.cookedAt)}</time>{log.rating && `, ${log.rating}/5`}
+                    </p>
                   </div>
                 </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Community section */}
-        {communityRecipes.length > 0 && (
-          <section class="mb-16">
-            <div class="flex items-end justify-between mb-8">
-              <div>
-                <h2 class="font-serif text-2xl md:text-3xl tracking-tight">{t("nav.community")}</h2>
-                <p class="text-sm text-muted-foreground/40 mt-1.5">{t("home.communityDesc")}</p>
-              </div>
-              <a
-                href="/users"
-                class="group/link inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.06em] font-medium text-muted-foreground/60 hover:text-primary transition-colors duration-300"
-              >
-                {t("home.allMembers")}
-                <svg class="w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-              {communityRecipes.map((recipe, i) => (
-                <div class="animate-fade-up" style={`animation-delay: ${i * 60}ms;`}>
-                  <a href={`/users/${recipe.createdBy}/recipes/${recipe.slug}`} class="group block">
-                    <div class="card-shine relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1">
-                      {recipe.imageUrl ? (
-                        <div class="aspect-[4/3] overflow-hidden relative">
-                          <img
-                            src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
-                            alt={recipe.title}
-                            class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.06]"
-                            loading="lazy"
-                          />
-                          <div class="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent opacity-80 pointer-events-none" />
-                          <div class="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                          <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
-                            <h3 class="font-serif text-xl leading-snug text-foreground line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
-                              {recipe.title}
-                            </h3>
-                          </div>
-                        </div>
-                      ) : (
-                        <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted/80 to-primary/[0.06] flex items-center justify-center relative overflow-hidden">
-                          <svg class="w-12 h-12 text-muted-foreground/15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-                          </svg>
-                          <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
-                            <h3 class="font-serif text-xl leading-snug text-foreground/80 line-clamp-2">{recipe.title}</h3>
-                          </div>
-                        </div>
-                      )}
-                      <div class="px-4 pb-4 pt-2 flex items-center gap-2">
-                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                          {recipe.authorName.charAt(0).toUpperCase()}
-                        </span>
-                        <span class="text-xs text-muted-foreground/50">{recipe.authorName}</span>
-                      </div>
-                      <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/[0.08]" />
-                    </div>
-                  </a>
-                </div>
               ))}
             </div>
           </section>
@@ -337,124 +209,41 @@ const firstName = user?.name?.split(" ")[0] || "";
       </>
     ) : (
       <>
-        {/* ========== LOGGED-OUT LANDING ========== */}
-
-        {/* Hero */}
-        <section class="relative pt-20 pb-16 md:pt-28 md:pb-24 text-center overflow-hidden">
-          <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-primary/[0.06] blur-[100px] animate-glow-pulse" />
-            <div class="absolute top-20 left-[20%] w-[200px] h-[200px] rounded-full bg-primary/[0.03] blur-[60px] animate-float" />
-            <div class="absolute bottom-0 right-[25%] w-[250px] h-[180px] rounded-full bg-accent/[0.04] blur-[70px]" style="animation-delay: 2s;" />
-          </div>
-
-          <div class="relative">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/15 bg-primary/[0.04] text-primary text-[13px] font-medium tracking-wide mb-8 animate-fade-in">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-              </svg>
-              {t("home.heroBadge")}
-            </div>
-
-            <h1 class="font-serif text-5xl md:text-7xl tracking-tight text-foreground leading-[1.05] animate-fade-up text-balance">
-              {t("site.title")}
-            </h1>
-            <p class="text-lg md:text-xl text-muted-foreground/60 mt-5 max-w-md mx-auto leading-relaxed animate-fade-up" style="animation-delay: 80ms;">
-              {t("home.heroDesc")}
-            </p>
-
-            <div class="flex flex-wrap gap-3 justify-center mt-10 animate-fade-up" style="animation-delay: 160ms;">
-              <a
-                href="/register"
-                class="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 transition-all duration-300 active:scale-[0.97]"
-              >
-                {t("home.getStarted")}
-              </a>
-              <a
-                href="/login"
-                class="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-secondary/40 backdrop-blur-sm px-8 py-3 text-sm font-semibold hover:bg-secondary/70 hover:border-border/70 transition-all duration-300 active:scale-[0.97]"
-              >
-                {t("auth.login")}
-              </a>
-            </div>
+        <section class="pt-12 pb-16 md:pt-20 md:pb-20">
+          <h1 class="text-7xl md:text-9xl"><Wordmark /></h1>
+          <p class="text-lg md:text-xl text-muted-foreground mt-6 max-w-lg leading-relaxed">{t("home.heroDesc")}</p>
+          <div class="flex flex-wrap gap-3 mt-8">
+            <a href="/register" class={pillPrimary}>{t("home.getStarted")}</a>
+            <a href="/login" class={pillOutline}>{t("auth.login")}</a>
           </div>
         </section>
 
-        {/* Stats — refined with warm separator above */}
-        <div class="separator-warm mb-12 animate-fade-up" style="animation-delay: 220ms;" />
-        <section class="grid grid-cols-3 gap-px mb-20 rounded-2xl overflow-hidden border border-border/25 bg-border/15 animate-fade-up" style="animation-delay: 240ms;">
-          {[
-            { label: t("nav.recipes"), value: totalRecipes },
-            { label: t("home.members"), value: totalMembers },
-            { label: t("home.cooked"), value: totalLogs },
-          ].map((stat) => (
-            <div class="bg-card/50 backdrop-blur-sm p-6 md:p-8 text-center">
-              <div class="font-serif text-3xl md:text-4xl text-foreground tracking-tight">{stat.value}</div>
-              <div class="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/40 mt-1.5 font-medium">{stat.label}</div>
+        <section class="grid grid-cols-3 gap-6 max-w-xl mb-20">
+          {stats.map((stat) => (
+            <div>
+              <p class="text-4xl md:text-5xl font-medium tracking-[-0.04em]">{stat.value}</p>
+              <p class="text-sm text-muted-foreground mt-2">{stat.label}</p>
             </div>
           ))}
         </section>
-
-        {/* Community preview */}
-        {communityRecipes.length > 0 && (
-          <section class="mb-20">
-            <div class="text-center mb-10">
-              <h2 class="font-serif text-3xl md:text-4xl tracking-tight">{t("home.whatsCooking")}</h2>
-              <p class="text-sm text-muted-foreground/40 mt-2">{t("home.recentCommunity")}</p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-              {communityRecipes.map((recipe, i) => (
-                <div class="animate-fade-up" style={`animation-delay: ${i * 60}ms;`}>
-                  <div class="card-shine relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 ease-out hover:border-primary/25 hover:shadow-[0_8px_30px_-6px] hover:shadow-primary/[0.08] hover:-translate-y-1">
-                    {recipe.imageUrl ? (
-                      <div class="aspect-[4/3] overflow-hidden relative">
-                        <img
-                          src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
-                          alt={recipe.title}
-                          class="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                        <div class="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent opacity-80 pointer-events-none" />
-                        <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
-                          <h3 class="font-serif text-xl leading-snug text-foreground line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
-                            {recipe.title}
-                          </h3>
-                        </div>
-                      </div>
-                    ) : (
-                      <div class="aspect-[4/3] bg-gradient-to-br from-secondary via-muted/80 to-primary/[0.06] flex items-center justify-center relative overflow-hidden">
-                        <svg class="w-12 h-12 text-muted-foreground/15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                          <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-                        </svg>
-                        <div class="absolute bottom-0 inset-x-0 p-4 pb-3.5">
-                          <h3 class="font-serif text-xl leading-snug text-foreground/80 line-clamp-2">{recipe.title}</h3>
-                        </div>
-                      </div>
-                    )}
-                    <div class="px-4 pb-4 pt-2 flex items-center gap-2">
-                      <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                        {recipe.authorName.charAt(0).toUpperCase()}
-                      </span>
-                      <span class="text-xs text-muted-foreground/50">{recipe.authorName}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div class="text-center mt-10">
-              <a
-                href="/register"
-                class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                {t("home.signUpCta")}
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          </section>
-        )}
       </>
     )}
 
+    {communityRecipes.length > 0 && (
+      <section class="mb-16">
+        <div class="flex items-end justify-between gap-4 mb-7">
+          <h2 class="text-2xl font-medium tracking-tight">{user ? t("nav.community") : t("home.whatsCooking")}</h2>
+          {user && <a href="/users" class={sectionLink}>{t("home.allMembers")}</a>}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+          {communityRecipes.map((recipe) => <RecipeCard recipe={recipe} href={communityHref(recipe)} />)}
+        </div>
+        {!user && (
+          <a href="/register" class="inline-block mt-10 font-medium hover:underline underline-offset-4">
+            {t("home.signUpCta")}
+          </a>
+        )}
+      </section>
+    )}
   </div>
 </Layout>

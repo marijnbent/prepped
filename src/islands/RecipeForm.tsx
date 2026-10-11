@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical, Clock, Layers, Loader2, Search, Check, ChevronDown, ChefHat } from "lucide-react";
+import { Plus, Trash2, GripVertical, Clock, Layers, Loader2, Search, Check, ChevronDown } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { t } from "@/lib/i18n";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -127,7 +127,7 @@ function IngredientRowFields({
 }) {
   return (
     <>
-      <div className="flex items-center gap-2 min-w-0 sm:flex-1">
+      <div className="flex flex-wrap items-center gap-2 min-w-0 sm:flex-1 sm:flex-nowrap">
         <button
           type="button"
           className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
@@ -139,25 +139,26 @@ function IngredientRowFields({
           placeholder={t("form.amount")}
           value={ing.amount}
           onChange={(e) => onUpdate(index, "amount", e.target.value)}
-          className="w-20"
+          className="min-w-0 flex-1 sm:w-24 sm:flex-none"
         />
         <Input
           placeholder={t("form.unit")}
           value={ing.unit}
           onChange={(e) => onUpdate(index, "unit", e.target.value)}
-          className="w-20"
+          className="min-w-0 flex-1 sm:w-24 sm:flex-none"
         />
         <Input
           placeholder={t("form.ingredientName")}
           value={ing.name}
           onChange={(e) => onUpdate(index, "name", e.target.value)}
-          className="flex-1 min-w-0"
+          className="order-last ml-6 min-w-0 basis-[calc(100%-1.5rem)] sm:order-none sm:ml-0 sm:flex-1"
         />
         <Button
           type="button"
           variant="ghost"
           size="icon"
           onClick={() => onRemove(index)}
+          aria-label={t("common.delete")}
           disabled={disableRemove}
         >
           <Trash2 className="h-4 w-4" />
@@ -168,7 +169,7 @@ function IngredientRowFields({
           placeholder={t("form.group")}
           value={ing.group || ""}
           onChange={(e) => onUpdate(index, "group", e.target.value)}
-          className="w-full sm:w-28"
+          className="ml-6 w-[calc(100%-1.5rem)] sm:ml-0 sm:w-28"
         />
       )}
     </>
@@ -276,7 +277,7 @@ function StepRowFields({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <span className="flex items-center justify-center h-9 w-9 rounded-full bg-muted text-sm font-medium shrink-0">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium">
         {index + 1}
       </span>
       <div className="flex-1 space-y-2">
@@ -304,6 +305,7 @@ function StepRowFields({
         variant="ghost"
         size="icon"
         onClick={() => onRemove(index)}
+        aria-label={t("common.delete")}
         disabled={disableRemove}
       >
         <Trash2 className="h-4 w-4" />
@@ -727,7 +729,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
   const cookingSuppliesCount = cookingSupplies.filter((item) => item.trim()).length;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
+    <form onSubmit={handleSubmit} className="max-w-3xl space-y-12">
       {/* Title & Description */}
       <div className="space-y-4">
         <div className="space-y-2">
@@ -786,22 +788,25 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         </div>
         <div className="space-y-2">
           <Label htmlFor="difficulty">{t("recipe.difficulty")}</Label>
-          <select
-            id="difficulty"
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as "easy" | "medium" | "hard")}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="easy">{t("recipe.easy")}</option>
-            <option value="medium">{t("recipe.medium")}</option>
-            <option value="hard">{t("recipe.hard")}</option>
-          </select>
+          <div className="relative">
+            <select
+              id="difficulty"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value as "easy" | "medium" | "hard")}
+              className="h-10 w-full appearance-none rounded-full border border-input bg-transparent pl-4 pr-9 text-sm transition-colors hover:border-muted-foreground focus-visible:border-foreground"
+            >
+              <option value="easy">{t("recipe.easy")}</option>
+              <option value="medium">{t("recipe.medium")}</option>
+              <option value="hard">{t("recipe.hard")}</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
         </div>
       </div>
 
       {/* Ingredients */}
-      <div className="space-y-3">
-        <Label>{t("form.ingredientsRequired")}</Label>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-medium tracking-tight">{t("form.ingredientsRequired")}</h2>
         {isHydrated ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={ingredients.map((i) => i._dndId)} strategy={verticalListSortingStrategy}>
@@ -835,7 +840,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         )}
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus />
             {t("recipe.addIngredient")}
           </Button>
           <Button
@@ -844,14 +849,14 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             size="sm"
             onClick={() => setShowGroups((v) => !v)}
           >
-            <Layers className="h-4 w-4 mr-1" />
+            <Layers />
             {t("form.showGroups")}
           </Button>
         </div>
       </div>
 
       {/* Cooking Supplies */}
-      <div className="space-y-3 rounded-2xl border border-border/35 bg-card/40 p-4 sm:p-5">
+      <div className="border-y border-border py-5">
         <button
           type="button"
           onClick={() => setShowCookingSupplies((value) => !value)}
@@ -859,16 +864,15 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
           aria-expanded={showCookingSupplies}
         >
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <ChefHat className="h-4 w-4 shrink-0 text-primary/70" />
+            <div className="flex items-center gap-2 font-medium">
               <span>{t("recipe.cookingSupplies")}</span>
               {cookingSuppliesCount > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <span className="text-sm font-normal text-muted-foreground">
                   {t("recipe.cookingSuppliesCount").replace("{count}", String(cookingSuppliesCount))}
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground/70">
+            <p className="mt-1 text-sm text-muted-foreground">
               {t("form.cookingSuppliesHint")}
             </p>
           </div>
@@ -880,7 +884,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         </button>
 
         {showCookingSupplies && (
-          <div className="space-y-3 border-t border-border/25 pt-4">
+          <div className="mt-5 space-y-3">
             {cookingSupplies.length > 0 ? (
               <div className="space-y-2">
                 {cookingSupplies.map((supply, index) => (
@@ -903,11 +907,11 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground/70">{t("form.cookingSuppliesEmpty")}</p>
+              <p className="text-sm text-muted-foreground">{t("form.cookingSuppliesEmpty")}</p>
             )}
 
             <Button type="button" variant="outline" size="sm" onClick={addCookingSupply}>
-              <Plus className="h-4 w-4 mr-1" />
+              <Plus />
               {t("recipe.addCookingSupply")}
             </Button>
           </div>
@@ -915,8 +919,8 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       </div>
 
       {/* Steps */}
-      <div className="space-y-3">
-        <Label>{t("form.stepsRequired")}</Label>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-medium tracking-tight">{t("form.stepsRequired")}</h2>
         {isHydrated ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleStepDragEnd}>
             <SortableContext items={steps.map((s) => s._dndId)} strategy={verticalListSortingStrategy}>
@@ -950,7 +954,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         )}
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={addStep}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus />
             {t("recipe.addStep")}
           </Button>
           <Button
@@ -959,7 +963,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             size="sm"
             onClick={() => setShowStepDurations((v) => !v)}
           >
-            <Clock className="h-4 w-4 mr-1" />
+            <Clock />
             {t("form.showDurations")}
           </Button>
         </div>
@@ -967,20 +971,20 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
 
       {/* Image Upload */}
       <div className="space-y-4">
-        <Label>{t("recipe.image")}</Label>
+        <h2 className="text-2xl font-medium tracking-tight">{t("recipe.image")}</h2>
         <ImageUpload value={imageUrl} onChange={handleUploadedImageChange} />
 
         {!imageUrl && !showCoverSearch ? (
           <button
             type="button"
             onClick={() => setShowCoverSearch(true)}
-            className="text-sm text-primary hover:underline underline-offset-4"
+            className="text-sm underline underline-offset-4"
           >
             {t("recipe.coverSearchTitle")}
           </button>
         ) : !imageUrl && showCoverSearch ? (
-          <div className="rounded-2xl border border-border/40 bg-card/60 p-4 sm:p-5 space-y-4">
-            <p className="text-xs text-muted-foreground leading-relaxed">{t("recipe.coverSearchHelper")}</p>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t("recipe.coverSearchHelper")}</p>
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
@@ -1015,11 +1019,11 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             {imageProvider === "unsplash" && imageAuthorName && imageAuthorUrl && imageSourceUrl && (
               <p className="text-xs text-muted-foreground">
                 {t("recipe.coverPhotoBy")}{" "}
-                <a href={imageAuthorUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                <a href={imageAuthorUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">
                   {imageAuthorName}
                 </a>{" "}
                 {t("recipe.onUnsplash")}{" "}
-                <a href={imageSourceUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                <a href={imageSourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">
                   Unsplash
                 </a>
               </p>
@@ -1043,11 +1047,12 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                       key={photo.id}
                       type="button"
                       onClick={() => applyUnsplashSelection(photo)}
-                      className={`overflow-hidden rounded-2xl border bg-background/70 transition-colors text-left ${
-                        isSelected ? "border-primary shadow-sm shadow-primary/10" : "border-border/40"
+                      aria-pressed={isSelected}
+                      className={`overflow-hidden rounded-[20px] text-left ring-offset-2 ring-offset-background ${
+                        isSelected ? "ring-2 ring-foreground" : ""
                       }`}
                     >
-                      <div className="relative aspect-[4/3] bg-muted/40">
+                      <div className="relative aspect-[4/3] bg-secondary">
                         <img
                           src={photo.smallUrl}
                           alt={photo.alt}
@@ -1055,7 +1060,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                           className="h-full w-full object-cover"
                         />
                         {isSelected && (
-                          <div className="absolute right-2 top-2 rounded-full bg-background/90 p-1 text-primary shadow-sm">
+                          <div className="absolute right-2 top-2 rounded-full bg-highlight p-1 text-highlight-foreground">
                             <Check className="h-4 w-4" />
                           </div>
                         )}
@@ -1070,8 +1075,8 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
       </div>
 
       {/* Tags */}
-      <div className="space-y-2">
-        <Label>{t("recipe.tags")}</Label>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-medium tracking-tight">{t("recipe.tags")}</h2>
         <div className="flex flex-wrap gap-2">
           {availableTags.map((tag) => (
             <button
@@ -1084,10 +1089,11 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                     : [...prev, tag.id]
                 )
               }
-              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+              aria-pressed={selectedTags.includes(tag.id)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
                 selectedTags.includes(tag.id)
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent border-border hover:bg-accent"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-secondary"
               }`}
             >
               {tag.name}
@@ -1105,7 +1111,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                 createTag();
               }
             }}
-            className="w-40 h-8 text-sm"
+            className="h-8 w-44 px-3.5 text-sm"
           />
           <Button
             type="button"
@@ -1114,15 +1120,15 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             onClick={createTag}
             disabled={creatingTag || !newTagName.trim()}
           >
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus />
             {t("form.add")}
           </Button>
         </div>
       </div>
 
       {/* Collections */}
-      <div className="space-y-2">
-        <Label>{t("recipe.collections")}</Label>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-medium tracking-tight">{t("recipe.collections")}</h2>
         <div className="flex flex-wrap gap-2">
           {availableCollections.map((col) => (
             <button
@@ -1135,10 +1141,11 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                     : [...prev, col.id]
                 )
               }
-              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+              aria-pressed={selectedCollections.includes(col.id)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
                 selectedCollections.includes(col.id)
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent border-border hover:bg-accent"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-secondary"
               }`}
             >
               {col.name}
@@ -1156,7 +1163,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
                 createCollection();
               }
             }}
-            className="w-40 h-8 text-sm"
+            className="h-8 w-44 px-3.5 text-sm"
           />
           <Button
             type="button"
@@ -1165,7 +1172,7 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
             onClick={createCollection}
             disabled={creatingCollection || !newCollectionName.trim()}
           >
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus />
             {t("form.add")}
           </Button>
         </div>
@@ -1205,13 +1212,13 @@ export default function RecipeForm({ initial, tags: initialTags = [], collection
         </div>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={saving}>
+      <div className="flex flex-wrap gap-2 border-t border-border pt-8">
+        <Button type="submit" size="lg" disabled={saving}>
           {saving ? t("form.saving") : isEdit ? t("form.updateRecipe") : t("form.createRecipe")}
         </Button>
-        <Button type="button" variant="outline" onClick={() => history.back()}>
+        <Button type="button" variant="ghost" size="lg" onClick={() => history.back()}>
           {t("recipe.cancel")}
         </Button>
       </div>

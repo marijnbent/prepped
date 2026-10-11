@@ -120,95 +120,82 @@ export default function RecipeComments({ recipeId, initialComments, canComment, 
   }
 
   return (
-    <section className="space-y-5">
-      <h2 className="font-serif text-2xl tracking-tight flex items-center gap-3">
-        {t("comments.title")}
-        <span className="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-      </h2>
+    <section>
+      <h2 className="text-2xl font-medium tracking-tight">{t("comments.title")}</h2>
 
       {canComment ? (
-        <div className="rounded-2xl bg-card/60 border border-border/25 p-5 backdrop-blur-sm space-y-4">
-          <form onSubmit={submitComment} className="space-y-3">
-            <div className="overflow-hidden rounded-xl border border-input/80 bg-secondary/30 shadow-xs transition-all focus-within:border-primary/40 focus-within:bg-background focus-within:ring-[3px] focus-within:ring-primary/15 hover:border-input hover:bg-secondary/40">
-              <Textarea
-                ref={textareaRef}
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                placeholder={t("comments.placeholder")}
-                rows={3}
-                maxLength={1000}
-                className="min-h-24 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:bg-transparent hover:bg-transparent"
-              />
-              <div className="flex flex-wrap items-center gap-1 border-t border-border/20 px-2.5 py-2">
-                {quickEmojis.map(({ emoji, label }) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => insertEmoji(emoji)}
-                    disabled={saving}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-lg transition-all hover:bg-background/80 hover:scale-105 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/20 active:scale-95 disabled:opacity-50"
-                    aria-label={label}
-                    title={label}
-                  >
-                    <span aria-hidden="true">{emoji}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" disabled={saving || !body.trim()} size="sm">
-              <Send className="h-3.5 w-3.5" />
+        <form onSubmit={submitComment} className="mt-6">
+          <Textarea
+            ref={textareaRef}
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder={t("comments.placeholder")}
+            aria-label={t("comments.placeholder")}
+            rows={3}
+            maxLength={1000}
+            className="min-h-24"
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-0.5">
+            {quickEmojis.map(({ emoji, label }) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => insertEmoji(emoji)}
+                disabled={saving}
+                className="inline-flex size-9 items-center justify-center rounded-full text-lg transition-colors hover:bg-secondary disabled:opacity-50"
+                aria-label={label}
+                title={label}
+              >
+                <span aria-hidden="true">{emoji}</span>
+              </button>
+            ))}
+            <Button type="submit" disabled={saving || !body.trim()} className="ml-auto">
+              <Send />
               {saving ? t("form.saving") : t("comments.post")}
             </Button>
-          </form>
-        </div>
+          </div>
+          {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
+        </form>
       ) : (
         <a
           href={loginHref}
-          className="inline-flex rounded-full border border-border/35 bg-secondary/45 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+          className="mt-6 inline-flex rounded-full border-[1.5px] border-foreground px-[18px] py-[9px] text-sm font-medium transition-colors hover:bg-secondary"
         >
           {t("comments.login")}
         </a>
       )}
 
-      <div className="space-y-3">
-        {comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground/60">{t("comments.empty")}</p>
-        ) : (
-          comments.map((comment) => {
+      {comments.length === 0 ? (
+        <p className="mt-8 text-muted-foreground">{t("comments.empty")}</p>
+      ) : (
+        <div className="mt-8 divide-y divide-border border-t border-border">
+          {comments.map((comment) => {
             const highlighted = highlightedId === comment.id;
             return (
               <article
                 key={comment.id}
                 id={`comment-${comment.id}`}
-                className={`scroll-mt-24 rounded-2xl border p-4 transition-colors ${
-                  highlighted
-                    ? "border-primary/45 bg-primary/10"
-                    : "border-border/20 bg-card/50 hover:border-border/35 hover:bg-card/70"
+                className={`scroll-mt-24 py-5 transition-[border-color] ${
+                  highlighted ? "border-l-[3px] border-l-highlight pl-4" : ""
                 }`}
               >
-                <div className="mb-2 flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                      {comment.authorName.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="truncate text-sm font-medium text-foreground/75">{comment.authorName}</span>
-                  </span>
-                  <time className="ml-auto shrink-0 text-xs text-muted-foreground/40 tabular-nums">
+                <p className="flex items-baseline gap-2 text-sm">
+                  <span className="min-w-0 truncate font-medium">{comment.authorName}</span>
+                  <time className="shrink-0 text-muted-foreground tabular-nums">
                     {formatCommentDate(comment.createdAt)}
                   </time>
-                </div>
+                </p>
                 {comment.reaction && (
-                  <p className="mb-2 text-lg leading-none">
+                  <p className="mt-2 text-lg leading-none">
                     {reactionText(comment.reaction)}
                   </p>
                 )}
-                {comment.body && <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/70">{comment.body}</p>}
+                {comment.body && <p className="mt-2 whitespace-pre-wrap leading-relaxed">{comment.body}</p>}
               </article>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </section>
   );
 }

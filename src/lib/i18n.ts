@@ -37,6 +37,10 @@ const strings = {
     "home.signUpCta": "Sign up to start collecting recipes",
 
     // Recipe
+    "recipe.open": "Open recipe",
+    "recipe.fewerServings": "Fewer servings",
+    "recipe.moreServings": "More servings",
+    "recipe.people": "people",
     "recipe.servings": "Servings",
     "recipe.addedBy": "Added by",
     "recipe.prepTime": "Prep Time",
@@ -160,6 +164,9 @@ const strings = {
     "collection.favoritesDesc": "Recipes you've hearted",
     "collection.new": "New collection",
     "collection.noCustom": "No custom collections yet",
+    "collection.emptyHint": "Group recipes for a week, a season or an occasion.",
+    "collection.empty": "This collection is still empty",
+    "collection.addRecipesHint": "Pick this collection when you edit a recipe.",
     "collection.editPrefix": "Edit",
     "collection.deleteConfirm": "Delete this collection? Recipes won't be deleted.",
 
@@ -211,8 +218,9 @@ const strings = {
     "chat.errorGenerate": "Sorry, I couldn't generate a response.",
     "chat.errorGeneral": "Sorry, I ran into an error. Please try again.",
     "chat.expand": "Expand chat",
+    "chat.send": "Send",
     "chat.dialogDesc": "Chat with AI about this recipe",
-    "chat.emptyState": "Ask anything — substitutions, tips, technique questions...",
+    "chat.emptyState": "Ask anything: substitutions, tips, technique questions...",
 
     // Auth
     "auth.login": "Login",
@@ -252,6 +260,7 @@ const strings = {
     "common.edit": "Edit",
     "common.back": "Back",
     "common.search": "Search",
+    "common.close": "Close",
 
     // Count (pluralization)
     "count.recipe": "recipe",
@@ -422,6 +431,10 @@ const strings = {
     "home.signUpCta": "Meld je aan om recepten te verzamelen",
 
     // Recipe
+    "recipe.open": "Open recept",
+    "recipe.fewerServings": "Minder porties",
+    "recipe.moreServings": "Meer porties",
+    "recipe.people": "personen",
     "recipe.servings": "Porties",
     "recipe.addedBy": "Toegevoegd door",
     "recipe.prepTime": "Voorbereidingstijd",
@@ -544,7 +557,10 @@ const strings = {
     "collection.favorites": "Favorieten",
     "collection.favoritesDesc": "Recepten die je hebt gemarkeerd",
     "collection.new": "Nieuwe collectie",
-    "collection.noCustom": "Nog geen aangepaste collecties",
+    "collection.noCustom": "Nog geen eigen collecties",
+    "collection.emptyHint": "Bundel recepten voor een week, een seizoen of een gelegenheid.",
+    "collection.empty": "Deze collectie is nog leeg",
+    "collection.addRecipesHint": "Kies deze collectie bij het bewerken van een recept.",
     "collection.editPrefix": "Bewerken",
     "collection.deleteConfirm": "Deze collectie verwijderen? Recepten worden niet verwijderd.",
 
@@ -596,8 +612,9 @@ const strings = {
     "chat.errorGenerate": "Sorry, ik kon geen antwoord genereren.",
     "chat.errorGeneral": "Sorry, er ging iets mis. Probeer het opnieuw.",
     "chat.expand": "Chat vergroten",
+    "chat.send": "Versturen",
     "chat.dialogDesc": "Chat met AI over dit recept",
-    "chat.emptyState": "Vraag alles — vervangingen, tips, technieken...",
+    "chat.emptyState": "Vraag alles: vervangingen, tips, technieken...",
 
     // Auth
     "auth.login": "Inloggen",
@@ -637,6 +654,7 @@ const strings = {
     "common.edit": "Bewerken",
     "common.back": "Terug",
     "common.search": "Zoeken",
+    "common.close": "Sluiten",
 
     // Count (pluralization)
     "count.recipe": "recept",

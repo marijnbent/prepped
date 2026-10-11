@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import CollectionForm from "../../islands/CollectionForm";
 import { t } from "../../lib/i18n";
 
@@ -9,8 +10,8 @@ if (!Astro.locals.user) {
 ---
 
 <Layout title={t("collection.new")}>
-  <div class="max-w-lg mx-auto animate-fade-up">
-    <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.1] mb-8">{t("collection.new")}</h1>
+  <div class="max-w-6xl mx-auto">
+    <PageHeader title={t("collection.new")} back={{ href: "/collections", label: t("nav.collections") }} />
     <CollectionForm client:load />
   </div>
 </Layout>

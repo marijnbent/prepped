@@ -1,5 +1,6 @@
 ---
 import "../styles/globals.css";
+import { Font } from "astro:assets";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import MobileToolbar from "../islands/MobileToolbar";
@@ -33,17 +34,11 @@ const pathname = Astro.url.pathname;
     {/* PWA */}
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#c2710c" />
+    <meta name="theme-color" content="#f4f4f0" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
-    {/* Google Fonts — DM Serif Display for editorial headings + Inter for crisp body */}
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <Font cssVariable="--font-outfit" preload />
 
     {/* Open Graph */}
     <meta property="og:title" content={pageTitle} />
@@ -85,9 +80,9 @@ const pathname = Astro.url.pathname;
       })();
     </script>
   </head>
-  <body class="min-h-screen bg-background text-foreground flex flex-col antialiased">
+  <body class="min-h-screen bg-background text-foreground flex flex-col antialiased font-sans">
     <Header user={user} />
-    <main class="flex-1 w-full pb-20 md:pb-0">
+    <main class="flex-1 w-full pb-20 lg:pb-0">
       <div class="container mx-auto px-4 sm:px-6 py-6 md:py-10">
         <slot />
       </div>

@@ -1,4 +1,5 @@
 ---
+import { Share, Printer, Copy, Pencil, Trash2, ChevronDown, Link } from "lucide-react";
 import Layout from "../../layouts/Layout.astro";
 import ServingsScaler from "../../islands/ServingsScaler";
 import RecipeChat from "../../islands/RecipeChat";
@@ -211,270 +212,133 @@ const hasUnsplashAttribution =
       )}
     </div>
 
-    {/* ===== Hero image ===== */}
-    {recipe.imageUrl && (
-      <div class="no-print -mx-4 sm:-mx-6 md:mx-0 mb-10 animate-fade-in relative group/hero">
-        <div class="overflow-hidden md:rounded-2xl">
-          <div class="aspect-[16/9] md:aspect-[2/1]">
-            <img
-              src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
-              alt={recipe.title}
-              class="w-full h-full object-cover"
-            />
-          </div>
-          {/* Warm gradient overlay at the bottom for visual continuity */}
-          <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
+    <div class:list={["grid gap-8 lg:gap-14 mb-16 items-center", recipe.imageUrl && "lg:grid-cols-2"]}>
+      {recipe.imageUrl && (
+        <div class="min-w-0">
+          <img src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl} alt={recipe.title} class="w-full aspect-[4/5] max-h-[680px] object-cover rounded-[20px]" />
+          {hasUnsplashAttribution && <p class="mt-3 text-xs text-muted-foreground">{t("recipe.coverPhotoBy")}{" "}<a href={recipe.imageAuthorUrl!} target="_blank" rel="noreferrer" class="hover:underline">{recipe.imageAuthorName}</a>{" "}{t("recipe.onUnsplash")}{" "}<a href={recipe.imageSourceUrl!} target="_blank" rel="noreferrer" class="hover:underline">Unsplash</a></p>}
         </div>
-        {hasUnsplashAttribution && (
-          <p class="mt-2 text-xs text-muted-foreground md:px-1">
-            {t("recipe.coverPhotoBy")}{" "}
-            <a href={recipe.imageAuthorUrl!} target="_blank" rel="noreferrer" class="text-primary hover:underline">
-              {recipe.imageAuthorName}
-            </a>{" "}
-            {t("recipe.onUnsplash")}{" "}
-            <a href={recipe.imageSourceUrl!} target="_blank" rel="noreferrer" class="text-primary hover:underline">
-              Unsplash
-            </a>
-          </p>
-        )}
-      </div>
-    )}
-
-    {/* ===== Title + description ===== */}
-    <div class="mb-8 animate-fade-up">
-      <h1 class="font-serif text-4xl md:text-5xl tracking-tight text-foreground leading-[1.08] text-balance">
-        {recipe.title}
-      </h1>
-      {recipe.description && (
-        <p class="text-lg text-muted-foreground/70 mt-4 max-w-2xl leading-relaxed">
-          {recipe.description}
-        </p>
       )}
-    </div>
-
-    {/* ===== Meta bar ===== */}
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-x-6 sm:gap-y-3 mb-8 sm:mb-10 animate-fade-up" style="animation-delay: 120ms;">
-      {/* Meta pills */}
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground/60 min-w-0">
-        {recipeAuthor && (
-          <span class="inline-flex items-center gap-1.5 max-w-full">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary shrink-0">
-              {recipeAuthor.name.charAt(0).toUpperCase()}
-            </span>
-            <span class="truncate font-medium text-foreground/70">{recipeAuthor.name}</span>
-          </span>
+      <div class="min-w-0">
+        <h1 class="text-4xl sm:text-[44px] xl:text-[52px] font-medium tracking-[-0.04em] leading-none break-words">{recipe.title}</h1>
+        <p class="text-muted-foreground mt-5">{[
+          totalTime > 0 && formatStepDuration(totalTime, t("recipe.minutes"), t("recipe.hours")),
+          recipe.servings && `${recipe.servings} ${t("recipe.people")}`,
+          recipe.difficulty && t(`recipe.${recipe.difficulty}` as "recipe.easy" | "recipe.medium" | "recipe.hard").toLocaleLowerCase(),
+        ].filter(Boolean).join(", ")}</p>
+        {recipe.description && <p class="text-muted-foreground mt-5 mb-6 leading-relaxed max-w-[55ch]">{recipe.description}</p>}
+        <p class="text-sm text-muted-foreground my-5">{[recipeAuthor?.name, recipe.createdAt && formatDate(recipe.createdAt)].filter(Boolean).join(", ")}{copiedFromSource && <>{", "}<a href={`/users/${copiedFromSource.createdBy}/recipes/${copiedFromSource.slug}`} class="hover:underline">{t("recipe.copiedFrom")} {copiedFromSource.authorName}</a></>}</p>
+        {(recipeCollections_.length > 0 || recipeTags_.length > 0) && (
+          <div class="flex flex-wrap gap-2 mb-8">
+            {recipeCollections_.map((col) => (
+              <a
+                href={`/collections/${col.slug}`}
+                class="px-3 py-1 rounded-full text-sm border border-border hover:border-foreground"
+              >
+                {col.name}
+              </a>
+            ))}
+            {recipeTags_.map((tag) => (
+              <a
+                href={`/tags/${tag.slug}`}
+                class="px-3 py-1 rounded-full text-sm border border-border hover:border-foreground"
+              >
+                {tag.name}
+              </a>
+            ))}
+          </div>
         )}
-        {copiedFromSource && (
-          <a
-            href={`/users/${copiedFromSource.createdBy}/recipes/${copiedFromSource.slug}`}
-            class="inline-flex items-center gap-1.5 text-primary/70 hover:text-primary transition-colors max-w-full"
-          >
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-            </svg>
-            <span class="truncate">{t("recipe.copiedFrom")} {copiedFromSource.authorName}</span>
-          </a>
-        )}
-        {recipe.prepTime && (
-          <span class="inline-flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-            </svg>
-            {t("recipe.prepTime")} {formatStepDuration(recipe.prepTime, t("recipe.minutes"), t("recipe.hours"))}
-          </span>
-        )}
-        {recipe.cookTime && (
-          <span class="inline-flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-            </svg>
-            {t("recipe.cookTime")} {formatStepDuration(recipe.cookTime, t("recipe.minutes"), t("recipe.hours"))}
-          </span>
-        )}
-        {recipe.difficulty && (
-          <span class="inline-flex items-center gap-1.5 capitalize">
-            <span class:list={[
-              "w-2 h-2 rounded-full ring-2",
-              recipe.difficulty === "easy" ? "bg-emerald-400 ring-emerald-400/20" :
-              recipe.difficulty === "medium" ? "bg-amber-400 ring-amber-400/20" : "bg-rose-400 ring-rose-400/20"
-            ]} />
-            {t(`recipe.${recipe.difficulty}` as any)}
-          </span>
-        )}
-        {recipe.createdAt && (
-          <span class="hidden sm:inline-flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="18" x="3" y="4" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" />
-            </svg>
-            {formatDate(recipe.createdAt)}
-          </span>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div class="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
-        <button
-          id="share-recipe"
-          class="sm:hidden inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
-          aria-label={t("recipe.share")}
-        >
-          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" x2="12" y1="2" y2="15" />
-          </svg>
-        </button>
-        <button
-          class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
-          aria-label={t("recipe.print")}
-          onclick="window.print()"
-        >
-          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" />
-          </svg>
-        </button>
-        <button
-          id="copy-recipe-text"
-          class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border/50 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-200"
-          aria-label={t("recipe.copyText")}
-          title={t("recipe.copyText")}
-          data-copy-label={t("recipe.copyText")}
-          data-copied-label={t("recipe.textCopied")}
-          data-copy-text={recipePlainText}
-          type="button"
-        >
-          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-        </button>
-        <span
-          id="copy-recipe-feedback"
-          class="hidden text-xs font-medium text-primary"
-          aria-live="polite"
-        >
-          {t("recipe.textCopied")}
-        </span>
-        <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
-        <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} client:load />
-      {isOwner && (
-        <>
-          <a
-            href={`/recipes/${recipe.slug}/edit`}
-            class="inline-flex items-center justify-center gap-1.5 h-7 rounded-full border border-border/50 bg-secondary/50 px-3 text-xs font-medium hover:bg-secondary hover:border-border transition-all duration-200"
-          >
-            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-            </svg>
-            {t("recipe.edit")}
-          </a>
-          <button
-            id="delete-recipe"
-            class="inline-flex items-center justify-center h-7 w-7 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
-            onclick={`if(confirm('${t("recipe.deleteConfirm").replace(/'/g, "\\'")}'))fetch('/api/recipes/${recipe.id}',{method:'POST',headers:{'Content-Type':'application/json'}}).then(r=>r.ok?location.href='/recipes':r.text().then(t=>alert('Delete failed: '+(t||r.status)))).catch(e=>alert('Delete failed: '+e.message))`}
-          >
-            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
-            <span class="sr-only">{t("recipe.delete")}</span>
-          </button>
-        </>
-      )}
-      </div>
-    </div>
-
-    {/* Warm separator */}
-    <div class="separator-warm mb-8 sm:mb-10 animate-fade-up" style="animation-delay: 140ms;" />
-
-    {/* Collections + Tags */}
-    {(recipeCollections_.length > 0 || recipeTags_.length > 0) && (
-      <div class="flex flex-wrap gap-2 mb-10 animate-fade-up" style="animation-delay: 160ms;">
-        {recipeCollections_.map((col) => (
-          <a
-            href={`/collections/${col.slug}`}
-            class="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/15 hover:bg-primary/15 hover:border-primary/25 transition-all duration-200"
-          >
-            {col.name}
-          </a>
-        ))}
-        {recipeTags_.map((tag) => (
-          <a
-            href={`/tags/${tag.slug}`}
-            class="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border/20 hover:bg-secondary/80 hover:border-border/40 transition-all duration-200"
-          >
-            {tag.name}
-          </a>
-        ))}
-      </div>
-    )}
-
-    {/* ===== Main content: Ingredients + Steps — cookbook layout ===== */}
-    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-10 lg:gap-14 animate-fade-up" style="animation-delay: 200ms;">
-      {/* Ingredients panel */}
-      <div>
-        <h2 class="font-serif text-2xl tracking-tight mb-5 flex items-center gap-3">
-          {t("recipe.ingredients")}
-          <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-        </h2>
-        <div class="rounded-2xl bg-card/60 border border-border/25 p-5 backdrop-blur-sm">
-          <ServingsScaler
-            defaultServings={recipe.servings || 4}
-            ingredients={ingredients}
-            client:visible
-          />
-          <div class="mt-4 pt-4 border-t border-border/15">
+        <div class="flex flex-wrap gap-x-2 gap-y-3 items-center">
+          <div class="w-full mb-1">
             <AddToShoppingListButton recipeId={recipe.id} defaultServings={recipe.servings || 4} showLabel client:load />
           </div>
+          {isOwner && (
+            <a
+              href={`/recipes/${recipe.slug}/edit`}
+              class="inline-flex items-center justify-center gap-1.5 h-10 rounded-full border-[1.5px] border-foreground px-[18px] text-sm font-medium hover:bg-secondary"
+            >
+              <Pencil className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+              {t("recipe.edit")}
+            </a>
+          )}
+          <FavoriteButton recipeId={recipe.id} initialFavorited={isFavorited} client:load />
+          <button
+            id="share-recipe"
+            class="sm:hidden inline-flex items-center justify-center h-10 w-10 rounded-full border border-border hover:bg-secondary"
+            aria-label={t("recipe.share")}
+          >
+            <Share className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+          </button>
+          <button
+            class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-border hover:bg-secondary"
+            aria-label={t("recipe.print")}
+            onclick="window.print()"
+          >
+            <Printer className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+          </button>
+          <button
+            id="copy-recipe-text"
+            class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-border hover:bg-secondary"
+            aria-label={t("recipe.copyText")}
+            title={t("recipe.copyText")}
+            data-copy-label={t("recipe.copyText")}
+            data-copied-label={t("recipe.textCopied")}
+            data-copy-text={recipePlainText}
+            type="button"
+          >
+            <Copy className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+          </button>
+          {isOwner && (
+            <button
+              id="delete-recipe"
+              class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+              onclick={`if(confirm('${t("recipe.deleteConfirm").replace(/'/g, "\\'")}'))fetch('/api/recipes/${recipe.id}',{method:'POST',headers:{'Content-Type':'application/json'}}).then(r=>r.ok?location.href='/recipes':r.text().then(t=>alert('Delete failed: '+(t||r.status)))).catch(e=>alert('Delete failed: '+e.message))`}
+            >
+              <Trash2 className="w-4 h-4 pointer-events-none" strokeWidth={2} aria-hidden="true" />
+              <span class="sr-only">{t("recipe.delete")}</span>
+            </button>
+          )}
+          <span id="copy-recipe-feedback" class="hidden text-xs font-medium" aria-live="polite">
+            {t("recipe.textCopied")}
+          </span>
         </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-10 lg:gap-14">
+      <div>
+        <h2 class="font-medium text-2xl tracking-tight mb-5">{t("recipe.ingredients")}</h2>
+        <ServingsScaler
+          defaultServings={recipe.servings || 4}
+          ingredients={ingredients}
+          client:visible
+        />
         {cookingSupplies.length > 0 && (
           <details
-            class="mt-4 rounded-2xl border border-border/25 bg-card/40 p-5 backdrop-blur-sm group"
+            class="mt-8 border-t border-border pt-6 group"
             open={cookingSuppliesExpandedByDefault}
           >
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-foreground/85 [&::-webkit-details-marker]:hidden">
-              <span class="inline-flex items-center gap-2">
-                <svg class="w-4 h-4 text-primary/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M12 4a3 3 0 0 0-2.83 2 4 4 0 0 0-5.17 3.83A3 3 0 0 0 7 13h10a3 3 0 0 0 .82-5.89A4 4 0 0 0 14 4z" />
-                  <path d="M8 13v5a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-5" />
-                  <path d="M10 20v-3" />
-                  <path d="M14 20v-3" />
-                </svg>
-                {t("recipe.cookingSupplies")}
-              </span>
-              <svg class="w-4 h-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-foreground [&::-webkit-details-marker]:hidden">
+              {t("recipe.cookingSupplies")}
+              <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" strokeWidth={2} aria-hidden="true" />
             </summary>
-            <ul class="mt-4 space-y-2 border-t border-border/15 pt-4 text-sm text-foreground/75">
+            <ul class="mt-4 space-y-2 text-sm text-foreground">
               {cookingSupplies.map((supply) => (
-                <li class="flex items-start gap-2">
-                  <span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary/45" />
-                  <span>{supply}</span>
-                </li>
+                <li>{supply}</li>
               ))}
             </ul>
           </details>
         )}
       </div>
-
-      {/* Steps */}
       <div>
-        <h2 class="font-serif text-2xl tracking-tight mb-5 flex items-center gap-3">
-          {t("recipe.steps")}
-          <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-        </h2>
+        <h2 class="font-medium text-2xl tracking-tight mb-5">{t("recipe.steps")}</h2>
         <ol class="space-y-8">
-          {steps.map((step, si) => (
-            <li class="flex gap-5 group/step">
-              {/* Step number — warm circle with hover fill */}
-              <span class="flex items-center justify-center h-9 w-9 rounded-full bg-primary/[0.08] text-primary text-sm font-semibold shrink-0 border border-primary/15 transition-all duration-300 group-hover/step:bg-primary group-hover/step:text-primary-foreground group-hover/step:shadow-lg group-hover/step:shadow-primary/15 group-hover/step:scale-105">
-                {step.order}
-              </span>
-              <div class="flex-1 pt-1.5">
-                <p class="text-[15px] leading-[1.75] text-foreground/85">{step.instruction}</p>
+          {steps.map((step) => (
+            <li class="flex gap-5">
+              <span class="text-3xl font-medium leading-none w-8 shrink-0 tabular-nums">{step.order}</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-base leading-[1.75] max-w-[65ch] text-foreground">{step.instruction}</p>
                 {step.duration && (
-                  <span class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/45 mt-2.5 px-2.5 py-1 rounded-full bg-secondary/50 border border-border/15">
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-                    </svg>
+                  <span class="block text-sm text-muted-foreground mt-2">
                     ~{formatStepDuration(step.duration, t("recipe.minutes"), t("recipe.hours"))}
                   </span>
                 )}
@@ -484,37 +348,25 @@ const hasUnsplashAttribution =
         </ol>
       </div>
     </div>
-
-    {/* ===== Notes + Chat ===== */}
     {(recipe.notes || Astro.locals.user) && (
-      <div class:list={["mt-16 gap-6", recipe.notes && Astro.locals.user ? "grid grid-cols-1 md:grid-cols-2" : ""]}>
+      <div class:list={["mt-16 gap-10", recipe.notes && Astro.locals.user ? "grid grid-cols-1 md:grid-cols-2" : ""]}>
         {recipe.notes && (
-          <div class="rounded-2xl bg-card/60 border border-border/25 p-6 backdrop-blur-sm">
-            <h2 class="font-serif text-xl tracking-tight mb-3 flex items-center gap-2">
-              <svg class="w-4 h-4 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" x2="8" y1="13" y2="13" />
-                <line x1="16" x2="8" y1="17" y2="17" />
-              </svg>
-              {t("recipe.notes")}
-            </h2>
-            <p class="text-sm text-foreground/65 whitespace-pre-wrap leading-relaxed">{recipe.notes}</p>
+          <div class="border-t border-border pt-6">
+            <h2 class="font-medium text-xl tracking-tight mb-3">{t("recipe.notes")}</h2>
+            <p class="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{recipe.notes}</p>
           </div>
         )}
         {Astro.locals.user && (
-          <div class="no-print rounded-2xl bg-card/60 border border-border/25 p-6 backdrop-blur-sm">
+          <div class="no-print border-t border-border pt-6">
             <RecipeChat recipeId={recipe.id} title={t("chat.title")} placeholder={t("chat.placeholder")} client:visible />
           </div>
         )}
       </div>
     )}
-
-    {/* ===== YouTube Video ===== */}
     {youtubeId && (
       <div class="no-print mt-16">
-        <h2 class="font-serif text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
-        <div class="aspect-video rounded-2xl overflow-hidden border border-border/25 shadow-lg shadow-black/[0.04]">
+        <h2 class="font-medium text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
+        <div class="aspect-video rounded-[20px] overflow-hidden">
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
             title={`${recipe.title} video`}
@@ -526,16 +378,14 @@ const hasUnsplashAttribution =
         </div>
       </div>
     )}
-
-    {/* ===== Instagram Embed ===== */}
     {instagramEmbedPath && !youtubeId && (
       <div class="no-print mt-16">
-        <h2 class="font-serif text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
+        <h2 class="font-medium text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
         <div class="flex justify-center">
           <iframe
             src={`https://www.instagram.com/${instagramEmbedPath}/embed/`}
             title={`${recipe.title} video`}
-            class="rounded-2xl border border-border/25 shadow-lg shadow-black/[0.04]"
+            class="w-full max-w-[400px] rounded-[20px]"
             width="400"
             height="500"
             frameborder="0"
@@ -546,16 +396,14 @@ const hasUnsplashAttribution =
         </div>
       </div>
     )}
-
-    {/* ===== TikTok Embed ===== */}
     {tiktokVideoId && !youtubeId && !instagramEmbedPath && (
       <div class="no-print mt-16">
-        <h2 class="font-serif text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
+        <h2 class="font-medium text-xl tracking-tight mb-5">{t("recipe.video")}</h2>
         <div class="flex justify-center">
           <iframe
             src={`https://www.tiktok.com/embed/v2/${tiktokVideoId}`}
             title={`${recipe.title} video`}
-            class="h-[740px] w-full max-w-[400px] rounded-2xl border border-border/25 shadow-lg shadow-black/[0.04]"
+            class="h-[740px] w-full max-w-[400px] rounded-[20px]"
             width="400"
             height="740"
             frameborder="0"
@@ -567,20 +415,15 @@ const hasUnsplashAttribution =
         </div>
       </div>
     )}
-
-    {/* Source */}
     {recipe.sourceUrl && (
-      <div class="mt-12 flex items-center gap-2 text-sm text-muted-foreground/40">
-        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-        </svg>
-        {t("recipe.source")} <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-primary/60 hover:text-primary hover:underline transition-colors truncate">{recipe.sourceUrl}</a>
+      <div class="mt-12 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link className="w-3.5 h-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+        {t("recipe.source")} <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-foreground hover:underline underline-offset-4 truncate">{recipe.sourceUrl}</a>
       </div>
     )}
 
     <div class="no-print mt-20">
-      <div class="separator-warm mb-12" />
+      <div class="border-t border-border mb-12" />
       <div class="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <RecipeComments
           recipeId={recipe.id}
@@ -590,63 +433,38 @@ const hasUnsplashAttribution =
           client:visible
         />
 
-        <section class="space-y-6">
+        <section class="space-y-12">
           {Astro.locals.user && (
-            <div class="rounded-2xl bg-card/60 border border-border/25 p-6 backdrop-blur-sm">
-              <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
-                {t("cookLog.addEntry")}
-                <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-              </h2>
+            <div>
+              <h2 class="font-medium text-2xl tracking-tight mb-6">{t("cookLog.addEntry")}</h2>
               <CookLogForm recipeId={recipe.id} recipeSlug={recipe.slug} client:visible />
             </div>
           )}
 
           <div>
-            <h2 class="font-serif text-2xl tracking-tight mb-6 flex items-center gap-3">
-              {t("cookLog.title")}
-              <span class="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent" />
-            </h2>
+            <h2 class="font-medium text-2xl tracking-tight mb-4">{t("cookLog.title")}</h2>
             {logs.length > 0 ? (
-              <div class="space-y-4">
+              <div class="divide-y divide-border">
                 {logs.map((log) => (
-                  <div class="rounded-2xl bg-card/50 border border-border/20 p-5 transition-all duration-300 hover:bg-card/70 hover:border-border/35">
-                    <div class="flex items-center gap-4 mb-3">
-                      {log.authorName && (
-                        <span class="inline-flex items-center gap-1.5">
-                          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                            {log.authorName.charAt(0).toUpperCase()}
-                          </span>
-                          <span class="text-sm font-medium text-foreground/75">{log.authorName}</span>
-                        </span>
-                      )}
-                      <time class="text-xs text-muted-foreground/40 tabular-nums">
-                        {formatDate(log.cookedAt)}
-                      </time>
-                      {log.rating && (
-                        <div class="flex items-center gap-1 ml-auto">
-                          {Array.from({ length: 5 }).map((_, si) => (
-                            <span class:list={[
-                              "inline-block w-2 h-2 rounded-full transition-colors",
-                              si < log.rating! ? "bg-primary" : "bg-border/40"
-                            ]} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  <div class="py-5">
+                    <p class="text-sm text-muted-foreground mb-3">
+                      {log.authorName && <span class="font-medium text-foreground">{log.authorName}, </span>}
+                      <time>{formatDate(log.cookedAt)}</time>{log.rating && `, ${log.rating}/5`}
+                    </p>
                     {log.photoUrl && (
                       <img
                         src={log.photoUrl.startsWith("/") ? `/api/uploads${log.photoUrl}` : log.photoUrl}
                         alt={t("cookLog.photoAlt")}
-                        class="block w-full max-w-full rounded-xl mb-3 border border-border/15 sm:max-w-sm"
+                        class="block w-full rounded-[20px] mb-3 sm:max-w-sm"
                         loading="lazy"
                       />
                     )}
-                    {log.notes && <p class="text-sm text-foreground/65 leading-relaxed">{log.notes}</p>}
+                    {log.notes && <p class="text-foreground leading-relaxed">{log.notes}</p>}
                   </div>
                 ))}
               </div>
             ) : (
-              <p class="text-sm text-muted-foreground/60">{t("cookLog.noLogs")}</p>
+              <p class="text-sm text-muted-foreground">{t("cookLog.noLogs")}</p>
             )}
           </div>
         </section>

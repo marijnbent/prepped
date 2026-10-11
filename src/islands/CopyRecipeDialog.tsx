@@ -51,36 +51,36 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          className="inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-medium bg-secondary/60 text-muted-foreground border border-border/30 hover:bg-secondary hover:text-foreground transition-colors"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border transition-colors hover:bg-secondary"
           aria-label={t("recipe.copy")}
+          title={t("recipe.copy")}
         >
-          <GitFork className="w-3 h-3" />
-          <span className="sr-only">{t("recipe.fork")}</span>
+          <GitFork size={18} strokeWidth={1.75} />
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">{t("recipe.copyToMyRecipes")}</DialogTitle>
+          <DialogTitle>{t("recipe.copyToMyRecipes")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 mt-4">
-          <p className="text-sm text-muted-foreground">{t("recipe.forkDesc")}</p>
+        <div className="space-y-5">
+          <p className="text-muted-foreground">{t("recipe.forkDesc")}</p>
           {collections.length > 0 && (
             <div>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="mb-2 font-medium">
                 {t("recipe.addToCollections")}
               </p>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="-mx-3 max-h-56 overflow-y-auto">
                 {collections.map((col) => (
                   <label
                     key={col.id}
-                    className="flex items-center gap-3 rounded-lg p-2 hover:bg-secondary/50 transition-colors cursor-pointer"
+                    className="flex cursor-pointer items-center gap-3 rounded-full px-3 py-2 transition-colors hover:bg-secondary"
                   >
                     <Checkbox
                       checked={selected.includes(col.id)}
                       onCheckedChange={() => toggleCollection(col.id)}
                     />
-                    <span className="text-sm">{col.name}</span>
-                    <span className="text-xs text-muted-foreground ml-auto tabular-nums">{col.recipeCount}</span>
+                    <span className="min-w-0 truncate">{col.name}</span>
+                    <span className="ml-auto text-sm text-muted-foreground tabular-nums">{col.recipeCount}</span>
                   </label>
                 ))}
               </div>
@@ -89,6 +89,7 @@ export default function CopyRecipeDialog({ recipeId, collections }: Props) {
           <Button
             onClick={handleCopy}
             disabled={loading}
+            size="lg"
             className="w-full"
           >
             {loading ? t("recipe.copying") : t("recipe.copyRecipe")}

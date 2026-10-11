@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Search } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { formatStepDuration } from "@/lib/recipe-export";
 
@@ -99,279 +100,86 @@ export default function RecipeSearch({
     return `/recipes/${recipe.slug}`;
   };
 
+  // Saved recipes say whose they are and whether there is already a fork
+  const savedLabel = (recipe: Recipe) => {
+    if (!recipe.savedByUser) return null;
+    return recipe.forkSlug ? t("recipe.alreadyForked") : t("recipe.savedBadge");
+  };
+
+  function tile(recipe: Recipe | CommunityRecipe, href: string, extra: (string | null | undefined)[]) {
+    const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+    const meta = [
+      totalTime > 0 && formatStepDuration(totalTime, minutesLabel, hoursLabel),
+      recipe.difficulty && difficultyLabel(recipe.difficulty).toLocaleLowerCase(),
+      ...extra,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return (
+      <a key={recipe.id} href={href} className="group block min-w-0">
+        <div className="aspect-[4/3] overflow-hidden rounded-[20px] bg-secondary">
+          {recipe.imageUrl && (
+            <img
+              src={recipe.imageUrl.startsWith("/") ? `/api/uploads${recipe.imageUrl}` : recipe.imageUrl}
+              alt={recipe.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
+          )}
+        </div>
+        <h3 className="mt-4 text-xl font-medium tracking-[-0.025em] leading-tight line-clamp-2 group-hover:underline underline-offset-4">
+          {recipe.title}
+        </h3>
+        {meta && <p className="mt-2 text-sm text-muted-foreground">{meta}</p>}
+      </a>
+    );
+  }
+
+  const gridClass = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10";
+
   return (
     <div>
-      {/* Search input — dark, minimal with warm focus glow */}
-      <div className="relative mb-10 max-w-md">
-        <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 pointer-events-none"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
+      <div className="relative mb-10 max-w-lg">
+        <Search
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+          strokeWidth={2}
+        />
         <input
           ref={inputRef}
           type="search"
+          aria-label={searchPlaceholder}
           placeholder={searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-11 h-12 rounded-xl bg-secondary/60 backdrop-blur-sm border-border/30 border shadow-inner shadow-black/10 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all placeholder:text-muted-foreground/60 text-sm outline-none"
+          className="w-full pl-11 pr-5 h-12 rounded-full bg-transparent border border-border placeholder:text-muted-foreground text-base"
         />
       </div>
 
       {filtered.length === 0 && filteredCommunity.length === 0 ? (
-        /* Empty state */
-        <div className="text-center py-28">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/80 border border-border/30 mb-6">
-            <svg
-              className="w-9 h-9 text-muted-foreground/30"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-            </svg>
-          </div>
-          <p className="font-serif text-muted-foreground text-lg">
-            {query ? noResultsText : t("recipe.noRecipesYet")}
-          </p>
-          {query && (
-            <p className="text-muted-foreground/40 text-sm mt-2">
-              {t("recipe.tryDifferent")}
-            </p>
-          )}
+        <div className="py-16">
+          <p className="text-xl font-medium">{query ? noResultsText : t("recipe.noRecipesYet")}</p>
+          {query && <p className="text-muted-foreground mt-2">{t("recipe.tryDifferent")}</p>}
         </div>
       ) : (
         <>
-        {/* Recipe grid — matches RecipeCard.astro visually */}
-        {filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {filtered.map((recipe, i) => {
-            const totalTime =
-              (recipe.prepTime || 0) + (recipe.cookTime || 0);
-            return (
-              <a
-                key={recipe.id}
-                href={getRecipeHref(recipe)}
-                className="group block animate-fade-up"
-                style={{ animationDelay: `${i * 50}ms` }}
-              >
-                <div className="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
-                  {/* Image area */}
-                  {recipe.imageUrl ? (
-                    <div className="aspect-[4/3] overflow-hidden relative">
-                      <img
-                        src={
-                          recipe.imageUrl.startsWith("/")
-                            ? `/api/uploads${recipe.imageUrl}`
-                            : recipe.imageUrl
-                        }
-                        alt={recipe.title}
-                        className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
-                        loading="lazy"
-                      />
-                      {/* Deep cinematic gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
-                      {/* Saved/Forked badge */}
-                      {recipe.savedByUser && (
-                        <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm">
-                          {recipe.forkSlug ? t("recipe.alreadyForked") : t("recipe.savedBadge")}
-                        </span>
-                      )}
-                      {/* Title over image */}
-                      <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                        <h3 className="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
-                          {recipe.title}
-                        </h3>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
-                      <div className="absolute top-6 right-6 w-24 h-24 rounded-full border border-primary/10" />
-                      <div className="absolute bottom-8 left-8 w-16 h-16 rounded-full bg-primary/5" />
-                      <svg
-                        className="w-14 h-14 text-muted-foreground/20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-                      </svg>
-                      {/* Saved/Forked badge */}
-                      {recipe.savedByUser && (
-                        <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm">
-                          {recipe.forkSlug ? t("recipe.alreadyForked") : t("recipe.savedBadge")}
-                        </span>
-                      )}
-                      <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                        <h3 className="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">
-                          {recipe.title}
-                        </h3>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Content below title */}
-                  <div className="px-4 pb-4 pt-2">
-                    {recipe.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                        {recipe.description}
-                      </p>
-                    )}
-                    {(totalTime > 0 || recipe.difficulty || recipe.savedByUser) && (
-                      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/30">
-                        {totalTime > 0 && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                            <svg
-                              className="w-3.5 h-3.5 text-primary/50"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <circle cx="12" cy="12" r="10" />
-                              <path d="M12 6v6l4 2" />
-                            </svg>
-                            {formatStepDuration(totalTime, minutesLabel, hoursLabel)}
-                          </span>
-                        )}
-                        {recipe.difficulty && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 capitalize">
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                recipe.difficulty === "easy"
-                                  ? "bg-emerald-400"
-                                  : recipe.difficulty === "medium"
-                                  ? "bg-amber-400"
-                                  : "bg-rose-400"
-                              }`}
-                            />
-                            {difficultyLabel(recipe.difficulty)}
-                          </span>
-                        )}
-                        {recipe.savedByUser && recipe.createdByName && (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 ml-auto">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                              <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            {recipe.createdByName}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Hover ambient glow */}
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
-                </div>
-              </a>
-            );
-          })}
-        </div>
-        )}
-
-      {/* Community search results — only visible when searching */}
-      {filteredCommunity.length > 0 && (
-        <div className="mt-14">
-          <h2 className="text-lg font-serif tracking-tight text-muted-foreground mb-6">
-            {t("recipe.communityResults")}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {filteredCommunity.map((recipe, i) => {
-              const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
-              return (
-                <a
-                  key={recipe.id}
-                  href={`/users/${recipe.createdBy}/recipes/${recipe.slug}`}
-                  className="group block animate-fade-up"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <div className="relative rounded-2xl bg-card overflow-hidden border border-border/40 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.06] hover:-translate-y-1.5">
-                    {recipe.imageUrl ? (
-                      <div className="aspect-[4/3] overflow-hidden relative">
-                        <img
-                          src={
-                            recipe.imageUrl.startsWith("/")
-                              ? `/api/uploads${recipe.imageUrl}`
-                              : recipe.imageUrl
-                          }
-                          alt={recipe.title}
-                          className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-110"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent opacity-70 pointer-events-none" />
-                        <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                          <h3 className="font-serif text-xl leading-tight text-foreground line-clamp-2 drop-shadow-lg">
-                            {recipe.title}
-                          </h3>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="aspect-[4/3] bg-gradient-to-br from-secondary via-muted to-accent/30 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute top-6 right-6 w-24 h-24 rounded-full border border-primary/10" />
-                        <div className="absolute bottom-8 left-8 w-16 h-16 rounded-full bg-primary/5" />
-                        <svg className="w-14 h-14 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z" />
-                        </svg>
-                        <div className="absolute bottom-0 inset-x-0 p-4 pb-3">
-                          <h3 className="font-serif text-xl leading-tight text-foreground/80 line-clamp-2">
-                            {recipe.title}
-                          </h3>
-                        </div>
-                      </div>
-                    )}
-                    <div className="px-4 pb-4 pt-2">
-                      {recipe.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                          {recipe.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/30">
-                        {totalTime > 0 && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                            <svg className="w-3.5 h-3.5 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                              <path d="M12 6v6l4 2" />
-                            </svg>
-                            {formatStepDuration(totalTime, minutesLabel, hoursLabel)}
-                          </span>
-                        )}
-                        {recipe.difficulty && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 capitalize">
-                            <span className={`w-1.5 h-1.5 rounded-full ${recipe.difficulty === "easy" ? "bg-emerald-400" : recipe.difficulty === "medium" ? "bg-amber-400" : "bg-rose-400"}`} />
-                            {difficultyLabel(recipe.difficulty)}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 ml-auto">
-                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
-                          {recipe.authorName}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ring-1 ring-inset ring-primary/10" />
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          {filtered.length > 0 && (
+            <div className={gridClass}>
+              {filtered.map((recipe) =>
+                tile(recipe, getRecipeHref(recipe), [recipe.createdByName, savedLabel(recipe)])
+              )}
+            </div>
+          )}
+          {filteredCommunity.length > 0 && (
+            <section className="mt-16">
+              <h2 className="text-2xl font-medium tracking-tight mb-6">{t("recipe.communityResults")}</h2>
+              <div className={gridClass}>
+                {filteredCommunity.map((recipe) =>
+                  tile(recipe, `/users/${recipe.createdBy}/recipes/${recipe.slug}`, [recipe.authorName])
+                )}
+              </div>
+            </section>
+          )}
         </>
       )}
     </div>

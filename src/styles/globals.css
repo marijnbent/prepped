@@ -4,293 +4,81 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* --- Light theme (default) ---
-     Warm cream tones with deep amber accent.
-     Editorial feel with generous whitespace. */
-
-  --color-background: oklch(0.975 0.005 80);
-  --color-foreground: oklch(0.14 0.01 60);
-
-  --color-card: oklch(0.995 0.003 80);
-  --color-card-foreground: oklch(0.14 0.01 60);
-
-  --color-popover: oklch(0.995 0.003 80);
-  --color-popover-foreground: oklch(0.14 0.01 60);
-
-  /* Warm amber primary — rich enough for light bg contrast */
-  --color-primary: oklch(0.55 0.17 55);
-  --color-primary-foreground: oklch(0.98 0.005 80);
-
-  --color-secondary: oklch(0.945 0.008 80);
-  --color-secondary-foreground: oklch(0.30 0.01 60);
-
-  --color-muted: oklch(0.93 0.012 80);
-  --color-muted-foreground: oklch(0.45 0.02 60);
-
-  --color-accent: oklch(0.94 0.015 180);
-  --color-accent-foreground: oklch(0.20 0.01 60);
-
-  --color-destructive: oklch(0.55 0.22 25);
-  --color-destructive-foreground: oklch(0.98 0.005 70);
-
-  --color-border: oklch(0.895 0.012 80);
-  --color-input: oklch(0.92 0.01 80);
-  --color-ring: oklch(0.55 0.17 55);
-
-  /* Chart palette */
-  --color-chart-1: oklch(0.55 0.17 55);
-  --color-chart-2: oklch(0.55 0.14 160);
-  --color-chart-3: oklch(0.50 0.12 250);
-  --color-chart-4: oklch(0.55 0.18 340);
-  --color-chart-5: oklch(0.50 0.10 30);
-
-  --color-sidebar: oklch(0.97 0.005 80);
-  --color-sidebar-foreground: oklch(0.14 0.01 60);
-  --color-sidebar-primary: oklch(0.55 0.17 55);
-  --color-sidebar-primary-foreground: oklch(0.98 0.005 80);
-  --color-sidebar-accent: oklch(0.94 0.01 80);
-  --color-sidebar-accent-foreground: oklch(0.30 0.01 60);
-  --color-sidebar-border: oklch(0.895 0.012 80);
-  --color-sidebar-ring: oklch(0.55 0.17 55);
-
-  /* Radii */
+  --color-background: #f4f4f0;
+  --color-foreground: #17181a;
+  --color-card: #f4f4f0;
+  --color-card-foreground: #17181a;
+  --color-popover: #f4f4f0;
+  --color-popover-foreground: #17181a;
+  --color-primary: #17181a;
+  --color-primary-foreground: #f4f4f0;
+  --color-secondary: #e9e9e4;
+  --color-secondary-foreground: #17181a;
+  --color-muted: #e9e9e4;
+  --color-muted-foreground: #5d5f62;
+  --color-accent: #e9e9e4;
+  --color-accent-foreground: #17181a;
+  --color-destructive: #b82f35;
+  --color-destructive-foreground: #f4f4f0;
+  --color-border: #dcdcd5;
+  --color-input: #dcdcd5;
+  --color-ring: #17181a;
+  --color-highlight: #ffe45c;
+  --color-highlight-foreground: #17181a;
+  --color-chart-1: #17181a;
+  --color-chart-2: #5d5f62;
+  --color-chart-3: #8b8d89;
+  --color-chart-4: #b7b8b1;
+  --color-chart-5: #dcdcd5;
+  --color-sidebar: var(--color-background);
+  --color-sidebar-foreground: var(--color-foreground);
+  --color-sidebar-primary: var(--color-primary);
+  --color-sidebar-primary-foreground: var(--color-primary-foreground);
+  --color-sidebar-accent: var(--color-secondary);
+  --color-sidebar-accent-foreground: var(--color-foreground);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-ring: var(--color-ring);
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
   --radius-xl: 1.25rem;
-
-  /* Custom animation timings */
-  --animate-fade-in: fade-in 0.6s ease-out both;
-  --animate-fade-up: fade-up 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-  --animate-scale-in: scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  --animate-slide-in-right: slide-in-right 0.45s ease-out both;
-  --animate-shimmer: shimmer 2.2s ease-in-out infinite;
-  --animate-glow-pulse: glow-pulse 3s ease-in-out infinite;
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-warm-pulse: warm-pulse 4s ease-in-out infinite;
-  --animate-soft-bounce: soft-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-
-  /* Font families */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "DM Serif Display", "Georgia", "Times New Roman", serif;
 }
 
-/* --- Dark theme overrides ("Midnight Kitchen") --- */
+@theme inline {
+  --font-sans: var(--font-outfit), sans-serif;
+  --font-serif: var(--font-outfit), sans-serif;
+}
+
 .dark {
-  --color-background: oklch(0.145 0.005 260);
-  --color-foreground: oklch(0.93 0.01 80);
-
-  --color-card: oklch(0.18 0.006 260);
-  --color-card-foreground: oklch(0.93 0.01 80);
-
-  --color-popover: oklch(0.19 0.006 260);
-  --color-popover-foreground: oklch(0.93 0.01 80);
-
-  --color-primary: oklch(0.78 0.15 75);
-  --color-primary-foreground: oklch(0.13 0.01 260);
-
-  --color-secondary: oklch(0.22 0.008 260);
-  --color-secondary-foreground: oklch(0.85 0.02 80);
-
-  --color-muted: oklch(0.20 0.006 260);
-  --color-muted-foreground: oklch(0.60 0.015 80);
-
-  --color-accent: oklch(0.24 0.012 200);
-  --color-accent-foreground: oklch(0.88 0.02 80);
-
-  --color-destructive: oklch(0.60 0.22 25);
-  --color-destructive-foreground: oklch(0.98 0.005 70);
-
-  --color-border: oklch(0.26 0.008 260);
-  --color-input: oklch(0.24 0.008 260);
-  --color-ring: oklch(0.78 0.15 75);
-
-  --color-chart-1: oklch(0.78 0.15 75);
-  --color-chart-2: oklch(0.65 0.14 160);
-  --color-chart-3: oklch(0.58 0.12 250);
-  --color-chart-4: oklch(0.70 0.18 340);
-  --color-chart-5: oklch(0.62 0.10 30);
-
-  --color-sidebar: oklch(0.16 0.005 260);
-  --color-sidebar-foreground: oklch(0.90 0.01 80);
-  --color-sidebar-primary: oklch(0.78 0.15 75);
-  --color-sidebar-primary-foreground: oklch(0.13 0.01 260);
-  --color-sidebar-accent: oklch(0.22 0.01 260);
-  --color-sidebar-accent-foreground: oklch(0.85 0.02 80);
-  --color-sidebar-border: oklch(0.26 0.008 260);
-  --color-sidebar-ring: oklch(0.78 0.15 75);
+  --color-background: #18191a;
+  --color-foreground: #f4f4f0;
+  --color-card: #242627;
+  --color-card-foreground: #f4f4f0;
+  --color-popover: #242627;
+  --color-popover-foreground: #f4f4f0;
+  --color-primary: #f4f4f0;
+  --color-primary-foreground: #18191a;
+  --color-secondary: #242627;
+  --color-secondary-foreground: #f4f4f0;
+  --color-muted: #242627;
+  --color-muted-foreground: #b6b7b5;
+  --color-accent: #242627;
+  --color-accent-foreground: #f4f4f0;
+  --color-destructive: #ef777b;
+  --color-destructive-foreground: #18191a;
+  --color-border: #393b3b;
+  --color-input: #393b3b;
+  --color-ring: #f4f4f0;
 }
 
-/* --- Keyframe animations --- */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes shimmer {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.4; filter: blur(40px); }
-  50% { opacity: 0.7; filter: blur(60px); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-8px) rotate(1deg); }
-  66% { transform: translateY(4px) rotate(-0.5deg); }
-}
-
-@keyframes warm-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.02); }
-}
-
-@keyframes soft-bounce {
-  0% { transform: scale(0.95); opacity: 0; }
-  60% { transform: scale(1.02); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Light body — warm subtle radials with extra depth */
-body {
-  background-image:
-    radial-gradient(ellipse 60% 50% at 15% 20%, oklch(0.55 0.06 55 / 0.045) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 75% 10%, oklch(0.60 0.04 40 / 0.025) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 85% 80%, oklch(0.50 0.04 180 / 0.03) 0%, transparent 60%);
-  background-attachment: fixed;
-}
-
-/* Dark body — moody warm glow */
-.dark body {
-  background-image:
-    radial-gradient(ellipse 60% 50% at 15% 20%, oklch(0.25 0.06 75 / 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 80%, oklch(0.22 0.04 200 / 0.08) 0%, transparent 60%);
-}
-
-/* Smooth scrolling globally */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom focus rings */
-*:focus-visible {
-  outline: 2px solid var(--color-ring, oklch(0.55 0.17 55 / 0.5));
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
-/* Selection color */
-::selection {
-  background-color: oklch(0.55 0.17 55 / 0.15);
-  color: oklch(0.14 0.01 60);
-}
-.dark ::selection {
-  background-color: oklch(0.78 0.15 75 / 0.2);
-  color: oklch(0.95 0.01 80);
-}
-
-/* Scrollbar styling — dark theme only */
-.dark ::-webkit-scrollbar {
-  width: 8px;
-}
-.dark ::-webkit-scrollbar-track {
-  background: oklch(0.14 0.005 260);
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: oklch(0.28 0.01 260);
-  border-radius: 4px;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.35 0.01 260);
-}
-
-/* Decorative separator — warm gradient line */
-.separator-warm {
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    oklch(0.55 0.17 55 / 0.15) 20%,
-    oklch(0.55 0.17 55 / 0.25) 50%,
-    oklch(0.55 0.17 55 / 0.15) 80%,
-    transparent
-  );
-}
-.dark .separator-warm {
-  background: linear-gradient(
-    to right,
-    transparent,
-    oklch(0.78 0.15 75 / 0.12) 20%,
-    oklch(0.78 0.15 75 / 0.2) 50%,
-    oklch(0.78 0.15 75 / 0.12) 80%,
-    transparent
-  );
-}
-
-/* Card shine effect on hover */
-.card-shine {
-  position: relative;
-  overflow: hidden;
-}
-.card-shine::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    oklch(1 0 0 / 0.03) 45%,
-    oklch(1 0 0 / 0.06) 50%,
-    oklch(1 0 0 / 0.03) 55%,
-    transparent 70%
-  );
-  transform: translateX(-100%);
-  transition: transform 0.8s ease;
-  pointer-events: none;
-  z-index: 1;
-}
-.card-shine:hover::before {
-  transform: translateX(100%);
-}
-
-/* Reduced motion preference */
+html { scroll-behavior: smooth; }
+body { font-size: 16px; line-height: 1.5; }
+*:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 3px; }
+/* Text fields already darken their border on focus, so the ring sits on it instead of doubling up. */
+:where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]), textarea, select):focus-visible { outline-offset: -1px; }
+::selection { background: var(--color-highlight); color: var(--color-highlight-foreground); }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

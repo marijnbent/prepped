@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Link, FileText, PenLine, Camera } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, PenLine } from "lucide-react";
 import RecipeForm from "./RecipeForm";
 import { t } from "@/lib/i18n";
 import { normalizeImageProvider } from "@/lib/image-provider";
@@ -329,9 +329,9 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
   // Loading state
   if (mode === "importing") {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">{importStageLabel(urlImportStage)}</p>
+      <div role="status" className="flex items-center gap-3 py-16 text-muted-foreground">
+        <Loader2 className="size-5 shrink-0 animate-spin" />
+        <p>{importStageLabel(urlImportStage)}</p>
       </div>
     );
   }
@@ -340,13 +340,12 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
   if (mode === "review" && imported) {
     return (
       <div>
-        <div className="mb-6 p-4 bg-secondary/50 rounded-lg flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t("import.reviewMessage")}
-          </p>
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[20px] bg-secondary py-3 pl-5 pr-3">
+          <p className="text-sm">{t("import.reviewMessage")}</p>
           <Button
             variant="ghost"
             size="sm"
+            className="hover:bg-border"
             onClick={() => {
               setImported(null);
               setMode("choose");
@@ -388,14 +387,14 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
   if (mode === "manual") {
     return (
       <div>
-        <div className="mb-6">
-          <button
-            onClick={() => setMode("choose")}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            &larr; {t("import.backToOptions")}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setMode("choose")}
+          className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          {t("import.backToOptions")}
+        </button>
         <RecipeForm tags={tags} collections={collections} />
       </div>
     );
@@ -403,151 +402,100 @@ export default function NewRecipePage({ tags: initialTags, collections: initialC
 
   // Choose mode
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl">
       {error && (
-        <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-scale-in">
+        <p role="alert" className="mb-8 rounded-[20px] border border-destructive/40 px-5 py-3 text-sm text-destructive">
           {error}
-        </div>
+        </p>
       )}
 
-      {/* --- Hero import card: URL + photo combined --- */}
-      <div className="group/card relative overflow-hidden rounded-2xl border border-border/40 bg-card/80 shadow-sm transition-all duration-300 hover:border-border/60 hover:shadow-md hover:shadow-primary/[0.04]">
-        {/* Decorative gradient glow at top of card */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-primary/[0.04] to-transparent pointer-events-none" />
+      <section className="pb-10">
+        <h2 className="text-2xl font-medium tracking-tight">
+          <label htmlFor="importUrl">{t("import.fromUrl")}</label>
+        </h2>
+        <p className="mt-1 text-muted-foreground">{t("import.fromUrlDesc")}</p>
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          <Input
+            id="importUrl"
+            type="url"
+            inputMode="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://example.com/recipe"
+            className="h-12 flex-1 px-5 text-base"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleImportUrl();
+              }
+            }}
+          />
+          <Button size="lg" onClick={handleImportUrl} disabled={!url.trim()}>
+            {t("import.import")}
+          </Button>
+        </div>
+      </section>
 
-        <div className="relative p-6 md:p-8">
-          {/* Header with icon */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 shadow-sm shadow-primary/[0.08] transition-transform duration-300 group-hover/card:scale-105">
-              <Link className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold tracking-tight text-base">{t("import.fromUrl")}</h2>
-              <p className="text-sm text-muted-foreground/70">
-                {t("import.fromUrlDesc")}
-              </p>
-            </div>
-          </div>
-
-          {/* URL input row */}
-          <div className="flex gap-2.5">
-            <Input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com/recipe"
-              className="flex-1 h-11 rounded-xl border-border/40 bg-background/60 text-base placeholder:text-muted-foreground/40 focus-visible:border-primary/40 focus-visible:ring-primary/20"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleImportUrl();
-                }
+      <section className="border-t border-border py-10">
+        <h2 className="text-2xl font-medium tracking-tight">{t("import.photo")}</h2>
+        <p className="mt-1 text-muted-foreground">{t("import.fromPhotoDesc")}</p>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <label className="relative inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-foreground px-[18px] text-sm font-medium transition-colors hover:bg-secondary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-[3px] has-[:focus-visible]:outline-ring">
+            <Camera className="size-4" />
+            {photoFiles.length > 0 ? t("import.addSecondPhoto") : t("import.upload")}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                handlePhotoSelection(files);
+                e.target.value = "";
               }}
             />
-            <Button
-              onClick={handleImportUrl}
-              disabled={!url.trim()}
-              className="h-11 px-5 rounded-xl shadow-sm shadow-primary/20 font-semibold tracking-tight"
-            >
-              {t("import.import")}
-            </Button>
-          </div>
-
-          {/* "or upload a photo" inline divider */}
-          <div className="flex items-center gap-3 mt-5">
-            <div className="flex-1 h-px bg-border/30" />
-            <label className="group/photo inline-flex items-center gap-2 cursor-pointer rounded-full border border-border/40 bg-background/60 pl-3.5 pr-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary hover:shadow-sm hover:shadow-primary/[0.06]">
-              <Camera className="h-4 w-4 transition-transform duration-200 group-hover/photo:scale-110" />
-              {photoFiles.length > 0 ? t("import.addSecondPhoto") : t("import.photo")}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  handlePhotoSelection(files);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <div className="flex-1 h-px bg-border/30" />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground/70 text-center">
-            {t("import.photoCountHint")}
-          </p>
+          </label>
           {photoFiles.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {photoFiles.length}/{PHOTO_MAX_FILES} {t("import.photosSelected")}
-              </span>
-              <Button
-                onClick={() => handleImportPhoto(photoFiles)}
-                size="sm"
-                className="h-8 rounded-lg"
-              >
-                {t("import.import")}
-              </Button>
-              <Button
-                onClick={() => setPhotoFiles([])}
-                size="sm"
-                variant="ghost"
-                className="h-8 rounded-lg"
-              >
+            <>
+              <Button onClick={() => handleImportPhoto(photoFiles)}>{t("import.import")}</Button>
+              <Button onClick={() => setPhotoFiles([])} variant="ghost">
                 {t("import.startOver")}
               </Button>
-            </div>
+            </>
           )}
         </div>
-      </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {photoFiles.length > 0
+            ? `${photoFiles.length}/${PHOTO_MAX_FILES} ${t("import.photosSelected")}`
+            : t("import.photoCountHint")}
+        </p>
+      </section>
 
-      {/* --- Paste text card --- */}
-      <div className="group/paste rounded-2xl border border-border/30 bg-card/50 transition-all duration-300 hover:border-border/50 hover:shadow-sm hover:shadow-primary/[0.03]">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/[0.07] transition-transform duration-300 group-hover/paste:scale-105">
-              <FileText className="h-4 w-4 text-primary/80" />
-            </div>
-            <div>
-              <h2 className="font-semibold tracking-tight text-sm">{t("import.pasteText")}</h2>
-              <p className="text-xs text-muted-foreground/60">
-                {t("import.pasteTextDesc")}
-              </p>
-            </div>
-          </div>
+      <section className="border-t border-border py-10">
+        <h2 className="text-2xl font-medium tracking-tight">
+          <label htmlFor="importText">{t("import.pasteText")}</label>
+        </h2>
+        <p className="mt-1 text-muted-foreground">{t("import.pasteTextDesc")}</p>
+        <Textarea
+          id="importText"
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          placeholder={t("import.pasteTextPlaceholder")}
+          rows={6}
+          className="mt-5 resize-none"
+        />
+        <Button onClick={handleImportText} disabled={!pasteText.trim()} variant="outline" className="mt-3">
+          {t("import.parseRecipe")}
+        </Button>
+      </section>
 
-          {/* Textarea */}
-          <Textarea
-            value={pasteText}
-            onChange={(e) => setPasteText(e.target.value)}
-            placeholder={t("import.pasteTextPlaceholder")}
-            rows={5}
-            className="rounded-xl border-border/30 bg-background/40 placeholder:text-muted-foreground/35 text-sm focus-visible:border-primary/30 focus-visible:ring-primary/15 resize-none"
-          />
-          <div className="mt-3 flex justify-end">
-            <Button
-              onClick={handleImportText}
-              disabled={!pasteText.trim()}
-              variant="outline"
-              className="rounded-xl border-border/40 hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary transition-all duration-200"
-            >
-              {t("import.parseRecipe")}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* --- Manual write: quiet text link --- */}
-      <div className="text-center pt-1 pb-2">
-        <button
-          onClick={() => setMode("manual")}
-          className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors duration-200 inline-flex items-center gap-1.5"
-        >
-          <PenLine className="h-3.5 w-3.5" />
-          {t("import.writeManually")}
-        </button>
-      </div>
+      <section className="border-t border-border pt-10">
+        <h2 className="text-2xl font-medium tracking-tight">{t("import.writeManually")}</h2>
+        <p className="mt-1 text-muted-foreground">{t("import.writeManuallyDesc")}</p>
+        <Button onClick={() => setMode("manual")} variant="outline" className="mt-5">
+          <PenLine />
+          {t("import.start")}
+        </Button>
+      </section>
     </div>
   );
 }

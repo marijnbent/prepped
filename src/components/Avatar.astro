@@ -1,0 +1,23 @@
+---
+interface Props {
+  name: string;
+  image?: string | null;
+  class?: string;
+}
+
+const { name, image, class: className } = Astro.props;
+const initials = name
+  .split(" ")
+  .map((n) => n[0])
+  .join("")
+  .toUpperCase()
+  .slice(0, 2);
+---
+
+{image ? (
+  <img src={image} alt="" class:list={["shrink-0 rounded-full object-cover", className]} />
+) : (
+  <span aria-hidden="true" class:list={["shrink-0 rounded-full bg-secondary inline-flex items-center justify-center font-medium", className]}>
+    {initials}
+  </span>
+)}

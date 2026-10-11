@@ -39,7 +39,7 @@ export default function UserMenu({ user, authMode }: Props) {
     return (
       <a
         href="/login"
-        className="inline-flex items-center gap-2 rounded-lg border border-border/40 bg-secondary/40 px-4 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border/60 transition-all duration-200"
+        className="inline-flex h-10 items-center rounded-full border-[1.5px] border-foreground px-[18px] text-sm font-medium transition-colors hover:bg-secondary"
       >
         {t("nav.login")}
       </a>
@@ -62,30 +62,36 @@ export default function UserMenu({ user, authMode }: Props) {
       className="relative"
       onMouseEnter={openMenu}
       onMouseLeave={scheduleClose}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
     >
       <Button
         variant="ghost"
         size="sm"
-        className="gap-2 text-muted-foreground hover:text-foreground"
+        className="gap-2"
+        aria-expanded={open}
+        onClick={openMenu}
       >
-        <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center">
-          <User className="h-3.5 w-3.5 text-primary" />
-        </div>
-        <span className="text-[13px]">{user.name || user.email}</span>
+        <User className="size-4" strokeWidth={1.75} />
+        <span>{user.name || user.email}</span>
       </Button>
       {open && (
         <div className="absolute right-0 top-full pt-1 z-50">
-          <div className="bg-card/95 backdrop-blur-xl border border-border/30 rounded-md p-1 shadow-md min-w-[160px]">
+          <div className="min-w-[180px] rounded-[20px] border border-border bg-background p-1.5 shadow-[0_12px_32px_-12px_rgb(23_24_26/0.18)]">
             <a
               href="/profile"
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors hover:bg-secondary"
             >
               <Settings className="h-4 w-4" />
               {t("profile.title")}
             </a>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
+              className="flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors hover:bg-secondary cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
               {t("nav.logout")}

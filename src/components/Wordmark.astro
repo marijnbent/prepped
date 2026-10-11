@@ -1,0 +1,60 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<span class:list={["wordmark", className]}>prepped<span class="bar" aria-hidden="true"><span>prepped</span></span></span>
+
+<style>
+  .wordmark {
+    --bar-left: 0.07em;
+    --bar-top: 0.6em;
+    --bar-height: 0.3em;
+    position: relative;
+    display: inline-block;
+    isolation: isolate;
+    font-weight: 600;
+    letter-spacing: -0.06em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  /* Light: the marker runs behind the lower half of the letters. */
+  .bar {
+    position: absolute;
+    z-index: -1;
+    left: calc(-1 * var(--bar-left));
+    right: -0.02em;
+    top: var(--bar-top);
+    height: var(--bar-height);
+    overflow: hidden;
+    border-radius: 0.06em;
+    background: var(--color-highlight);
+  }
+
+  .bar span {
+    display: none;
+    position: absolute;
+    left: var(--bar-left);
+    top: calc(-1 * var(--bar-top));
+    color: var(--color-highlight-foreground);
+  }
+
+  /* Dark: a bar through light letters reads as a strikethrough, so it drops
+     under the baseline and redraws the descenders in ink on top of itself. */
+  :global(.dark) .wordmark {
+    --bar-top: 0.9em;
+    --bar-height: 0.2em;
+  }
+
+  :global(.dark) .bar {
+    z-index: auto;
+  }
+
+  :global(.dark) .bar span {
+    display: block;
+  }
+</style>
