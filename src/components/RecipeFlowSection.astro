@@ -2,13 +2,16 @@
 import RecipeFlow from "../islands/RecipeFlow";
 import type { FlowRecipe } from "../lib/recipe-flow";
 import { recipeFlowFingerprint } from "../lib/recipe-flow-fingerprint";
+import { scheduleRecipeFlow } from "../lib/recipe-flow-service";
 
 interface Props {
   recipeId: number;
   recipe: FlowRecipe;
+  secretMode: boolean;
 }
 
-const { recipeId, recipe } = Astro.props;
+const { recipeId, recipe, secretMode } = Astro.props;
+scheduleRecipeFlow(recipeId, secretMode);
 ---
 <RecipeFlow
   client:load

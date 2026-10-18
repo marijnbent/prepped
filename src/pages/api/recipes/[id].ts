@@ -4,6 +4,7 @@ import { recipes, recipeTags, recipeCollections } from "../../../lib/schema";
 import { recipeSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
 import { eq, and, ne } from "drizzle-orm";
+import { scheduleRecipeFlow } from "../../../lib/recipe-flow-service";
 
 export const PUT: APIRoute = async ({ params, request, locals }) => {
   if (!locals.user) {
@@ -92,6 +93,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     return updatedRecipe;
   });
 
+  scheduleRecipeFlow(updated.id);
   return new Response(JSON.stringify(updated), {
     headers: { "Content-Type": "application/json" },
   });

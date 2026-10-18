@@ -12,6 +12,7 @@ import {
   resolveTagIds,
 } from "./import-shared";
 import { slugify } from "./slugify";
+import { scheduleRecipeFlow } from "./recipe-flow-service";
 import { recipeCollections, recipes, recipeTags, type Ingredient, type Step } from "./schema";
 import { type ApiRecipeCreateInput, recipeSchema, type RecipeInput } from "./validation";
 
@@ -190,7 +191,7 @@ export function createRecipeForUser(data: RecipeInput, userId: string) {
   const tagIds = dedupeNumberArray(data.tagIds);
   const collectionIds = dedupeNumberArray(data.collectionIds);
 
-  return db.transaction((tx) => {
+  const saved = db.transaction((tx) => {
     const recipe = tx
       .insert(recipes)
       .values({
@@ -232,4 +233,6 @@ export function createRecipeForUser(data: RecipeInput, userId: string) {
 
     return recipe;
   });
+  scheduleRecipeFlow(saved.id);
+  return saved;
 }

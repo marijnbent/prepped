@@ -3,7 +3,7 @@ import test from "node:test";
 import { validateRecipeFlow, type FlowRecipe, type RecipeFlow } from "../src/lib/recipe-flow";
 import { recipeFlowFingerprint } from "../src/lib/recipe-flow-fingerprint";
 import { generateRecipeFlow, RecipeFlowGenerationError } from "../src/lib/recipe-flow-generator";
-import { runRecipeFlowJob } from "../src/lib/recipe-flow-jobs";
+import { isRecipeFlowPending, runRecipeFlowJob } from "../src/lib/recipe-flow-jobs";
 import { canReadFlow, isFlowSameOrigin } from "../src/lib/recipe-flow-access";
 
 test("private recipe flows stay with their owner; published flows can be read", () => {
@@ -106,4 +106,30 @@ test("concurrent requests share one generation, and failures release their job",
   assert.equal(calls, 1);
   await assert.rejects(runRecipeFlowJob("test:failure", async () => { throw new Error("test"); }));
   assert.deepEqual(await runRecipeFlowJob("test:failure", async () => flow), flow);
+});
+
+test("burst saves queue after three active generations and share queued work", async () => {
+  const started: number[] = [];
+  const release: Array<() => void> = [];
+  const jobs = Array.from({ length: 5 }, (_, index) => runRecipeFlowJob(`test:queue:${index}`, async () => {
+    started.push(index);
+    await new Promise<void>(resolve => { release[index] = resolve; });
+    if (index === 0) throw new Error("provider failed");
+    return flow;
+  }));
+  const failed = assert.rejects(jobs[0], /provider failed/);
+  const shared = runRecipeFlowJob("test:queue:3", async () => { throw new Error("duplicate generation"); });
+  assert.equal(shared, jobs[3]);
+  assert.equal(isRecipeFlowPending("test:queue:4"), true);
+  await Promise.resolve();
+  assert.deepEqual(started, [0, 1, 2]);
+  release[0]();
+  await failed;
+  assert.deepEqual(started, [0, 1, 2, 3]);
+  release[1]();
+  await jobs[1];
+  assert.deepEqual(started, [0, 1, 2, 3, 4]);
+  for (const index of [2, 3, 4]) release[index]();
+  await Promise.all(jobs.slice(1));
+  assert.equal(isRecipeFlowPending("test:queue:4"), false);
 });

@@ -305,7 +305,7 @@ const hasUnsplashAttribution =
         </div>
       </div>
     </div>
-    <RecipeFlowSection recipeId={recipe.id} recipe={{ title: recipe.title, ingredients, steps, servings: recipe.servings }} />
+    <RecipeFlowSection recipeId={recipe.id} recipe={{ title: recipe.title, ingredients, steps, servings: recipe.servings }} secretMode={dirkSecretModeEnabled} />
 
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-10 lg:gap-14">
       <div>

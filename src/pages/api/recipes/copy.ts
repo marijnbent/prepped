@@ -4,6 +4,7 @@ import { recipes, recipeTags, recipeCollections, collections } from "../../../li
 import { copyRecipeSchema } from "../../../lib/validation";
 import { slugify } from "../../../lib/slugify";
 import { eq, and, asc, inArray } from "drizzle-orm";
+import { scheduleRecipeFlow } from "../../../lib/recipe-flow-service";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
@@ -114,6 +115,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return created;
   });
 
+  scheduleRecipeFlow(copy.id);
   return new Response(JSON.stringify({ slug: copy.slug }), {
     status: 201,
     headers: { "Content-Type": "application/json" },
