@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+import type { RecipeFlow } from "./recipe-flow";
 import type { OrganizedCategory, ShoppingListItem } from "./shopping-list";
 
 // ---- Auth tables (managed by Better Auth) ----
@@ -100,6 +101,17 @@ export const recipes = sqliteTable("recipes", {
   index("recipes_created_by_idx").on(table.createdBy),
   index("recipes_is_published_idx").on(table.isPublished),
   index("recipes_created_by_published_idx").on(table.createdBy, table.isPublished),
+]);
+
+export const recipeFlows = sqliteTable("recipe_flows", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipeId: integer("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  fingerprint: text("fingerprint").notNull(),
+  flow: text("flow", { mode: "json" }).$type<RecipeFlow>(),
+  retryAfter: integer("retry_after", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+}, (table) => [
+  uniqueIndex("recipe_flows_recipe_fingerprint_unique").on(table.recipeId, table.fingerprint),
 ]);
 
 export const collections = sqliteTable("collections", {
