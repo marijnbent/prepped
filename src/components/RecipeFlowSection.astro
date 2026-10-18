@@ -1,8 +1,7 @@
 ---
-import RecipeFlow, { type RecipeFlowLabels } from "../islands/RecipeFlow";
+import RecipeFlow from "../islands/RecipeFlow";
 import type { FlowRecipe } from "../lib/recipe-flow";
 import { recipeFlowFingerprint } from "../lib/recipe-flow-fingerprint";
-import { t } from "../lib/i18n";
 
 interface Props {
   recipeId: number;
@@ -10,42 +9,6 @@ interface Props {
 }
 
 const { recipeId, recipe } = Astro.props;
-const labels: RecipeFlowLabels = {
-  title: t("recipeFlow.title"),
-  subtitle: "",
-  loading: t("recipeFlow.loading"),
-  loadingHint: t("recipeFlow.loadingHint"),
-  error: t("recipeFlow.error"),
-  staleError: t("recipeFlow.staleError"),
-  busyError: t("recipeFlow.busyError"),
-  unverifiedError: t("recipeFlow.unverifiedError"),
-  tooLargeError: t("recipeFlow.tooLargeError"),
-  retry: t("recipeFlow.retry"),
-  signIn: t("recipeFlow.signIn"),
-  signInAction: t("recipeFlow.signInAction"),
-  layout: t("recipeFlow.layout"),
-  chart: t("recipeFlow.chart"),
-  list: t("recipeFlow.list"),
-  step: t("recipeFlow.step"),
-  beforeYouStart: t("recipeFlow.beforeYouStart"),
-  goesIn: t("recipeFlow.goesIn"),
-  fromEarlier: t("recipeFlow.fromEarlier"),
-  total: t("recipeFlow.total"),
-  forServings: t("recipeFlow.forServings"),
-  scaledNote: t("recipeFlow.scaledNote"),
-  fullStep: t("recipeFlow.fullStep"),
-  selectHint: t("recipeFlow.selectHint"),
-  asWritten: t("recipeFlow.asWritten"),
-  notInChart: t("recipeFlow.notInChart"),
-  notes: t("recipeFlow.notes"),
-  close: t("recipeFlow.close"),
-  kindPrepare: t("recipeFlow.kindPrepare"),
-  kindCombine: t("recipeFlow.kindCombine"),
-  kindHeat: t("recipeFlow.kindHeat"),
-  kindRest: t("recipeFlow.kindRest"),
-  kindFinish: t("recipeFlow.kindFinish"),
-  kindSetup: t("recipeFlow.kindSetup"),
-};
 ---
 <RecipeFlow
   client:load
@@ -54,5 +17,4 @@ const labels: RecipeFlowLabels = {
   fingerprint={recipeFlowFingerprint(recipe)}
   preferenceKey={Astro.locals.user?.id ?? "guest"}
   canGenerate={!!Astro.locals.user}
-  labels={labels}
 />

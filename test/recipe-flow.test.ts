@@ -74,13 +74,16 @@ test("fingerprints invalidate edited recipes while tolerating top-level property
 
 test("retries invalid generation once and never accepts an unverified graph", async () => {
   let calls = 0;
+  const efforts: string[] = [];
   const broken = { ...flow, nodes: flow.nodes.slice(0, 1) };
-  const fakeFetch: typeof fetch = async () => {
+  const fakeFetch: typeof fetch = async (_url, options) => {
     calls++;
+    efforts.push(JSON.parse(String(options?.body)).reasoning.effort);
     return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(calls === 1 ? broken : flow) } }] }));
   };
   const result = await generateRecipeFlow(recipe, { apiKey: "test", baseUrl: "https://example.invalid", fetch: fakeFetch });
   assert.equal(calls, 2);
+  assert.deepEqual(efforts, ["low", "medium"]);
   assert.equal(result.attempts[0].errors.length > 0, true);
   assert.deepEqual(result.flow, flow);
   let invalidCalls = 0;

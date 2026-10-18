@@ -8,7 +8,7 @@ export interface FlowRecipe {
   servings: number | null;
 }
 
-export const FLOW_VERSION = 2;
+export const FLOW_VERSION = 3;
 export const FLOW_MODEL = "~openai/gpt-luna-latest";
 
 export const recipeFlowSchema = z.object({

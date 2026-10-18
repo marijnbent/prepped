@@ -23,7 +23,7 @@ export async function generateRecipeFlow(recipe: FlowRecipe, options: Generation
       headers: { Authorization: `Bearer ${options.apiKey}`, "Content-Type": "application/json", "X-Title": "Prepped" },
       body: JSON.stringify({
         model: FLOW_MODEL,
-        reasoning: { effort: "medium" },
+        reasoning: { effort: attempt ? "medium" : "low" },
         max_tokens: 10000,
         provider: { require_parameters: true },
         messages: [
