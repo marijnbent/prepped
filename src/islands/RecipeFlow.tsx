@@ -14,7 +14,7 @@ interface Props {
 }
 
 type LoadState =
-  | { status: "idle" | "loading" | "signin" }
+  | { status: "idle" | "loading" | "pending" | "signin" }
   | { status: "ready"; flow: RecipeFlowGraph }
   | { status: "error"; message: string; retry: boolean };
 
@@ -130,28 +130,21 @@ export default function RecipeFlow({ recipeId, recipe, preferenceKey, canGenerat
   const [servings, setServings] = useState(baseServings);
   const inFlight = useRef(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (retry = false) => {
     if (inFlight.current) return;
     inFlight.current = true;
     setState({ status: "loading" });
     const url = `/api/recipes/${recipeId}/flow?fingerprint=${encodeURIComponent(fingerprint)}`;
     try {
-      const cached = await fetch(url, { headers: { Accept: "application/json" } });
-      if (cached.ok) {
-        const body = await cached.json();
-        if (body?.status === "ready" && body.flow && body.fingerprint === fingerprint) return setState({ status: "ready", flow: body.flow });
-      } else if (cached.status !== 401 && cached.status !== 403) {
-        return setState(await readFailure(cached));
-      }
-      if (!canGenerate) return setState({ status: "signin" });
-      const generated = await fetch(url, {
+      const response = await fetch(url, retry && canGenerate ? {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ fingerprint }),
-      });
-      if (!generated.ok) return setState(await readFailure(generated));
-      const body = await generated.json();
-      if (body?.status !== "ready" || !body.flow) setState({ status: "error", message: t("recipeFlow.error"), retry: true });
+      } : { headers: { Accept: "application/json" } });
+      if (!response.ok) return setState(await readFailure(response));
+      const body = await response.json();
+      if (body?.status === "pending") setState({ status: "pending" });
+      else if (body?.status !== "ready" || !body.flow) setState({ status: "error", message: t("recipeFlow.error"), retry: true });
       else if (body.fingerprint !== fingerprint) setState({ status: "error", message: t("recipeFlow.staleError"), retry: false });
       else setState({ status: "ready", flow: body.flow });
     } catch {
@@ -177,6 +170,10 @@ export default function RecipeFlow({ recipeId, recipe, preferenceKey, canGenerat
 
   useEffect(() => {
     if (open && state.status === "idle") void load();
+    if (open && state.status === "pending") {
+      const timer = window.setTimeout(() => void load(), 2000);
+      return () => window.clearTimeout(timer);
+    }
   }, [open, state.status, load]);
 
   const toggle = () => {
@@ -277,7 +274,7 @@ export default function RecipeFlow({ recipeId, recipe, preferenceKey, canGenerat
         <div role="alert" className="flex flex-wrap items-center gap-x-4 gap-y-3">
           <p className="text-sm">{state.message}</p>
           {state.retry && (
-            <button type="button" onClick={() => void load()} className="inline-flex h-10 items-center gap-1.5 rounded-full border-[1.5px] border-foreground px-[18px] text-sm font-medium hover:bg-secondary">
+            <button type="button" onClick={() => void load(true)} className="inline-flex h-10 items-center gap-1.5 rounded-full border-[1.5px] border-foreground px-[18px] text-sm font-medium hover:bg-secondary">
               <RotateCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {t("recipeFlow.retry")}
             </button>
