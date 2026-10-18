@@ -1,0 +1,20 @@
+---
+import RecipeFlow from "../islands/RecipeFlow";
+import type { FlowRecipe } from "../lib/recipe-flow";
+import { recipeFlowFingerprint } from "../lib/recipe-flow-fingerprint";
+
+interface Props {
+  recipeId: number;
+  recipe: FlowRecipe;
+}
+
+const { recipeId, recipe } = Astro.props;
+---
+<RecipeFlow
+  client:load
+  recipeId={recipeId}
+  recipe={recipe}
+  fingerprint={recipeFlowFingerprint(recipe)}
+  preferenceKey={Astro.locals.user?.id ?? "guest"}
+  canGenerate={!!Astro.locals.user}
+/>

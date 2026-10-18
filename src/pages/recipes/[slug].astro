@@ -1,6 +1,7 @@
 ---
 import { Share, Printer, Copy, Pencil, Trash2, ChevronDown, Link } from "lucide-react";
 import Layout from "../../layouts/Layout.astro";
+import RecipeFlowSection from "../../components/RecipeFlowSection.astro";
 import ServingsScaler from "../../islands/ServingsScaler";
 import RecipeChat from "../../islands/RecipeChat";
 import RecipeComments from "../../islands/RecipeComments";
@@ -304,6 +305,8 @@ const hasUnsplashAttribution =
         </div>
       </div>
     </div>
+    <RecipeFlowSection recipeId={recipe.id} recipe={{ title: recipe.title, ingredients, steps, servings: recipe.servings }} />
+
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-10 lg:gap-14">
       <div>
         <h2 class="font-medium text-2xl tracking-tight mb-5">{t("recipe.ingredients")}</h2>

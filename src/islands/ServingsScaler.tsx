@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { t } from "@/lib/i18n";
@@ -38,6 +38,11 @@ function splitIngredientName(name: string) {
 
 export default function ServingsScaler({ defaultServings, ingredients }: Props) {
   const [servings, setServings] = useState(defaultServings);
+
+  useEffect(() => {
+    document.documentElement.dataset.recipeServings = String(servings);
+    window.dispatchEvent(new CustomEvent("prepped:servings-change", { detail: { servings } }));
+  }, [servings]);
 
   const factor = servings / defaultServings;
 

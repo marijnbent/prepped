@@ -33,7 +33,7 @@ test("reviewed migrations create the complete schema", () => {
       (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as Array<{ name: string }>)
         .map((row) => row.name),
     );
-    for (const table of ["recipes", "shopping_lists", "recipe_comments", "notifications"]) {
+    for (const table of ["recipes", "shopping_lists", "recipe_comments", "notifications", "recipe_flows"]) {
       assert.ok(tables.has(table), `missing table: ${table}`);
     }
   });
@@ -65,7 +65,7 @@ test("leaves an absent idempotent migration for Drizzle to apply", () => {
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'notifications'")
       .get();
     assert.ok(notificationTable);
-    assert.equal(migrationRecordCount(sqlite), 5);
+    assert.equal(migrationRecordCount(sqlite), 6);
   });
 });
 

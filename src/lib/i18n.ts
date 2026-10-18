@@ -1,5 +1,23 @@
 const strings = {
   en: {
+    "recipeFlow.title": "Cooking flow",
+    "recipeFlow.loading": "Building the cooking flow…",
+    "recipeFlow.loadingHint": "First generation takes about 30–60 seconds.",
+    "recipeFlow.error": "The cooking flow could not be loaded.",
+    "recipeFlow.staleError": "This recipe changed. Reload the page to see the latest version.",
+    "recipeFlow.busyError": "Try again in a few minutes.",
+    "recipeFlow.unverifiedError": "A reliable flow could not be generated. Follow the original steps below.",
+    "recipeFlow.tooLargeError": "This recipe is too long for a cooking flow.",
+    "recipeFlow.retry": "Try again",
+    "recipeFlow.signIn": "Sign in to generate this cooking flow.",
+    "recipeFlow.signInAction": "Sign in",
+    "recipeFlow.step": "Step {n}",
+    "recipeFlow.forServings": "for {n}",
+    "recipeFlow.total": "{amount} in total",
+    "recipeFlow.fromEarlier": "from “{label}”",
+    "recipeFlow.fullStep": "Full step {n}",
+    "recipeFlow.scaledNote": "Ingredient totals are for {servings} servings. Step text and portions remain as written for {original}.",
+
     // Site
     "site.title": "Prepped",
     "site.description": "Family recipes",
@@ -394,6 +412,24 @@ const strings = {
     "profile.customizeHint": "Customize AI in {link}",
   },
   nl: {
+    "recipeFlow.title": "Kookschema",
+    "recipeFlow.loading": "Het kookschema wordt gemaakt…",
+    "recipeFlow.loadingHint": "De eerste keer duurt dit ongeveer 30–60 seconden.",
+    "recipeFlow.error": "Het kookschema kon niet worden geladen.",
+    "recipeFlow.staleError": "Dit recept is gewijzigd. Herlaad de pagina voor de nieuwste versie.",
+    "recipeFlow.busyError": "Probeer het over een paar minuten opnieuw.",
+    "recipeFlow.unverifiedError": "Er kon geen betrouwbaar schema worden gemaakt. Volg de oorspronkelijke stappen hieronder.",
+    "recipeFlow.tooLargeError": "Dit recept is te lang voor een kookschema.",
+    "recipeFlow.retry": "Opnieuw proberen",
+    "recipeFlow.signIn": "Log in om dit kookschema te maken.",
+    "recipeFlow.signInAction": "Inloggen",
+    "recipeFlow.step": "Stap {n}",
+    "recipeFlow.forServings": "voor {n}",
+    "recipeFlow.total": "{amount} in totaal",
+    "recipeFlow.fromEarlier": "uit ‘{label}’",
+    "recipeFlow.fullStep": "Volledige stap {n}",
+    "recipeFlow.scaledNote": "De totale hoeveelheden zijn voor {servings} personen. De tekst en deelhoeveelheden blijven zoals beschreven voor {original}.",
+
     // Site
     "site.title": "Prepped",
     "site.description": "Familierecepten",
