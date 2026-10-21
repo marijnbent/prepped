@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-slim AS deps
+FROM node:22.23.4-slim AS deps
 
 WORKDIR /app
 
@@ -34,7 +34,7 @@ FROM deps AS pruned-deps
 RUN --mount=type=cache,target=/root/.npm \
     npm prune --omit=dev --no-audit --no-fund
 
-FROM node:22-slim AS runtime
+FROM node:22.23.4-slim AS runtime
 
 WORKDIR /app
 
