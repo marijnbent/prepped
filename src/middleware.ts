@@ -1,13 +1,22 @@
 import { defineMiddleware } from "astro:middleware";
 import { auth, ssoEnabled } from "./lib/auth";
+import { getUserFromApiToken } from "./lib/api-auth";
 import { db } from "./lib/db";
+import { isCrossSiteForm } from "./lib/origin";
 import { users } from "./lib/schema";
 import { eq } from "drizzle-orm";
 
 const isSimpleAuth = import.meta.env.AUTH_MODE === "simple";
+const BACKCHANNEL_LOGOUT = "/api/auth/backchannel-logout";
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  if (isSimpleAuth && new URL(context.request.url).pathname === "/register") {
+  const { pathname, search } = context.url;
+
+  if (pathname !== BACKCHANNEL_LOGOUT && isCrossSiteForm(context.request, context.url)) {
+    return new Response(`Cross-site ${context.request.method} form submissions are forbidden`, { status: 403 });
+  }
+
+  if (isSimpleAuth && pathname === "/register") {
     return context.redirect("/login");
   }
 
@@ -40,10 +49,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
       };
     } else {
       context.locals.user = null;
-      const { pathname, search } = context.url;
-      const page = context.request.method === "GET" && context.request.headers.get("accept")?.includes("text/html");
-      if (ssoEnabled && page && pathname !== "/login" && !pathname.startsWith("/api/")) {
-        return context.redirect(`/api/auth/sso?redirect=${encodeURIComponent(pathname + search)}`);
+      const open = pathname === "/login" || pathname === "/ready" || pathname.startsWith("/api/auth/");
+      if (ssoEnabled && !open && !(await getUserFromApiToken(context.request))) {
+        const page = ["GET", "HEAD"].includes(context.request.method) && !pathname.startsWith("/api/");
+        return page
+          ? context.redirect(`/api/auth/sso?redirect=${encodeURIComponent(pathname + search)}`)
+          : new Response(null, { status: 401 });
       }
     }
   }

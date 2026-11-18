@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
-import { auth, SSO_PROVIDER_ID, ssoEnabled } from "@/lib/auth";
+import { auth, ssoEnabled } from "@/lib/auth";
+import { SSO_PROVIDER_ID } from "@/lib/oidc";
 
 export const GET: APIRoute = async ({ url }) => {
   if (!ssoEnabled) return new Response(null, { status: 404 });

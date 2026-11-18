@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { FolderOpen, LogOut, Settings, ShoppingCart, BookOpen, Heart, Users } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { logout } from "./logout";
 import ThemeToggle from "./ThemeToggle";
 
 interface Props {
@@ -11,17 +12,6 @@ interface Props {
 }
 
 export default function MobileNav({ user, authMode, open, onOpenChange }: Props) {
-  async function handleLogout() {
-    const url = authMode === "simple" ? "/api/auth/simple-logout" : "/api/auth/sign-out";
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
-    if (!response.ok) return;
-    window.location.href = "/login?local";
-  }
-
   const itemClass = "flex items-center gap-3 rounded-full px-3 py-2.5 transition-colors hover:bg-secondary";
 
   return (
@@ -86,7 +76,7 @@ export default function MobileNav({ user, authMode, open, onOpenChange }: Props)
               </div>
               <div className="my-3 border-t border-border" />
               <button
-                onClick={handleLogout}
+                onClick={() => void logout(authMode)}
                 className={`${itemClass} text-left`}
               >
                 <LogOut className="size-[18px]" strokeWidth={1.75} />

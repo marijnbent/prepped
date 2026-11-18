@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, Settings } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { logout } from "./logout";
 
 interface Props {
   user?: { id: string; name: string; email: string } | null;
@@ -46,17 +47,6 @@ export default function UserMenu({ user, authMode }: Props) {
     );
   }
 
-  async function handleLogout() {
-    const url = authMode === "simple" ? "/api/auth/simple-logout" : "/api/auth/sign-out";
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
-    if (!response.ok) return;
-    window.location.href = "/login?local";
-  }
-
   return (
     <div
       className="relative"
@@ -90,7 +80,7 @@ export default function UserMenu({ user, authMode }: Props) {
               {t("profile.title")}
             </a>
             <button
-              onClick={handleLogout}
+              onClick={() => void logout(authMode)}
               className="flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors hover:bg-secondary cursor-pointer"
             >
               <LogOut className="h-4 w-4" />

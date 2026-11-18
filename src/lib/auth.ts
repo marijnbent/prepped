@@ -1,27 +1,14 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware } from "better-auth/api";
 import { genericOAuth } from "better-auth/plugins";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "./db";
+import { ID_TOKEN_COOKIE, oidc, SSO_PROVIDER_ID } from "./oidc";
 import * as schema from "./schema";
 import { seedUserDefaults } from "./seed";
 
 const day = 60 * 60 * 24;
-
-function readOidc() {
-  const issuer = process.env.OIDC_ISSUER?.trim().replace(/\/$/, "");
-  const clientId = process.env.OIDC_CLIENT_ID?.trim();
-  const clientSecret = process.env.OIDC_CLIENT_SECRET?.trim();
-
-  if (!issuer && !clientId && !clientSecret) return null;
-  if (!issuer || !clientId || !clientSecret) {
-    throw new Error("OIDC_ISSUER, OIDC_CLIENT_ID and OIDC_CLIENT_SECRET must be set together");
-  }
-
-  return { issuer, clientId, clientSecret };
-}
-
-const oidc = readOidc();
 
 function adoptNameOnlyAccount(profile: Record<string, unknown>): void {
   if (typeof profile.email !== "string" || profile.email_verified !== true || typeof profile.name !== "string") return;
@@ -42,7 +29,6 @@ function adoptNameOnlyAccount(profile: Record<string, unknown>): void {
   }
 }
 
-export const SSO_PROVIDER_ID = "oidc";
 export const ssoEnabled = oidc !== null && import.meta.env.AUTH_MODE !== "simple";
 
 export const auth = betterAuth({
@@ -65,10 +51,23 @@ export const auth = betterAuth({
   session: {
     expiresIn: 365 * day,
     updateAge: day,
-    cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60,
-    },
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const session = ctx.context.newSession;
+      if (!session || ctx.params?.id !== SSO_PROVIDER_ID) return;
+
+      const { accounts } = schema;
+      const account = db
+        .select({ idToken: accounts.idToken })
+        .from(accounts)
+        .where(and(eq(accounts.userId, session.user.id), eq(accounts.providerId, SSO_PROVIDER_ID)))
+        .get();
+      if (!account?.idToken) return;
+
+      const cookie = ctx.context.createAuthCookie(ID_TOKEN_COOKIE, { maxAge: 365 * day });
+      ctx.setCookie(cookie.name, account.idToken, cookie.attributes);
+    }),
   },
   plugins: oidc
     ? [

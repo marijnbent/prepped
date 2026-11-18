@@ -9,6 +9,7 @@ export default defineConfig({
   fonts: [{ provider: fontProviders.google(), name: "Outfit", cssVariable: "--font-outfit", weights: ["100 900"], styles: ["normal"], subsets: ["latin"] }],
   adapter: node({ mode: "standalone" }),
   integrations: [react()],
+  security: { checkOrigin: false },
   server: {
     host: process.env.HOST || "127.0.0.1",
     port: parseInt(process.env.PORT || "4322"),
