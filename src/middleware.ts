@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { auth } from "./lib/auth";
+import { auth, ssoEnabled } from "./lib/auth";
 import { db } from "./lib/db";
 import { users } from "./lib/schema";
 import { eq } from "drizzle-orm";
@@ -40,6 +40,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
       };
     } else {
       context.locals.user = null;
+      const { pathname, search } = context.url;
+      const page = context.request.method === "GET" && context.request.headers.get("accept")?.includes("text/html");
+      if (ssoEnabled && page && pathname !== "/login" && !pathname.startsWith("/api/")) {
+        return context.redirect(`/api/auth/sso?redirect=${encodeURIComponent(pathname + search)}`);
+      }
     }
   }
 

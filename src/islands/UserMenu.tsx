@@ -54,7 +54,7 @@ export default function UserMenu({ user, authMode }: Props) {
       body: "{}",
     });
     if (!response.ok) return;
-    window.location.href = "/";
+    window.location.href = "/login?local";
   }
 
   return (

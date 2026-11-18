@@ -88,7 +88,7 @@ The readiness endpoint is available at `/ready`.
 
 ## Single Sign-On
 
-With `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` set, the login page sends people to your OpenID Connect provider. Visitors who are already signed in at the provider are signed in here without a click. This needs `AUTH_MODE=password`.
+With `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` set, every page sends logged-out visitors to your OpenID Connect provider. This needs `AUTH_MODE=password`.
 
 - Register `<BETTER_AUTH_URL>/api/auth/callback/oidc` as the redirect URI. The client secret is sent to the token endpoint as `client_secret_post`.
 - Accounts are matched on a verified email address. An unknown address gets a new account.
