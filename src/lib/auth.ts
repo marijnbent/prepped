@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth } from "better-auth/plugins";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./db";
 import * as schema from "./schema";
 import { seedUserDefaults } from "./seed";
@@ -21,6 +22,25 @@ function readOidc() {
 }
 
 const oidc = readOidc();
+
+function adoptNameOnlyAccount(profile: Record<string, unknown>): void {
+  if (typeof profile.email !== "string" || profile.email_verified !== true || typeof profile.name !== "string") return;
+  const email = profile.email.trim().toLowerCase();
+  const { users } = schema;
+  if (db.select({ id: users.id }).from(users).where(sql`lower(${users.email}) = ${email}`).get()) return;
+
+  const fullName = profile.name.trim().toLowerCase();
+  for (const name of new Set([fullName, fullName.split(/\s+/)[0]])) {
+    const matches = db
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`lower(${users.name}) = ${name} and ${users.email} like '%@family.local'`)
+      .all();
+    if (matches.length !== 1) continue;
+    db.update(users).set({ email, emailVerified: true, updatedAt: new Date() }).where(eq(users.id, matches[0].id)).run();
+    return;
+  }
+}
 
 export const SSO_PROVIDER_ID = "oidc";
 export const ssoEnabled = oidc !== null && import.meta.env.AUTH_MODE !== "simple";
@@ -61,6 +81,10 @@ export const auth = betterAuth({
               discoveryUrl: `${oidc.issuer}/.well-known/openid-configuration`,
               scopes: ["openid", "profile", "email"],
               pkce: true,
+              mapProfileToUser: (profile) => {
+                adoptNameOnlyAccount(profile);
+                return {};
+              },
             },
           ],
         }),

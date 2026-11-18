@@ -92,6 +92,7 @@ With `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` set, every page se
 
 - Register `<BETTER_AUTH_URL>/api/auth/callback/oidc` as the redirect URI. The client secret is sent to the token endpoint as `client_secret_post`.
 - Accounts are matched on a verified email address. An unknown address gets a new account.
+- Coming from `AUTH_MODE=simple`: someone whose name at the provider (full name or first name) matches exactly one name-only account takes over that account, with its recipes.
 - Registration by email is off; new accounts come from the provider.
 - Email and password login stays available at `/login?local`.
 
