@@ -82,8 +82,18 @@ The readiness endpoint is available at `/ready`.
 | `CLOUDFLARE_ACCOUNT_ID` | No | Cloudflare account id used for Browser Run quick actions |
 | `CLOUDFLARE_BROWSER_RUN_MIN_INTERVAL_MS` | No | Minimum delay between Browser Run quick actions in milliseconds (default: `10000` for free-tier limits) |
 | `INVITE_CODE` | No | If set, new users must enter this code to register |
+| `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | No | Single sign-on through an OpenID Connect provider. Set all three or none. See below |
 | `MEASUREMENT_SYSTEM` | No | `metric` (default) or `imperial` |
 | `PUBLIC_UI_LOCALE` | No | `en` (default) or `nl` |
+
+## Single Sign-On
+
+With `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` set, the login page sends people to your OpenID Connect provider. This needs `AUTH_MODE=password`.
+
+- Register `<BETTER_AUTH_URL>/api/auth/callback/oidc` as the redirect URI. The client secret is sent to the token endpoint as `client_secret_post`.
+- Accounts are matched on a verified email address. An unknown address gets a new account.
+- Registration by email is off; new accounts come from the provider.
+- Email and password login stays available at `/login?local`.
 
 ## API Access
 
