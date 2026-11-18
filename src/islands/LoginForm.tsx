@@ -8,6 +8,8 @@ interface Props {
   redirect?: string;
   inviteRequired: boolean;
   authMode?: string;
+  ssoUrl?: string;
+  ssoFailed?: boolean;
 }
 
 function normalizeRedirectPath(value?: string): string {
@@ -15,7 +17,7 @@ function normalizeRedirectPath(value?: string): string {
   return value.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
 
-export default function LoginForm({ redirect, inviteRequired, authMode }: Props) {
+export default function LoginForm({ redirect, inviteRequired, authMode, ssoUrl, ssoFailed }: Props) {
   const safeRedirect = normalizeRedirectPath(redirect);
   const isSimple = authMode === "simple";
   const [isRegister, setIsRegister] = useState(false);
@@ -23,7 +25,7 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(ssoFailed ? t("auth.errorSso") : "");
   const [loading, setLoading] = useState(false);
 
   async function postAuth(path: string, payload: Record<string, string>) {
@@ -199,19 +201,27 @@ export default function LoginForm({ redirect, inviteRequired, authMode }: Props)
         {loading ? t("common.loading") : isRegister ? t("auth.registerButton") : t("auth.loginButton")}
       </Button>
 
-      <p className="text-sm text-muted-foreground">
-        {isRegister ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
-        <button
-          type="button"
-          onClick={() => {
-            setIsRegister(!isRegister);
-            setError("");
-          }}
-          className="font-medium text-foreground underline underline-offset-4 cursor-pointer"
-        >
-          {isRegister ? t("auth.signInLink") : t("auth.registerLink")}
-        </button>
-      </p>
+      {ssoUrl && (
+        <Button asChild variant="outline" size="lg" className="w-full">
+          <a href={ssoUrl}>{t("auth.ssoButton")}</a>
+        </Button>
+      )}
+
+      {!ssoUrl && (
+        <p className="text-sm text-muted-foreground">
+          {isRegister ? t("auth.hasAccount") : t("auth.noAccount")}{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError("");
+            }}
+            className="font-medium text-foreground underline underline-offset-4 cursor-pointer"
+          >
+            {isRegister ? t("auth.signInLink") : t("auth.registerLink")}
+          </button>
+        </p>
+      )}
     </form>
   );
 }
