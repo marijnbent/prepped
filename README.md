@@ -88,12 +88,14 @@ The readiness endpoint is available at `/ready`.
 
 ## Single Sign-On
 
-With `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` set, every page sends logged-out visitors to your OpenID Connect provider. This needs `AUTH_MODE=password`.
+With `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` set, nothing is readable without logging in: every page sends logged-out visitors to your OpenID Connect provider, and other requests get a 401 unless they carry an API token. This needs `AUTH_MODE=password`.
 
 - Register `<BETTER_AUTH_URL>/api/auth/callback/oidc` as the redirect URI. The client secret is sent to the token endpoint as `client_secret_post`.
 - Accounts are matched on a verified email address. An unknown address gets a new account.
 - Coming from `AUTH_MODE=simple`: someone whose name at the provider (full name or first name) matches exactly one name-only account takes over that account, with its recipes.
 - Registration by email is off; new accounts come from the provider.
+- Logging out also ends the session at the provider, through its `end_session_endpoint`. Register `<BETTER_AUTH_URL>/` as the post-logout redirect URI.
+- When the provider session ends elsewhere, the provider can end the Prepped session too: register `<BETTER_AUTH_URL>/api/auth/backchannel-logout` as the OIDC back-channel logout URI.
 - Email and password login stays available at `/login?local`.
 
 ## API Access
