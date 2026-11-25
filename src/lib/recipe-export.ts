@@ -1,5 +1,5 @@
 import { groupIngredientsCupboardLast } from "./ingredient-groups";
-import { locale } from "./i18n";
+import { getLocale } from "./i18n";
 
 interface RecipeIngredient {
   amount: string;
@@ -51,7 +51,7 @@ export function formatStepDuration(duration: number, minutesLabel: string, hours
   }
 
   const hours = duration / 60;
-  const formattedHours = new Intl.NumberFormat(locale, {
+  const formattedHours = new Intl.NumberFormat(getLocale(), {
     maximumFractionDigits: 1,
   }).format(hours);
 

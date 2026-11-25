@@ -1,3 +1,5 @@
+import { resolveLocale } from "./i18n";
+
 export const defaultCollectionsByLocale = {
   en: [
     "🍽️ Mains",
@@ -23,23 +25,24 @@ export const defaultCollectionsByLocale = {
     "🥖 Bijgerechten",
     "🍪 Bakken",
   ],
+  fi: [
+    "🍽️ Pääruoat",
+    "🥗 Salaatit",
+    "🍰 Jälkiruoat",
+    "🥣 Keitot",
+    "🍳 Aamiainen",
+    "🥪 Välipalat",
+    "🥤 Juomat",
+    "🫙 Kastikkeet",
+    "🥖 Lisukkeet",
+    "🍪 Leivonta",
+  ],
 } as const;
 
 export const defaultCollections = defaultCollectionsByLocale.en;
 
-type DefaultCollectionLocale = keyof typeof defaultCollectionsByLocale;
-
-function normalizeLocale(locale?: string): string {
-  if (!locale) return "en";
-  return locale.toLowerCase().replace(/_/g, "-").split("-")[0];
-}
-
 export function getDefaultCollections(locale?: string): readonly string[] {
-  const normalizedLocale = normalizeLocale(locale);
-  if (normalizedLocale in defaultCollectionsByLocale) {
-    return defaultCollectionsByLocale[normalizedLocale as DefaultCollectionLocale];
-  }
-  return defaultCollectionsByLocale.en;
+  return defaultCollectionsByLocale[resolveLocale(locale) ?? "en"];
 }
 
 export const defaultTags = [

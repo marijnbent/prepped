@@ -18,7 +18,7 @@ A self-hosted recipe manager for families and small groups. Import recipes from 
 - **Shopping list** — combine ingredients from multiple recipes, organize with AI
 - **YouTube videos** — embedded on recipe pages when available
 - **Mobile-friendly** — responsive design, works great on phones
-- **Multi-language** — English and Dutch (`PUBLIC_UI_LOCALE`)
+- **Multi-language** — English, Dutch, and Finnish; each user picks their language in their profile (`PUBLIC_UI_LOCALE` sets the default)
 - **Single-file database** — SQLite
 
 ## Quick Start with Docker
@@ -84,7 +84,7 @@ The readiness endpoint is available at `/ready`.
 | `INVITE_CODE` | No | If set, new users must enter this code to register |
 | `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | No | Single sign-on through an OpenID Connect provider. Set all three or none. See below |
 | `MEASUREMENT_SYSTEM` | No | `metric` (default) or `imperial` |
-| `PUBLIC_UI_LOCALE` | No | `en` (default) or `nl` |
+| `PUBLIC_UI_LOCALE` | No | Default UI language for logged-out users and new accounts: `en` (default), `nl`, or `fi`. Signed-in users can override it in their profile |
 
 ## Single Sign-On
 

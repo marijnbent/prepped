@@ -41,6 +41,15 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
+  user: {
+    additionalFields: {
+      locale: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     disableSignUp: ssoEnabled,

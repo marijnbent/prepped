@@ -28,6 +28,6 @@ interface ImportMeta {
 
 declare namespace App {
   interface Locals {
-    user: { id: string; name: string; email: string } | null;
+    user: { id: string; name: string; email: string; locale?: string | null } | null;
   }
 }

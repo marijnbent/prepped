@@ -1,4 +1,4 @@
-import { locale, t } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
 type FlattenedFieldErrors = Record<string, string[] | undefined>;
 type ValidationIssuePath = Array<string | number>;
@@ -68,12 +68,12 @@ function formatValidationIssue(issue: ValidationIssue) {
   const label = Array.isArray(issue.path) ? formatFieldLabel(issue.path) : undefined;
 
   if (issue.code === "too_small" && issue.minimum === 0) {
-    const message = locale === "nl" ? "moet groter zijn dan 0" : "must be greater than 0";
+    const message = t("validation.tooSmall");
     return label ? `${label}: ${message}` : message;
   }
 
   if (issue.code === "invalid_format" && issue.format === "url") {
-    const message = locale === "nl" ? "voer een geldige URL in" : "enter a valid URL";
+    const message = t("validation.invalidUrl");
     return label ? `${label}: ${message}` : message;
   }
 

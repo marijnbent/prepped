@@ -1,16 +1,18 @@
-import { t } from "./i18n";
+import { translatedValues } from "./i18n";
 
 type IngredientLike = {
   group?: string;
 };
 
-const KNOWN_CUPBOARD_GROUPS = new Set(["cupboard", "voorraadkast"]);
+const CUPBOARD_GROUP_NAMES = new Set(
+  translatedValues("recipe.cupboard").map((value) => value.trim().toLowerCase()),
+);
 
 export function isCupboardGroup(group?: string | null) {
   const normalized = group?.trim().toLowerCase();
   if (!normalized) return false;
 
-  return KNOWN_CUPBOARD_GROUPS.has(normalized) || normalized === t("recipe.cupboard").trim().toLowerCase();
+  return CUPBOARD_GROUP_NAMES.has(normalized);
 }
 
 export function sortIngredientsCupboardLast<T extends IngredientLike>(ingredients: T[]) {
