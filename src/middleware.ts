@@ -31,6 +31,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
           id: user.id,
           name: user.name,
           email: user.email,
+          locale: user.locale,
         };
       } else {
         context.locals.user = null;
@@ -48,6 +49,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         id: session.user.id,
         name: session.user.name,
         email: session.user.email,
+        locale: session.user.locale,
       };
     } else {
       context.locals.user = null;
@@ -61,10 +63,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  const userLocale = context.locals.user
-    ? db.select({ locale: users.locale }).from(users).where(eq(users.id, context.locals.user.id)).get()?.locale
-    : null;
-  const locale = resolveLocale(userLocale)
+  const locale = resolveLocale(context.locals.user?.locale)
     ?? resolveLocale(import.meta.env.PUBLIC_UI_LOCALE)
     ?? "en";
 

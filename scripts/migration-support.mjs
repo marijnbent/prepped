@@ -185,7 +185,12 @@ export function legacyBaselineCount(db) {
     "notifications_comment_id_idx",
   ]);
   if (commentsReady && notificationsReady && commentsIndexesReady) count = 5;
-  if (count === 5 && usersColumns.has("locale")) count = 6;
+
+  const hasLocale = usersColumns.has("locale");
+  if (hasLocale && count < 5) {
+    throw new Error("Legacy database migrations are not a contiguous prefix.");
+  }
+  if (hasLocale) count = 6;
 
   return count;
 }

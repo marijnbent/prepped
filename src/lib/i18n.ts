@@ -282,6 +282,10 @@ const strings = {
     "common.search": "Search",
     "common.close": "Close",
 
+    // Validation
+    "validation.tooSmall": "must be greater than 0",
+    "validation.invalidUrl": "enter a valid URL",
+
     // Count (pluralization)
     "count.recipe": "recipe",
     "count.recipes": "recipes",
@@ -697,6 +701,10 @@ const strings = {
     "common.back": "Terug",
     "common.search": "Zoeken",
     "common.close": "Sluiten",
+
+    // Validation
+    "validation.tooSmall": "moet groter zijn dan 0",
+    "validation.invalidUrl": "voer een geldige URL in",
 
     // Count (pluralization)
     "count.recipe": "recept",
@@ -1114,6 +1122,10 @@ const strings = {
     "common.search": "Hae",
     "common.close": "Sulje",
 
+    // Validation
+    "validation.tooSmall": "on oltava suurempi kuin 0",
+    "validation.invalidUrl": "anna kelvollinen URL",
+
     // Count (pluralization)
     "count.recipe": "resepti",
     "count.recipes": "reseptiä",
@@ -1251,6 +1263,18 @@ const strings = {
 
 export type Locale = keyof typeof strings;
 type StringKey = keyof (typeof strings)["en"];
+
+export const localeNames = {
+  en: "English",
+  nl: "Nederlands",
+  fi: "Suomi",
+} as const satisfies Record<Locale, string>;
+
+export const supportedLocales = Object.keys(strings) as Locale[];
+
+export function translatedValues(key: StringKey): string[] {
+  return supportedLocales.map((locale) => strings[locale][key]);
+}
 
 type LocaleResolver = () => Locale | undefined;
 

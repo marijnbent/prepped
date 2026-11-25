@@ -1,4 +1,4 @@
-import { getLocale, t } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
 type FlattenedFieldErrors = Record<string, string[] | undefined>;
 type ValidationIssuePath = Array<string | number>;
@@ -10,25 +10,6 @@ type ValidationIssue = {
   minimum?: number;
   format?: string;
 };
-
-const validationMessages = {
-  en: {
-    tooSmall: "must be greater than 0",
-    invalidUrl: "enter a valid URL",
-  },
-  nl: {
-    tooSmall: "moet groter zijn dan 0",
-    invalidUrl: "voer een geldige URL in",
-  },
-  fi: {
-    tooSmall: "on oltava suurempi kuin 0",
-    invalidUrl: "anna kelvollinen URL",
-  },
-} as const;
-
-function validationMessage(kind: keyof (typeof validationMessages)["en"]) {
-  return validationMessages[getLocale()][kind];
-}
 
 type ErrorPayload = {
   error?: unknown;
@@ -87,12 +68,12 @@ function formatValidationIssue(issue: ValidationIssue) {
   const label = Array.isArray(issue.path) ? formatFieldLabel(issue.path) : undefined;
 
   if (issue.code === "too_small" && issue.minimum === 0) {
-    const message = validationMessage("tooSmall");
+    const message = t("validation.tooSmall");
     return label ? `${label}: ${message}` : message;
   }
 
   if (issue.code === "invalid_format" && issue.format === "url") {
-    const message = validationMessage("invalidUrl");
+    const message = t("validation.invalidUrl");
     return label ? `${label}: ${message}` : message;
   }
 

@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
 Respond in plain text only. You may use **bold** for emphasis when needed, but no other markdown formatting (no headers, lists, links, or code blocks).
 
-The default language for this installation is ${t("site.language")} (${getLocale()}). Reply in ${t("site.language")} unless the user's personal instruction or the user's latest message clearly asks for a different language.
+The user's current language is ${t("site.language")} (${getLocale()}). Reply in ${t("site.language")} unless the user's personal instruction or the user's latest message clearly asks for a different language.
 
 The user prefers ${measurementSystem} measurements. Use ${measurementSystem === "metric" ? "grams, ml, °C" : "oz, cups, °F"} when mentioning quantities or temperatures.
 

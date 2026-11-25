@@ -5,14 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Copy, Trash2, ExternalLink } from "lucide-react";
-import { t } from "@/lib/i18n";
+import { localeNames, supportedLocales, t, type Locale } from "@/lib/i18n";
 import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface Props {
   importPrompt: string;
   chatPrompt: string;
   shoppingPrompt: string;
-  locale: string;
+  locale: Locale;
   cookingSuppliesExpandedByDefault: boolean;
   dirkSecretModeEnabled: boolean;
   apiTokenPreview: string;
@@ -36,7 +36,7 @@ export default function ProfileForm({
   const [importPrompt, setImportPrompt] = useState(initialImport);
   const [chatPrompt, setChatPrompt] = useState(initialChat);
   const [shoppingPrompt, setShoppingPrompt] = useState(initialShopping);
-  const [locale, setLocale] = useState(initialLocale);
+  const [locale, setLocale] = useState<Locale>(initialLocale);
   const [cookingSuppliesExpandedByDefault, setCookingSuppliesExpandedByDefault] = useState(initialCookingSuppliesExpandedByDefault);
   const [dirkSecretModeEnabled, setDirkSecretModeEnabled] = useState(initialDirkSecretModeEnabled);
   const [apiTokenPreview, setApiTokenPreview] = useState(initialApiTokenPreview);
@@ -357,12 +357,12 @@ export default function ProfileForm({
               id="locale"
               aria-describedby="locale-desc"
               value={locale}
-              onChange={(e) => setLocale(e.target.value)}
+              onChange={(e) => setLocale(e.target.value as Locale)}
               className="h-10 w-full max-w-xs rounded-full border border-input bg-background px-4 text-base transition-colors hover:border-muted-foreground focus-visible:border-foreground focus-visible:outline-none md:text-sm"
             >
-              <option value="en">English</option>
-              <option value="nl">Nederlands</option>
-              <option value="fi">Suomi</option>
+              {supportedLocales.map((value) => (
+                <option key={value} value={value}>{localeNames[value]}</option>
+              ))}
             </select>
           </div>
           <div className="flex items-start gap-3">

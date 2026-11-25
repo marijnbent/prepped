@@ -77,7 +77,7 @@ export function getImportContext(userId: string) {
 }
 
 function buildLocaleInstruction() {
-  return `The default language for this installation is ${t("site.language")} (${getLocale()}). Use ${t("site.language")} for all generated recipe text unless the user's personal instruction explicitly says otherwise. This default language rule applies to the title, description, ingredients, ingredient group names, steps, notes, tags, and collections.`;
+  return `The user's current language is ${t("site.language")} (${getLocale()}). Use ${t("site.language")} for all generated recipe text unless the user's personal instruction explicitly says otherwise. This language rule applies to the title, description, ingredients, ingredient group names, steps, notes, tags, and collections.`;
 }
 
 export function buildImportRules(ctx: ReturnType<typeof getImportContext>) {
