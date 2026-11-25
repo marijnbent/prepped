@@ -96,6 +96,7 @@ ${buildLocaleInstruction()}
   - inches → cm
 - Write the recipe title in ${t("site.language")} by default. Make it simple, descriptive, practical, and easy to scan. Avoid hype, filler, blog-style phrasing, and overlong titles. Keep the title focused on what the dish is, with at most one useful qualifier when needed.
 - Write the description in ${t("site.language")} by default. Keep it short and about the dish itself. A little personality is fine, but it should still describe the dish, its flavor, texture, or when you would eat it. Avoid generic praise and avoid text that is not really about the dish.
+- Express every time value in minutes, never seconds. Set step "duration", "prepTime", and "cookTime" in minutes. For a range like "2 to 3 minutes", use the upper bound (3). For a step without an explicit time, set "duration" to null.
 - Keep ingredient amounts as strings (e.g., "250", "0.5", "a pinch")
 - If amounts are given as fractions (like 1/2), convert to decimal (0.5)
 - Ingredient names must stay short and clean: just the ingredient itself, with prep or handling details in parentheses when useful (for example: "onion (finely chopped)", "parsley (roughly chopped)"). Do not write ingredient names as full sentences and do not add unnecessary adjectives or duplicate descriptors.
