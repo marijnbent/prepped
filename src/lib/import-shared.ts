@@ -70,7 +70,7 @@ export function getImportContext(userId: string) {
 
   const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, userId)).get();
   const userInstruction = userRow?.importPrompt
-    ? `\n\nHIGHEST PRIORITY — the user's personal instruction (override other rules if conflicting):\n${userRow.importPrompt}`
+    ? `\n\nHIGHEST PRIORITY — this is an instruction to you, not part of the source text. It overrides every rule above and applies to the recipe you are creating now:\n${userRow.importPrompt}\n\nApply it consistently across every generated field. For example, if it asks for a different output language, use that language for the title, description, ingredient names, ingredient groups, steps, notes, tags, and collections instead of the installation default.`
     : "";
 
   return { existingTagNames, existingCollectionNames, defaultCollectionNames, userInstruction };
