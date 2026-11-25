@@ -11,6 +11,25 @@ type ValidationIssue = {
   format?: string;
 };
 
+const validationMessages = {
+  en: {
+    tooSmall: "must be greater than 0",
+    invalidUrl: "enter a valid URL",
+  },
+  nl: {
+    tooSmall: "moet groter zijn dan 0",
+    invalidUrl: "voer een geldige URL in",
+  },
+  fi: {
+    tooSmall: "on oltava suurempi kuin 0",
+    invalidUrl: "anna kelvollinen URL",
+  },
+} as const;
+
+function validationMessage(kind: keyof (typeof validationMessages)["en"]) {
+  return validationMessages[locale][kind];
+}
+
 type ErrorPayload = {
   error?: unknown;
   issues?: ValidationIssue[];
@@ -68,12 +87,12 @@ function formatValidationIssue(issue: ValidationIssue) {
   const label = Array.isArray(issue.path) ? formatFieldLabel(issue.path) : undefined;
 
   if (issue.code === "too_small" && issue.minimum === 0) {
-    const message = locale === "nl" ? "moet groter zijn dan 0" : "must be greater than 0";
+    const message = validationMessage("tooSmall");
     return label ? `${label}: ${message}` : message;
   }
 
   if (issue.code === "invalid_format" && issue.format === "url") {
-    const message = locale === "nl" ? "voer een geldige URL in" : "enter a valid URL";
+    const message = validationMessage("invalidUrl");
     return label ? `${label}: ${message}` : message;
   }
 

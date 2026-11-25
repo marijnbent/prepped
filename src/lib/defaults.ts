@@ -23,6 +23,18 @@ export const defaultCollectionsByLocale = {
     "🥖 Bijgerechten",
     "🍪 Bakken",
   ],
+  fi: [
+    "🍽️ Pääruoat",
+    "🥗 Salaatit",
+    "🍰 Jälkiruoat",
+    "🥣 Keitot",
+    "🍳 Aamiainen",
+    "🥪 Välipalat",
+    "🥤 Juomat",
+    "🫙 Kastikkeet",
+    "🥖 Lisukkeet",
+    "🍪 Leivonta",
+  ],
 } as const;
 
 export const defaultCollections = defaultCollectionsByLocale.en;

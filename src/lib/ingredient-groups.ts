@@ -4,7 +4,7 @@ type IngredientLike = {
   group?: string;
 };
 
-const KNOWN_CUPBOARD_GROUPS = new Set(["cupboard", "voorraadkast"]);
+const KNOWN_CUPBOARD_GROUPS = new Set(["cupboard", "voorraadkast", "kuivakaappi"]);
 
 export function isCupboardGroup(group?: string | null) {
   const normalized = group?.trim().toLowerCase();
