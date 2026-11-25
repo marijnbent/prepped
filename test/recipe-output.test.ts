@@ -25,6 +25,28 @@ test("recipe AI schema requires every structured output property", () => {
   assertAllPropertiesRequired(schema.properties.steps.items);
 });
 
+test("describes extracted time fields in minutes", () => {
+  const schema = z.toJSONSchema(recipeOutputSchema) as unknown as {
+    properties: {
+      prepTime: { description?: string };
+      cookTime: { description?: string };
+      steps: {
+        items: {
+          properties: {
+            duration: { description?: string };
+          };
+        };
+      };
+    };
+  };
+
+  const stepDuration = schema.properties.steps.items.properties.duration.description ?? "";
+  assert.match(stepDuration, /minutes/i);
+  assert.match(stepDuration, /upper bound/i);
+  assert.match(schema.properties.prepTime.description ?? "", /minutes/i);
+  assert.match(schema.properties.cookTime.description ?? "", /minutes/i);
+});
+
 test("normalizes nullable AI values to application optionals", () => {
   const output = recipeOutputSchema.parse({
     title: "Lasagne Wraps",

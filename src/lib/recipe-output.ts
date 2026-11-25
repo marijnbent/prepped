@@ -18,12 +18,17 @@ export const recipeOutputSchema = z.object({
     z.object({
       order: z.number(),
       instruction: z.string(),
-      duration: z.number().nullable(),
+      duration: z
+        .number()
+        .nullable()
+        .describe(
+          "Total time for this step in minutes, never seconds. Use the upper bound of a range. Use null when the step has no explicit time."
+        ),
     })
   ),
   servings: z.number().nullable(),
-  prepTime: z.number().nullable(),
-  cookTime: z.number().nullable(),
+  prepTime: z.number().nullable().describe("Total preparation time in minutes, never seconds."),
+  cookTime: z.number().nullable().describe("Total cooking time in minutes, never seconds."),
   difficulty: z.enum(["easy", "medium", "hard"]).nullable(),
   notes: z.string().nullable(),
   tags: z.array(z.string()).nullable(),
