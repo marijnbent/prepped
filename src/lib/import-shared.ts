@@ -3,7 +3,7 @@ import { tags, collections, users } from "./schema";
 import { eq, and } from "drizzle-orm";
 import { slugify } from "./slugify";
 import { getDefaultCollections, defaultTags } from "./defaults";
-import { locale, t } from "./i18n";
+import { getLocale, t } from "./i18n";
 import { isCupboardGroup, sortIngredientsCupboardLast } from "./ingredient-groups";
 
 export function resolveTagIds(tagNames: string[]): number[] {
@@ -66,7 +66,7 @@ export function getImportContext(userId: string) {
     .all();
   const existingTagNames = existingTags.map((t) => t.name);
   const existingCollectionNames = existingCollections.map((c) => c.name);
-  const defaultCollectionNames = getDefaultCollections(import.meta.env.PUBLIC_UI_LOCALE);
+  const defaultCollectionNames = getDefaultCollections(getLocale());
 
   const userRow = db.select({ importPrompt: users.importPrompt }).from(users).where(eq(users.id, userId)).get();
   const userInstruction = userRow?.importPrompt
@@ -77,7 +77,7 @@ export function getImportContext(userId: string) {
 }
 
 function buildLocaleInstruction() {
-  return `The default language for this installation is ${t("site.language")} (${locale}). Use ${t("site.language")} for all generated recipe text unless the user's personal instruction explicitly says otherwise. This default language rule applies to the title, description, ingredients, ingredient group names, steps, notes, tags, and collections.`;
+  return `The default language for this installation is ${t("site.language")} (${getLocale()}). Use ${t("site.language")} for all generated recipe text unless the user's personal instruction explicitly says otherwise. This default language rule applies to the title, description, ingredients, ingredient group names, steps, notes, tags, and collections.`;
 }
 
 export function buildImportRules(ctx: ReturnType<typeof getImportContext>) {

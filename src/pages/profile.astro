@@ -5,7 +5,7 @@ import { db } from "../lib/db";
 import { users } from "../lib/schema";
 import { eq } from "drizzle-orm";
 import PageHeader from "../components/PageHeader.astro";
-import { t } from "../lib/i18n";
+import { t, getLocale } from "../lib/i18n";
 
 if (!Astro.locals.user) {
   return Astro.redirect("/login?redirect=/profile");
@@ -15,6 +15,7 @@ const user = db.select({
   importPrompt: users.importPrompt,
   chatPrompt: users.chatPrompt,
   shoppingPrompt: users.shoppingPrompt,
+  locale: users.locale,
   cookingSuppliesExpandedByDefault: users.cookingSuppliesExpandedByDefault,
   dirkSecretModeEnabled: users.dirkSecretModeEnabled,
   apiTokenPreview: users.apiTokenPreview,
@@ -34,6 +35,7 @@ const user = db.select({
       importPrompt={user?.importPrompt || ""}
       chatPrompt={user?.chatPrompt || ""}
       shoppingPrompt={user?.shoppingPrompt || ""}
+      locale={user?.locale || getLocale()}
       cookingSuppliesExpandedByDefault={user?.cookingSuppliesExpandedByDefault ?? false}
       dirkSecretModeEnabled={user?.dirkSecretModeEnabled ?? false}
       apiTokenPreview={user?.apiTokenPreview || ""}

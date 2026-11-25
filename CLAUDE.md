@@ -27,7 +27,7 @@ No test runner or linter is configured.
 
 **AI features:** Vercel AI SDK with OpenRouter (`@ai-sdk/openai`). Used for recipe import (URL scraping + AI extraction), text-to-recipe parsing, and per-recipe chat. Model chain (primary + fallback) is configured in `src/lib/ai.ts`.
 
-**i18n:** Static string map in `src/lib/i18n.ts` — English, Dutch, and Finnish. Locale selected via `PUBLIC_UI_LOCALE` env var. Use `t("key")` for translations.
+**i18n:** Static string map in `src/lib/i18n.ts` — English, Dutch, and Finnish. Each user picks a language in their profile (`users.locale`); `PUBLIC_UI_LOCALE` is the default for logged-out users and new accounts. `t("key")` resolves the active request/client locale; use `getLocale()` when a raw locale code is needed.
 
 **Validation:** Zod schemas in `src/lib/validation.ts` validate all API input (recipes, cook logs, collections).
 

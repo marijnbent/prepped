@@ -12,6 +12,7 @@ interface Props {
   importPrompt: string;
   chatPrompt: string;
   shoppingPrompt: string;
+  locale: string;
   cookingSuppliesExpandedByDefault: boolean;
   dirkSecretModeEnabled: boolean;
   apiTokenPreview: string;
@@ -23,6 +24,7 @@ export default function ProfileForm({
   importPrompt: initialImport,
   chatPrompt: initialChat,
   shoppingPrompt: initialShopping,
+  locale: initialLocale,
   cookingSuppliesExpandedByDefault: initialCookingSuppliesExpandedByDefault,
   dirkSecretModeEnabled: initialDirkSecretModeEnabled,
   apiTokenPreview: initialApiTokenPreview,
@@ -34,6 +36,7 @@ export default function ProfileForm({
   const [importPrompt, setImportPrompt] = useState(initialImport);
   const [chatPrompt, setChatPrompt] = useState(initialChat);
   const [shoppingPrompt, setShoppingPrompt] = useState(initialShopping);
+  const [locale, setLocale] = useState(initialLocale);
   const [cookingSuppliesExpandedByDefault, setCookingSuppliesExpandedByDefault] = useState(initialCookingSuppliesExpandedByDefault);
   const [dirkSecretModeEnabled, setDirkSecretModeEnabled] = useState(initialDirkSecretModeEnabled);
   const [apiTokenPreview, setApiTokenPreview] = useState(initialApiTokenPreview);
@@ -57,13 +60,18 @@ export default function ProfileForm({
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt, cookingSuppliesExpandedByDefault, dirkSecretModeEnabled }),
+        body: JSON.stringify({ importPrompt, chatPrompt, shoppingPrompt, locale, cookingSuppliesExpandedByDefault, dirkSecretModeEnabled }),
       });
 
       if (!res.ok) {
         const data = await res.json();
         setError(getApiErrorMessage(data, t("common.error")));
         setSaving(false);
+        return;
+      }
+
+      if (locale !== initialLocale) {
+        window.location.reload();
         return;
       }
 
@@ -342,6 +350,21 @@ export default function ProfileForm({
       <section className="mt-16 border-t border-border pt-10">
         <h2 className="text-2xl font-medium tracking-tight">{t("profile.groupOther")}</h2>
         <div className="mt-6 space-y-6">
+          <div>
+            <Label htmlFor="locale" className="text-base">{t("profile.language")}</Label>
+            <p id="locale-desc" className="mt-1 mb-3 text-sm text-muted-foreground">{t("profile.languageDesc")}</p>
+            <select
+              id="locale"
+              aria-describedby="locale-desc"
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
+              className="h-10 w-full max-w-xs rounded-full border border-input bg-background px-4 text-base transition-colors hover:border-muted-foreground focus-visible:border-foreground focus-visible:outline-none md:text-sm"
+            >
+              <option value="en">English</option>
+              <option value="nl">Nederlands</option>
+              <option value="fi">Suomi</option>
+            </select>
+          </div>
           <div className="flex items-start gap-3">
             <Checkbox
               id="cookingSuppliesExpandedByDefault"

@@ -43,6 +43,13 @@
       "when": 1792331786779,
       "tag": "0005_recipe_flows",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795606981802,
+      "tag": "0006_lowly_maggott",
+      "breakpoints": true
     }
   ]
 }

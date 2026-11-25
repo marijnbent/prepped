@@ -4,7 +4,7 @@ import { db } from "../lib/db";
 import { cookLogs, recipes, users } from "../lib/schema";
 import { desc, eq } from "drizzle-orm";
 import PageHeader from "../components/PageHeader.astro";
-import { t, formatDate, dateLocale } from "../lib/i18n";
+import { t, formatDate, getDateLocale } from "../lib/i18n";
 
 if (!Astro.locals.user) {
   return Astro.redirect("/login?redirect=/cook-log");
@@ -30,7 +30,7 @@ const logs = db
   .orderBy(desc(cookLogs.cookedAt))
   .all();
 
-const monthFormat = new Intl.DateTimeFormat(dateLocale, { month: "long", year: "numeric" });
+const monthFormat = new Intl.DateTimeFormat(getDateLocale(), { month: "long", year: "numeric" });
 const months: { label: string; logs: typeof logs }[] = [];
 for (const log of logs) {
   const label = monthFormat.format(new Date(log.cookedAt));

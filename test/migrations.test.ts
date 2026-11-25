@@ -45,16 +45,16 @@ test("records a complete legacy schema without replaying migrations", () => {
     sqlite.exec('DROP TABLE "__drizzle_migrations"');
 
     const count = legacyBaselineCount(sqlite);
-    assert.equal(count, 5);
+    assert.equal(count, 6);
     stampLegacyMigrations(sqlite, resolve("."), count);
-    assert.equal(migrationRecordCount(sqlite), 5);
+    assert.equal(migrationRecordCount(sqlite), 6);
   });
 });
 
 test("leaves an absent idempotent migration for Drizzle to apply", () => {
   withTemporaryDatabase((sqlite) => {
     migrate(drizzle(sqlite), { migrationsFolder: resolve("drizzle") });
-    sqlite.exec('DROP TABLE "notifications"; DROP TABLE "__drizzle_migrations"');
+    sqlite.exec('DROP TABLE "notifications"; ALTER TABLE "users" DROP COLUMN "locale"; DROP TABLE "__drizzle_migrations"');
 
     const count = legacyBaselineCount(sqlite);
     assert.equal(count, 4);
@@ -65,7 +65,7 @@ test("leaves an absent idempotent migration for Drizzle to apply", () => {
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'notifications'")
       .get();
     assert.ok(notificationTable);
-    assert.equal(migrationRecordCount(sqlite), 6);
+    assert.equal(migrationRecordCount(sqlite), 7);
   });
 });
 

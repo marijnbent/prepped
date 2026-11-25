@@ -1,4 +1,4 @@
-import { locale, t } from "@/lib/i18n";
+import { getLocale, t } from "@/lib/i18n";
 
 type FlattenedFieldErrors = Record<string, string[] | undefined>;
 type ValidationIssuePath = Array<string | number>;
@@ -27,7 +27,7 @@ const validationMessages = {
 } as const;
 
 function validationMessage(kind: keyof (typeof validationMessages)["en"]) {
-  return validationMessages[locale][kind];
+  return validationMessages[getLocale()][kind];
 }
 
 type ErrorPayload = {

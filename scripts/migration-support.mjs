@@ -185,6 +185,7 @@ export function legacyBaselineCount(db) {
     "notifications_comment_id_idx",
   ]);
   if (commentsReady && notificationsReady && commentsIndexesReady) count = 5;
+  if (count === 5 && usersColumns.has("locale")) count = 6;
 
   return count;
 }

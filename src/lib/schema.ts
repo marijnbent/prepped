@@ -13,6 +13,7 @@ export const users = sqliteTable("users", {
   importPrompt: text("import_prompt"),
   chatPrompt: text("chat_prompt"),
   shoppingPrompt: text("shopping_prompt"),
+  locale: text("locale"),
   cookingSuppliesExpandedByDefault: integer("cooking_supplies_expanded_by_default", { mode: "boolean" }).notNull().default(false),
   dirkSecretModeEnabled: integer("dirk_secret_mode_enabled", { mode: "boolean" }).notNull().default(false),
   apiTokenHash: text("api_token_hash"),

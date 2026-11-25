@@ -393,6 +393,8 @@ const strings = {
     "profile.shoppingPromptPlaceholder": "e.g. Use Dutch category names, group by store layout",
     "profile.groupPrompts": "Prompts",
     "profile.groupOther": "Other",
+    "profile.language": "Language",
+    "profile.languageDesc": "Choose the language used across the app. Changes apply after saving.",
     "profile.apiToken": "API token",
     "profile.apiTokenDesc": "Use this token to create recipes from external tools and LLMs.",
     "profile.apiDocs": "API docs",
@@ -807,6 +809,8 @@ const strings = {
     "profile.shoppingPromptPlaceholder": "bijv. Gebruik Nederlandse categorienamen, groepeer op winkelindeling",
     "profile.groupPrompts": "Prompts",
     "profile.groupOther": "Overig",
+    "profile.language": "Taal",
+    "profile.languageDesc": "Kies de taal die de app gebruikt. Wijzigingen worden toegepast na opslaan.",
     "profile.apiToken": "API-token",
     "profile.apiTokenDesc": "Gebruik deze token om recepten te maken vanuit externe tools en LLM's.",
     "profile.apiDocs": "API-documentatie",
@@ -1221,6 +1225,8 @@ const strings = {
     "profile.shoppingPromptPlaceholder": "esim. Käytä suomenkielisiä ryhmien nimiä ja ryhmittele ostokset kaupan osastojen mukaan",
     "profile.groupPrompts": "Kehotteet",
     "profile.groupOther": "Muut",
+    "profile.language": "Kieli",
+    "profile.languageDesc": "Valitse sovelluksen käyttämä kieli. Muutos tulee voimaan tallennuksen jälkeen.",
     "profile.apiToken": "API-tunniste",
     "profile.apiTokenDesc": "Käytä tätä tunnistetta reseptien luomiseen ulkoisilla työkaluilla ja LLM-kielimalleilla.",
     "profile.apiDocs": "API-ohjeet",
@@ -1243,12 +1249,47 @@ const strings = {
   },
 } as const;
 
-type Locale = keyof typeof strings;
+export type Locale = keyof typeof strings;
 type StringKey = keyof (typeof strings)["en"];
 
-function getLocale(): Locale {
-  const locale = import.meta.env.PUBLIC_UI_LOCALE || "en";
-  return locale in strings ? (locale as Locale) : "en";
+type LocaleResolver = () => Locale | undefined;
+
+const localeResolverKey = "__preppedLocaleResolver";
+type GlobalWithLocaleResolver = typeof globalThis & { __preppedLocaleResolver?: LocaleResolver };
+
+let cachedDocumentLocale: Locale | undefined;
+
+/**
+ * Register a request-scoped locale resolver (server only). The resolver takes
+ * precedence over the document and environment fallbacks. It lives on
+ * globalThis so separately bundled server modules share one instance.
+ */
+export function setLocaleResolver(resolver: LocaleResolver) {
+  (globalThis as GlobalWithLocaleResolver)[localeResolverKey] = resolver;
+}
+
+function getLocaleResolver(): LocaleResolver | undefined {
+  return (globalThis as GlobalWithLocaleResolver)[localeResolverKey];
+}
+
+export function resolveLocale(value?: string | null): Locale | undefined {
+  if (!value) return undefined;
+  const normalized = value.toLowerCase().replace(/_/g, "-").split("-")[0];
+  return normalized in strings ? (normalized as Locale) : undefined;
+}
+
+function localeFromDocument(): Locale | undefined {
+  if (typeof document === "undefined") return undefined;
+  if (cachedDocumentLocale) return cachedDocumentLocale;
+  cachedDocumentLocale = resolveLocale(document.documentElement.dataset.locale || document.documentElement.lang);
+  return cachedDocumentLocale;
+}
+
+export function getLocale(): Locale {
+  return getLocaleResolver()?.()
+    ?? localeFromDocument()
+    ?? resolveLocale(import.meta.env?.PUBLIC_UI_LOCALE)
+    ?? "en";
 }
 
 export function t(key: StringKey): string {
@@ -1256,19 +1297,19 @@ export function t(key: StringKey): string {
   return strings[locale][key] || strings["en"][key] || key;
 }
 
-export const locale = getLocale();
-
 const dateLocales: Record<Locale, string> = {
   en: "en-US",
   nl: "nl-NL",
   fi: "fi-FI",
 };
 
-export const dateLocale = (import.meta.env.PUBLIC_DATE_LOCALE || dateLocales[getLocale()]).replace(/_/g, "-");
+export function getDateLocale(): string {
+  return (import.meta.env?.PUBLIC_DATE_LOCALE || dateLocales[getLocale()]).replace(/_/g, "-");
+}
 
 export function formatDate(date: string | Date): string {
   try {
-    return new Date(date).toLocaleDateString(dateLocale, {
+    return new Date(date).toLocaleDateString(getDateLocale(), {
       year: "numeric",
       month: "short",
       day: "numeric",
